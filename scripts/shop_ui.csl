@@ -1,0 +1,1396 @@
+draw_shop_card :: proc(id: string, label: string, price: s64, icon: Texture_Asset, tint: v4, owned: bool) -> Interact_Result {
+    card_desc := UIK.card_desc(UIK.flex(1), UIK.pixels(118), tint, .LANDSCAPE, 0.38, 0.0, 0.0);
+    UIK.card_begin(id, card_desc);
+
+    UIK.card_zone(.MEDIA);
+    UIK.image_fitted(icon, UIK.image_desc(.CONTAIN));
+    UIK.card_zone_end();
+
+    UIK.card_zone(.BODY);
+    UIK.text(UIK.text_body(), "%", {label});
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    coin := get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png");
+    UIK.currency(coin, price, UIK.text_body());
+    if id == "admin_shop/giant_gun" {
+        UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+        UIK.text(UIK.text_body(), "By 59zttiotnra");
+    }
+    if owned {
+        UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+        UIK.text(UIK.text_body(), "Owned");
+    }
+    UIK.card_zone_end();
+
+    return UIK.card_end();
+}
+
+play_pickup_feedback :: proc(player: Player, text: string) {
+    player.reward_feedback_text = text;
+    player.reward_feedback_start = get_time();
+    player.reward_feedback_duration = 1.0;
+}
+
+giant_gun_admin_cost :: proc(player: Player) -> s64 {
+    if can_access_admin_panel(player) {
+        return 1;
+    }
+    return 1000000;
+}
+
+buy_weapon_offer :: proc(player: Player, wt: Weapon_Type, cost: s64, feedback_text: string) {
+    if player_has_weapon(player, wt) {
+        return;
+    }
+
+    weapon_def := get_weapon_item_def(wt);
+    if weapon_def != null && Items.calculate_room_in_inventory_for_item(weapon_def, player.default_inventory) <= 0 {
+        player.play_reward_feedback("No room");
+        return;
+    }
+
+    if !spend_coins(player, cost) {
+        return;
+    }
+
+    grant_weapon_with_ammo(player, wt, get_weapon_config(wt).ammo_first_pickup);
+    equip_weapon_item_if_present(player, wt);
+    if !player.show_admin_shop {
+        player.show_shop = false;
+    }
+    play_pickup_feedback(player, feedback_text);
+
+    if player.is_local() {
+        sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+        desc := SFX.default_sfx_desc();
+        desc.volume = 0.6;
+        SFX.play(sfx, desc);
+    }
+}
+
+buy_ammo_offer :: proc(player: Player, ammo_index: s64, amount: s64, cost: s64, feedback_text: string) {
+    if amount <= 0 {
+        return;
+    }
+
+    ammo_info := get_ammo_info(ammo_index);
+    ammo_def := g_ammo_item_defs[ammo_index];
+    if ammo_def == null || ammo_info.stack_size <= 0 {
+        return;
+    }
+
+    remaining := amount;
+    bought := false;
+    while remaining > 0 {
+        chunk := remaining;
+        if chunk > ammo_info.stack_size {
+            chunk = ammo_info.stack_size;
+        }
+
+        ammo := Items.create_item_instance(ammo_def, chunk);
+        will_destroy: bool;
+        if Items.can_move_item_to_inventory(ammo, player.default_inventory, ref will_destroy) {
+            if !bought {
+                if !spend_coins(player, cost) {
+                    Items.destroy_item_instance(ammo);
+                    return;
+                }
+                bought = true;
+            }
+
+            Items.move_item_to_inventory(ammo, player.default_inventory);
+        } else {
+            Items.destroy_item_instance(ammo);
+            break;
+        }
+
+        remaining -= chunk;
+    }
+
+    if bought {
+        play_pickup_feedback(player, feedback_text);
+
+        if player.is_local() {
+            sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+            desc := SFX.default_sfx_desc();
+            desc.volume = 0.5;
+            SFX.play(sfx, desc);
+        }
+    }
+}
+
+buy_bullets :: proc(player: Player) {
+    buy_ammo_offer(player, 0, BULLETS_PER_BUY, BULLET_COST, format_string("+% Bullets", {BULLETS_PER_BUY}));
+}
+
+buy_verity_offer :: proc(player: Player) {
+    if grant_verity_item(player) {
+        play_pickup_feedback(player, "+Verity");
+        if player.is_local() {
+            sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+            desc := SFX.default_sfx_desc();
+            desc.volume = 0.5;
+            SFX.play(sfx, desc);
+        }
+    } else {
+        player.play_reward_feedback("No room");
+    }
+}
+
+grant_admin_ammo_offer :: proc(player: Player, ammo_index: s64, amount: s64, feedback_text: string) {
+    if player == null || amount <= 0 {
+        return;
+    }
+
+    grant_ammo_to_player(player, ammo_index, amount);
+    play_pickup_feedback(player, feedback_text);
+
+    if player.is_local() {
+        sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+        desc := SFX.default_sfx_desc();
+        desc.volume = 0.5;
+        SFX.play(sfx, desc);
+    }
+}
+
+buy_armor_offer :: proc(player: Player) {
+    if spend_coins(player, 750) {
+        apply_armor_bonus(player, ARMOR_BONUS_HP);
+    }
+}
+
+buy_heal_offer :: proc(player: Player) {
+    if spend_coins(player, 50) {
+        fully_heal_player(player);
+    }
+}
+
+draw_coin_pass_card :: proc(player: Player, product_id: string, amount: s64) -> Interact_Result {
+    product := Purchasing.get_product(product_id);
+    available := product.id.count > 0;
+    tint := v4{0.78, 0.62, 0.18, 1};
+    if !available {
+        tint = v4{0.38, 0.38, 0.38, 1};
+    } else if product.consumable {
+        tint = v4{0.28, 0.72, 0.38, 1};
+    }
+
+    card_desc := UIK.card_desc(UIK.flex(1), UIK.pixels(108), tint, .LANDSCAPE, 0.32, 0.04, 0.10);
+    UIK.card_begin(product_id, card_desc);
+
+    UIK.card_zone(.MEDIA);
+    coin := get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png");
+    UIK.image_fitted(coin, UIK.image_desc(.CONTAIN));
+    UIK.card_zone_end();
+
+    UIK.card_zone(.BODY);
+    UIK.text(UIK.text_body(), "% Coins", {amount});
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    UIK.text(UIK.text_body(), "Buy again for more coins.");
+    if !available {
+        UIK.spacer(UIK.pixels(1), UIK.pixels(2));
+        UIK.text(UIK.text_body(), "Unavailable");
+    } else if product.consumable {
+        UIK.spacer(UIK.pixels(1), UIK.pixels(2));
+        UIK.text(UIK.text_body(), "Repeatable");
+    }
+    UIK.card_zone_end();
+
+    return UIK.card_end();
+}
+
+draw_vip_pass_card :: proc(product_id: string) -> Interact_Result {
+    product := Purchasing.get_product(product_id);
+    available := product.id.count > 0;
+    tint := v4{0.78, 0.62, 0.18, 1};
+    if !available {
+        tint = v4{0.38, 0.38, 0.38, 1};
+    }
+
+    card_desc := UIK.card_desc(UIK.flex(1), UIK.pixels(132), tint, .LANDSCAPE, 0.32, 0.04, 0.10);
+    UIK.card_begin(product_id, card_desc);
+    UIK.card_zone(.MEDIA);
+    crown := get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png");
+    UIK.image_fitted(crown, UIK.image_desc(.CONTAIN));
+    UIK.card_zone_end();
+    UIK.card_zone(.BODY);
+    UIK.text(UIK.text_body(), "VIP");
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    UIK.text(UIK.text_body(), "Crown + half-price shops + double kill coins");
+    if !available {
+        UIK.spacer(UIK.pixels(1), UIK.pixels(2));
+        UIK.text(UIK.text_body(), "Unavailable");
+    }
+    UIK.card_zone_end();
+    return UIK.card_end();
+}
+
+draw_monetization_tab :: proc(player: Player) {
+    content := UIK.layout_column();
+    content.width = UIK.flex(1);
+    content.height = UIK.flex(1);
+    content.padding = v4{12, 16, 12, 16};
+    content.gap = 8;
+    UIK.list_begin("monetization_scroll", content);
+
+    UIK.text(UIK.text_title(), "Passes");
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    UIK.text(UIK.text_body(), "Buy or gift a pass. Repeat purchases grant more coins.");
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    UIK.text(UIK.text_body(), "VIP: crown hat, half-price shops, double kill coins");
+    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+
+    vip_product := Purchasing.get_product(VIP_PRODUCT_ID);
+    vip_available := vip_product.id.count > 0;
+    vip_buy_desc := UIK.widget_desc_button_auto_default(.BUTTON_SHINY_YELLOW);
+    vip_buy_desc.panel.width = UIK.flex(1);
+    vip_buy_desc.panel.height = UIK.pixels(58);
+    vip_buy_handle := UIK.button("passes/vip_buy", "Buy VIP with Sparks", vip_buy_desc);
+    vip_handle := draw_vip_pass_card(VIP_PRODUCT_ID);
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+
+    pass25_product := Purchasing.get_product(COIN_PASS_25_PRODUCT_ID);
+    pass25_available := pass25_product.id.count > 0;
+    pass25_handle := draw_coin_pass_card(player, COIN_PASS_25_PRODUCT_ID, 25);
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    pass50_product := Purchasing.get_product(COIN_PASS_50_PRODUCT_ID);
+    pass50_available := pass50_product.id.count > 0;
+    pass50_handle := draw_coin_pass_card(player, COIN_PASS_50_PRODUCT_ID, 50);
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    pass100_product := Purchasing.get_product(COIN_PASS_100_PRODUCT_ID);
+    pass100_available := pass100_product.id.count > 0;
+    pass100_handle := draw_coin_pass_card(player, COIN_PASS_100_PRODUCT_ID, 100);
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    pass250_product := Purchasing.get_product(COIN_PASS_250_PRODUCT_ID);
+    pass250_available := pass250_product.id.count > 0;
+    pass250_handle := draw_coin_pass_card(player, COIN_PASS_250_PRODUCT_ID, 250);
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    pass500_product := Purchasing.get_product(COIN_PASS_500_PRODUCT_ID);
+    pass500_available := pass500_product.id.count > 0;
+    pass500_handle := draw_coin_pass_card(player, COIN_PASS_500_PRODUCT_ID, 500);
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    pass1000_product := Purchasing.get_product(COIN_PASS_1000_PRODUCT_ID);
+    pass1000_available := pass1000_product.id.count > 0;
+    pass1000_handle := draw_coin_pass_card(player, COIN_PASS_1000_PRODUCT_ID, 1000);
+
+    UIK.list_end();
+
+    if vip_available && UIK.clicked(vip_buy_handle) {
+        Purchasing.prompt_purchase(player, VIP_PRODUCT_ID);
+    }
+    if vip_available && UIK.clicked(vip_handle) {
+        Purchasing.prompt_purchase(player, VIP_PRODUCT_ID);
+    }
+
+    if pass25_available && UIK.clicked(pass25_handle) {
+        Purchasing.prompt_purchase(player, COIN_PASS_25_PRODUCT_ID);
+    }
+    if pass50_available && UIK.clicked(pass50_handle) {
+        Purchasing.prompt_purchase(player, COIN_PASS_50_PRODUCT_ID);
+    }
+    if pass100_available && UIK.clicked(pass100_handle) {
+        Purchasing.prompt_purchase(player, COIN_PASS_100_PRODUCT_ID);
+    }
+    if pass250_available && UIK.clicked(pass250_handle) {
+        Purchasing.prompt_purchase(player, COIN_PASS_250_PRODUCT_ID);
+    }
+    if pass500_available && UIK.clicked(pass500_handle) {
+        Purchasing.prompt_purchase(player, COIN_PASS_500_PRODUCT_ID);
+    }
+    if pass1000_available && UIK.clicked(pass1000_handle) {
+        Purchasing.prompt_purchase(player, COIN_PASS_1000_PRODUCT_ID);
+    }
+
+}
+
+draw_shop :: proc(player: Player) {
+    UIK.begin(UIK.modal(UIK.rect_window_large(), 15));
+
+    shell := UIK.panel_modal(.BLACK);
+    shell.gap = 0;
+    UIK.panel_begin(shell);
+
+    title_desc := UIK.title_area_desc("Shop");
+    title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/shopping_cart/shopping_cart_icon.png");
+    exit_handle := UIK.title_area(title_desc);
+
+    shop_close_btn: Interact_Result;
+    armor_handle: Interact_Result;
+    heal_handle: Interact_Result;
+    shop_gun_cutter_handle: Interact_Result;
+    shop_ar_handle: Interact_Result;
+    shop_smg_handle: Interact_Result;
+    shop_gatling_handle: Interact_Result;
+    shop_ray_handle: Interact_Result;
+    shop_shotgun_handle: Interact_Result;
+    shop_beam_handle: Interact_Result;
+    shop_hydro_handle: Interact_Result;
+    shop_blunder_handle: Interact_Result;
+    shop_revolver_handle: Interact_Result;
+    flashbang_handle: Interact_Result;
+    grenade_gun_handle: Interact_Result;
+    sword_handle: Interact_Result;
+    stun_handle: Interact_Result;
+    mine_handle: Interact_Result;
+    bullets_handle: Interact_Result;
+    heavy_handle: Interact_Result;
+    explosive_handle: Interact_Result;
+    energy_handle: Interact_Result;
+    cryo_handle: Interact_Result;
+    water_handle: Interact_Result;
+    sawblade_handle: Interact_Result;
+    lmg_handle: Interact_Result;
+    dash_handle: Interact_Result;
+    invis_handle: Interact_Result;
+    normal_handle: Interact_Result;
+    finger_handle: Interact_Result;
+    paper_handle: Interact_Result;
+    if player.shop_tab_index == 0 {
+    content := UIK.layout_column();
+    content.width = UIK.flex(1);
+    content.height = UIK.flex(1);
+    content.padding = v4{12, 16, 12, 16};
+    content.gap = 8;
+    UIK.list_begin("shop_scroll", content);
+
+    UIK.text("Support", UIK.text_title());
+    if player.has_vip {
+        UIK.text(UIK.text_body(), "VIP: 50% off shop prices");
+    }
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    support_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(support_row);
+    armor_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
+    heal_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/heart_icon_full.png");
+    armor_handle = draw_shop_card("shop/armor", "Armor", shop_price(player, 750), armor_icon, {0.35, 0.55, 0.85, 1}, false);
+    heal_handle = draw_shop_card("shop/heal", "Heal", shop_price(player, 50), heal_icon, {0.35, 0.8, 0.45, 1}, false);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+    UIK.text("Guns", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    shop_gun_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(shop_gun_row_1);
+    shop_gun_cutter_icon := get_asset(Texture_Asset, get_weapon_config(.MEGA_BLADE).weapon_icon_path);
+    shop_ar_icon := get_asset(Texture_Asset, get_weapon_config(.ASSAULT_RIFLE).weapon_icon_path);
+    shop_smg_icon := get_asset(Texture_Asset, get_weapon_config(.SUBMACHINE_GUN).weapon_icon_path);
+    shop_gun_cutter_handle = draw_shop_card("shop/gun_cutter", "Gun Cutter", shop_price(player, SWORD_COST), shop_gun_cutter_icon, {0.9, 0.75, 0.25, 1}, player_has_weapon(player, .MEGA_BLADE));
+    shop_ar_handle = draw_shop_card("shop/assault_rifle", "Assault Rifle", shop_price(player, 60), shop_ar_icon, {0.5, 0.5, 0.6, 1}, player_has_weapon(player, .ASSAULT_RIFLE));
+    shop_smg_handle = draw_shop_card("shop/submachine_gun", "Submachine Gun", shop_price(player, 70), shop_smg_icon, {0.5, 0.65, 0.85, 1}, player_has_weapon(player, .SUBMACHINE_GUN));
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    shop_gun_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(shop_gun_row_2);
+    shop_gatling_icon := get_asset(Texture_Asset, get_weapon_config(.GATLING_GUN).weapon_icon_path);
+    shop_ray_icon := get_asset(Texture_Asset, get_weapon_config(.RAY_GUN).weapon_icon_path);
+    shop_shotgun_icon := get_asset(Texture_Asset, get_weapon_config(.EXPLOSIVE_SHOTGUN).weapon_icon_path);
+    shop_gatling_handle = draw_shop_card("shop/gatling_gun", "Gatling Gun", shop_price(player, 120), shop_gatling_icon, {0.6, 0.6, 0.7, 1}, player_has_weapon(player, .GATLING_GUN));
+    shop_ray_handle = draw_shop_card("shop/ray_gun", "Ray Gun", shop_price(player, 90), shop_ray_icon, {0.7, 0.7, 0.9, 1}, player_has_weapon(player, .RAY_GUN));
+    shop_shotgun_handle = draw_shop_card("shop/explosive_shotgun", "Explosive Shotgun", shop_price(player, 85), shop_shotgun_icon, {0.85, 0.6, 0.35, 1}, player_has_weapon(player, .EXPLOSIVE_SHOTGUN));
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    shop_gun_row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(shop_gun_row_3);
+    shop_beam_icon := get_asset(Texture_Asset, get_weapon_config(.BEAM_MACHINE).weapon_icon_path);
+    shop_hydro_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
+    shop_blunder_icon := get_asset(Texture_Asset, get_weapon_config(.BLUNDERBUSS).weapon_icon_path);
+    shop_beam_handle = draw_shop_card("shop/beam_machine", "Beam Machine", 100, shop_beam_icon, {0.55, 0.7, 0.85, 1}, player_has_weapon(player, .BEAM_MACHINE));
+    shop_hydro_handle = draw_shop_card("shop/hydro_cannon", "Hydro Cannon", 110, shop_hydro_icon, {0.35, 0.75, 0.9, 1}, player_has_weapon(player, .HYDRO_CANNON));
+    shop_blunder_handle = draw_shop_card("shop/blunderbuss", "Blunderbuss", 75, shop_blunder_icon, {0.8, 0.55, 0.35, 1}, player_has_weapon(player, .BLUNDERBUSS));
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    shop_gun_row_4 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(shop_gun_row_4);
+    flashbang_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/grenade.png");
+    grenade_gun_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/grenade.png");
+    flashbang_handle = draw_shop_card("shop/flashbang", "Flashbang", 85, flashbang_icon, {0.9, 0.9, 0.6, 1}, player_has_weapon(player, .FLASHBANG));
+    grenade_gun_handle = draw_shop_card("shop/grenade_gun", "Grenade Gun", 110, grenade_gun_icon, {0.8, 0.6, 0.35, 1}, player_has_weapon(player, .GRENADE_GUN));
+    revolver_icon := get_asset(Texture_Asset, get_weapon_config(.AKIMBO_PISTOLS).weapon_icon_path);
+    shop_revolver_handle = draw_shop_card("shop/revolver", "Revolver", 80, revolver_icon, {0.75, 0.55, 0.35, 1}, player_has_weapon(player, .AKIMBO_PISTOLS));
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+    UIK.text("Melee & Traps", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    utility_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(utility_row);
+    sword_icon := get_asset(Texture_Asset, get_weapon_config(.SWORD).weapon_icon_path);
+    stun_icon := get_asset(Texture_Asset, get_weapon_config(.STUN_GRENADE).weapon_icon_path);
+    mine_icon := get_asset(Texture_Asset, get_weapon_config(.LANDMINE).weapon_icon_path);
+    sword_handle = draw_shop_card("shop/sword", "Sword", SWORD_COST, sword_icon, {0.9, 0.8, 0.35, 1}, player_has_weapon(player, .SWORD));
+    stun_handle = draw_shop_card("shop/stun_grenade", "Stun Grenade", STUN_GRENADE_COST, stun_icon, {0.4, 0.75, 0.95, 1}, player_has_weapon(player, .STUN_GRENADE));
+    mine_handle = draw_shop_card("shop/landmine", "Landmine", LANDMINE_COST, mine_icon, {0.55, 0.75, 0.45, 1}, player_has_weapon(player, .LANDMINE));
+    UIK.panel_end();
+
+    UIK.text("Ammo", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    shop_ammo_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(shop_ammo_row_1);
+    shop_bullet_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/bullet.png");
+    shop_heavy_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/cannonball.png");
+    shop_explosive_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/shotgunshell.png");
+    bullets_handle = draw_shop_card("shop/buy_bullets", "Buy 10 Bullets", BULLET_COST, shop_bullet_icon, {0.3, 0.7, 0.3, 1}, false);
+    heavy_handle = draw_shop_card("shop/buy_revolver_bullets", "Buy 10 Revolver Bullets", 20, shop_heavy_icon, {0.7, 0.6, 0.35, 1}, false);
+    explosive_handle = draw_shop_card("shop/buy_explosive", "Buy 10 Shells", 20, shop_explosive_icon, {0.85, 0.6, 0.35, 1}, false);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    shop_ammo_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(shop_ammo_row_2);
+    shop_energy_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/energycells.png");
+    shop_cryo_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/cryocell.png");
+    shop_water_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/waterballoon.png");
+    energy_handle = draw_shop_card("shop/buy_energy", "Buy 30 Energy Cells", 25, shop_energy_icon, {0.4, 0.75, 0.95, 1}, false);
+    cryo_handle = draw_shop_card("shop/buy_cryo", "Buy 30 Cryo Cells", 25, shop_cryo_icon, {0.65, 0.85, 1.0, 1}, false);
+    water_handle = draw_shop_card("shop/buy_water", "Buy 10 Water Balloons", 20, shop_water_icon, {0.3, 0.55, 0.9, 1}, false);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    shop_ammo_row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(shop_ammo_row_3);
+    shop_sawblade_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/buzzsaw.png");
+    shop_lmg_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/bullet_alt.png");
+    sawblade_handle = draw_shop_card("shop/buy_sawblade", "Buy 10 Sawblades", 30, shop_sawblade_icon, {0.85, 0.7, 0.25, 1}, false);
+    lmg_handle = draw_shop_card("shop/buy_lmg", "Buy 30 LMG Rounds", 40, shop_lmg_icon, {0.8, 0.8, 0.5, 1}, false);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+    UIK.text("Power-ups", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    powerup_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(powerup_row);
+    dash_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
+    inv_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/lock_closed.png");
+    dash_handle = draw_shop_card("shop/buy_dash", "Dash", DASH_COST, dash_icon, {0.3, 0.5, 0.9, 1}, player.has_dash);
+    invis_handle = draw_shop_card("shop/buy_invisible", "Invisible", INVISIBLE_COST, inv_icon, {0.6, 0.2, 0.8, 1}, player.has_invisible);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+    UIK.text("Gun Skins", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    skin_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(skin_row);
+    normal_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/assaultrifle.png");
+    finger_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/akimbo_pistols.png");
+    paper_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/blunderbuss.png");
+    normal_handle = draw_shop_card("shop/normal_gun", "Normal Gun", SKIN_COST, normal_icon, {0.5, 0.5, 0.6, 1}, true);
+    finger_handle = draw_shop_card("shop/finger_gun", "Finger Gun", SKIN_COST, finger_icon, {0.9, 0.7, 0.2, 1}, player.purchased_finger_gun);
+    paper_handle = draw_shop_card("shop/paper_gun", "Paper Gun", SKIN_COST, paper_icon, {0.8, 0.5, 0.2, 1}, player.purchased_paper_gun);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(12));
+    close_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(close_row);
+    close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    close_desc.panel.width = UIK.flex(1);
+    close_desc.panel.height = UIK.pixels(64);
+    shop_close_btn = UIK.button("shop/close", "Close", close_desc);
+    UIK.panel_end();
+
+    UIK.list_end();
+    } else {
+        draw_monetization_tab(player);
+    }
+
+    UIK.panel_end();
+    UIK.end();
+
+    if UIK.clicked(exit_handle) || UIK.clicked(shop_close_btn) {
+        player.show_shop = false;
+    }
+
+    if UIK.clicked(shop_gun_cutter_handle) && !player_has_weapon(player, .MEGA_BLADE) {
+        buy_weapon_offer(player, .MEGA_BLADE, GUN_CUTTER_COST, "+Gun Cutter");
+    }
+    if UIK.clicked(shop_ar_handle) {
+        buy_weapon_offer(player, .ASSAULT_RIFLE, 60, "+Assault Rifle");
+    }
+    if UIK.clicked(shop_smg_handle) {
+        buy_weapon_offer(player, .SUBMACHINE_GUN, 70, "+SMG");
+    }
+    if UIK.clicked(shop_gatling_handle) {
+        buy_weapon_offer(player, .GATLING_GUN, 120, "+Gatling Gun");
+    }
+    if UIK.clicked(shop_ray_handle) {
+        buy_weapon_offer(player, .RAY_GUN, 90, "+Ray Gun");
+    }
+    if UIK.clicked(shop_shotgun_handle) {
+        buy_weapon_offer(player, .EXPLOSIVE_SHOTGUN, 85, "+Explosive Shotgun");
+    }
+    if UIK.clicked(shop_beam_handle) {
+        buy_weapon_offer(player, .BEAM_MACHINE, 100, "+Beam Machine");
+    }
+    if UIK.clicked(shop_hydro_handle) {
+        buy_weapon_offer(player, .HYDRO_CANNON, 110, "+Hydro Cannon");
+    }
+    if UIK.clicked(shop_blunder_handle) {
+        buy_weapon_offer(player, .BLUNDERBUSS, 75, "+Blunderbuss");
+    }
+    if UIK.clicked(flashbang_handle) {
+        buy_weapon_offer(player, .FLASHBANG, 85, "+Flashbang");
+    }
+    if UIK.clicked(grenade_gun_handle) {
+        buy_weapon_offer(player, .GRENADE_GUN, 110, "+Grenade Gun");
+    }
+    if UIK.clicked(shop_revolver_handle) {
+        buy_weapon_offer(player, .AKIMBO_PISTOLS, 80, "+Revolver");
+    }
+    if UIK.clicked(sword_handle) {
+        buy_weapon_offer(player, .SWORD, SWORD_COST, "+Sword");
+    }
+    if UIK.clicked(stun_handle) {
+        buy_weapon_offer(player, .STUN_GRENADE, STUN_GRENADE_COST, "+Stun Grenade");
+    }
+    if UIK.clicked(mine_handle) {
+        buy_weapon_offer(player, .LANDMINE, LANDMINE_COST, "+Landmine");
+    }
+
+    if UIK.clicked(armor_handle) {
+        buy_armor_offer(player);
+    }
+    if UIK.clicked(heal_handle) {
+        buy_heal_offer(player);
+    }
+    if UIK.clicked(bullets_handle) {
+        buy_bullets(player);
+    }
+    if UIK.clicked(heavy_handle) {
+        buy_ammo_offer(player, 1, 10, 20, "+10 Revolver Bullets");
+    }
+    if UIK.clicked(explosive_handle) {
+        buy_ammo_offer(player, 2, 10, 20, "+10 Shells");
+    }
+    if UIK.clicked(energy_handle) {
+        buy_ammo_offer(player, 5, 30, 25, "+30 Energy Cells");
+    }
+    if UIK.clicked(cryo_handle) {
+        buy_ammo_offer(player, 3, 30, 25, "+30 Cryo Cells");
+    }
+    if UIK.clicked(water_handle) {
+        buy_ammo_offer(player, 9, 10, 20, "+10 Water Balloons");
+    }
+    if UIK.clicked(sawblade_handle) {
+        buy_ammo_offer(player, 7, 10, 30, "+10 Sawblades");
+    }
+    if UIK.clicked(lmg_handle) {
+        buy_ammo_offer(player, 8, 30, 40, "+30 LMG Rounds");
+    }
+
+    if UIK.clicked(dash_handle) && !player.has_dash {
+        if spend_coins(player, DASH_COST) {
+            player.has_dash = true;
+            play_pickup_feedback(player, "+Dash");
+            if player.is_local() {
+                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+                d := SFX.default_sfx_desc();
+                d.volume = 0.6;
+                SFX.play(sfx, d);
+            }
+        }
+    }
+
+    if UIK.clicked(invis_handle) && !player.has_invisible {
+        if spend_coins(player, INVISIBLE_COST) {
+            player.has_invisible = true;
+            player.powerup_invisible_active = true;
+            effect := new(Invisible_Effect);
+            player.entity.add_passive_effect(effect);
+            player.show_shop = false;
+            play_pickup_feedback(player, "+Invisible");
+            if player.is_local() {
+                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+                d := SFX.default_sfx_desc();
+                d.volume = 0.6;
+                SFX.play(sfx, d);
+            }
+        }
+    }
+
+    if UIK.clicked(finger_handle) && !player.purchased_finger_gun {
+        if spend_coins(player, SKIN_COST) {
+            player.purchased_finger_gun = true;
+            give_weapon(.AKIMBO_PISTOLS, player.default_inventory);
+            play_pickup_feedback(player, "+Akimbo");
+            heavy := Items.create_item_instance(g_ammo_item_defs[1], 30);
+            will_destroy: bool;
+            if Items.can_move_item_to_inventory(heavy, player.default_inventory, ref will_destroy) {
+                Items.move_item_to_inventory(heavy, player.default_inventory);
+            } else {
+                Items.destroy_item_instance(heavy);
+            }
+        }
+    }
+
+    if UIK.clicked(paper_handle) && !player.purchased_paper_gun {
+        if spend_coins(player, SKIN_COST) {
+            player.purchased_paper_gun = true;
+            give_weapon(.BLUNDERBUSS, player.default_inventory);
+            play_pickup_feedback(player, "+Blunderbuss");
+            heavy := Items.create_item_instance(g_ammo_item_defs[1], 30);
+            will_destroy: bool;
+            if Items.can_move_item_to_inventory(heavy, player.default_inventory, ref will_destroy) {
+                Items.move_item_to_inventory(heavy, player.default_inventory);
+            } else {
+                Items.destroy_item_instance(heavy);
+            }
+        }
+    }
+
+}
+
+draw_admin_shop :: proc(player: Player) {
+    if !can_access_admin_panel(player) {
+        player.show_admin_shop = false;
+        return;
+    }
+
+    UIK.begin(UIK.modal(UIK.rect_window(), 15));
+
+    shell := UIK.panel_modal(.BLACK);
+    shell.gap = 0;
+    UIK.panel_begin(shell);
+
+    title_desc := UIK.title_area_desc("Admin Shop");
+    title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/shopping_cart/shopping_cart_icon.png");
+    exit_handle := UIK.title_area(title_desc);
+    UIK.spacer(UIK.pixels(1), UIK.pixels(2));
+    UIK.text(UIK.text_body(), "Giant Gun by 59zttiotnra");
+
+    content := UIK.layout_column();
+    content.width = UIK.flex(1);
+    content.height = UIK.flex(1);
+    content.padding = v4{12, 16, 12, 16};
+    content.gap = 8;
+    UIK.list_begin("admin_shop_scroll", content);
+
+    UIK.text("Free Item", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    free_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(free_row);
+    verity_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/face/face_icon.png");
+    verity_btn := draw_shop_card("admin_shop/verity", "Verity", 0, verity_icon, {1.0, 0.9, 0.2, 1}, false);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    UIK.text("Ammo", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    ammo_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(ammo_row_1);
+    heavy_ammo_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/cannonball.png");
+    tornado_ammo_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/tornadoshot.png");
+    energy_ammo_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/energycells.png");
+    heavy_ammo_btn := draw_shop_card("admin_shop/heavy_ammo", "Buy 10 Heavy Shots", 0, heavy_ammo_icon, {0.7, 0.6, 0.35, 1}, false);
+    tornado_ammo_btn := draw_shop_card("admin_shop/tornado_ammo", "Buy 10 Tornado Shots", 0, tornado_ammo_icon, {0.85, 0.65, 0.3, 1}, false);
+    energy_ammo_btn := draw_shop_card("admin_shop/energy_ammo", "Buy 30 Energy Cells", 0, energy_ammo_icon, {0.4, 0.75, 0.95, 1}, false);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    ammo_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(ammo_row_2);
+    water_ammo_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/waterballoon.png");
+    lmg_ammo_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/bullet_alt.png");
+    water_ammo_btn := draw_shop_card("admin_shop/water_ammo", "Buy 10 Water Balloons", 0, water_ammo_icon, {0.35, 0.55, 0.9, 1}, false);
+    lmg_ammo_btn := draw_shop_card("admin_shop/lmg_ammo", "Buy 30 LMG Rounds", 0, lmg_ammo_icon, {0.8, 0.8, 0.5, 1}, false);
+    UIK.panel_end();
+
+    UIK.text("OP Guns", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    gun_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(gun_row_1);
+    rocket_icon := get_asset(Texture_Asset, get_weapon_config(.GOLDEN_ROCKET_LAUNCHER).weapon_icon_path);
+    void_icon := get_asset(Texture_Asset, get_weapon_config(.VOID_SPLITTER).weapon_icon_path);
+    storm_icon := get_asset(Texture_Asset, get_weapon_config(.STORMS_EYE).weapon_icon_path);
+    rocket_btn := draw_shop_card("admin_shop/golden_rocket", "Golden Rocket", ADMIN_SHOP_GUN_COST, rocket_icon, {0.85, 0.7, 0.25, 1}, player_has_weapon(player, .GOLDEN_ROCKET_LAUNCHER));
+    void_btn := draw_shop_card("admin_shop/void_splitter", "Void Splitter", ADMIN_SHOP_GUN_COST, void_icon, {0.65, 0.55, 0.95, 1}, player_has_weapon(player, .VOID_SPLITTER));
+    storm_btn := draw_shop_card("admin_shop/storms_eye", "Storm's Eye", ADMIN_SHOP_GUN_COST, storm_icon, {0.5, 0.8, 0.9, 1}, player_has_weapon(player, .STORMS_EYE));
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    gun_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(gun_row_2);
+    plasma_icon := get_asset(Texture_Asset, get_weapon_config(.PLASMA_BURST).weapon_icon_path);
+    boom_icon := get_asset(Texture_Asset, get_weapon_config(.BOOMWHEEL).weapon_icon_path);
+    hydro_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
+    plasma_btn := draw_shop_card("admin_shop/plasma_burst", "Plasma Burst", ADMIN_SHOP_GUN_COST, plasma_icon, {0.8, 0.45, 0.95, 1}, player_has_weapon(player, .PLASMA_BURST));
+    boom_btn := draw_shop_card("admin_shop/boomwheel", "Boomwheel", ADMIN_SHOP_GUN_COST, boom_icon, {0.9, 0.6, 0.25, 1}, player_has_weapon(player, .BOOMWHEEL));
+    hydro_btn := draw_shop_card("admin_shop/hydro_cannon", "Hydro Cannon", ADMIN_SHOP_GUN_COST, hydro_icon, {0.35, 0.75, 0.9, 1}, player_has_weapon(player, .HYDRO_CANNON));
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+    UIK.text("Trap", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    trap_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(trap_row);
+    tripmine_icon := get_asset(Texture_Asset, get_weapon_config(.SUBSPACE_TRIPMINE).weapon_icon_path);
+    tripmine_btn := draw_shop_card("admin_shop/tripmine", "Subspace Tripmine", SUBSPACE_TRIPMINE_COST, tripmine_icon, {1.0, 0.35, 0.9, 1}, player_has_weapon(player, .SUBSPACE_TRIPMINE));
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    chaos_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(chaos_row_1);
+    shuriken_icon := get_asset(Texture_Asset, get_weapon_config(.SHURIKEN).weapon_icon_path);
+    fireball_icon := get_asset(Texture_Asset, get_weapon_config(.FIREBALL).weapon_icon_path);
+    meteorite_icon := get_asset(Texture_Asset, get_weapon_config(.METEORITE).weapon_icon_path);
+    shuriken_btn := draw_shop_card("admin_shop/shuriken", "Shuriken", 250, shuriken_icon, {0.7, 0.75, 0.9, 1}, player_has_weapon(player, .SHURIKEN));
+    fireball_btn := draw_shop_card("admin_shop/fireball", "Fireball", 350, fireball_icon, {0.95, 0.45, 0.25, 1}, player_has_weapon(player, .FIREBALL));
+    meteorite_btn := draw_shop_card("admin_shop/meteorite", "Meteorite", 500, meteorite_icon, {0.85, 0.55, 0.35, 1}, player_has_weapon(player, .METEORITE));
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    chaos_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(chaos_row_2);
+    spoon_icon := get_asset(Texture_Asset, get_weapon_config(.SPOON).weapon_icon_path);
+    fish_icon := get_asset(Texture_Asset, get_weapon_config(.KILLER_FISH).weapon_icon_path);
+    giant_icon := get_asset(Texture_Asset, get_weapon_config(.GIANT_GUN).weapon_icon_path);
+    spoon_btn := draw_shop_card("admin_shop/spoon", "Spoon", 1000, spoon_icon, {0.8, 0.8, 0.82, 1}, player_has_weapon(player, .SPOON));
+    fish_btn := draw_shop_card("admin_shop/killer_fish", "Killer Fish", 2000, fish_icon, {0.35, 0.8, 0.7, 1}, player_has_weapon(player, .KILLER_FISH));
+    giant_btn := draw_shop_card("admin_shop/giant_gun", "Giant Gun", giant_gun_admin_cost(player), giant_icon, {0.55, 0.55, 0.7, 1}, player_has_weapon(player, .GIANT_GUN));
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    gun_row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(gun_row_3);
+    invisible_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/lock_closed.png");
+    battlepass_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/shopping_cart/shopping_cart_icon.png");
+    invisible_btn := draw_shop_card("admin_shop/invisible_gun", "Invisible Gun", ADMIN_SHOP_GUN_COST, invisible_icon, {0.6, 0.3, 0.85, 1}, player_has_weapon(player, .INVISIBLE_GUN_ADMIN));
+    battlepass_btn := draw_shop_card("admin_shop/battlepass_gun", "Battlepass Gun", ADMIN_SHOP_GUN_COST, battlepass_icon, {0.35, 0.7, 0.9, 1}, player_has_weapon(player, .BATTLEPASS_GUN));
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    close_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(close_row);
+    close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    close_desc.panel.width = UIK.flex(1);
+    close_desc.panel.height = UIK.pixels(52);
+    close_btn := UIK.button("admin_shop/close", "Close", close_desc);
+    UIK.panel_end();
+
+    UIK.list_end();
+    UIK.panel_end();
+    UIK.end();
+
+    if UIK.clicked(exit_handle) || UIK.clicked(close_btn) {
+        player.show_admin_shop = false;
+    }
+
+    if UIK.clicked(verity_btn) {
+        buy_verity_offer(player);
+    }
+    if UIK.clicked(rocket_btn) {
+        buy_weapon_offer(player, .GOLDEN_ROCKET_LAUNCHER, ADMIN_SHOP_GUN_COST, "+Golden Rocket");
+    }
+    if UIK.clicked(void_btn) {
+        buy_weapon_offer(player, .VOID_SPLITTER, ADMIN_SHOP_GUN_COST, "+Void Splitter");
+    }
+    if UIK.clicked(storm_btn) {
+        buy_weapon_offer(player, .STORMS_EYE, ADMIN_SHOP_GUN_COST, "+Storm's Eye");
+    }
+    if UIK.clicked(plasma_btn) {
+        buy_weapon_offer(player, .PLASMA_BURST, ADMIN_SHOP_GUN_COST, "+Plasma Burst");
+    }
+    if UIK.clicked(boom_btn) {
+        buy_weapon_offer(player, .BOOMWHEEL, ADMIN_SHOP_GUN_COST, "+Boomwheel");
+    }
+    if UIK.clicked(hydro_btn) {
+        buy_weapon_offer(player, .HYDRO_CANNON, ADMIN_SHOP_GUN_COST, "+Hydro Cannon");
+    }
+    if UIK.clicked(heavy_ammo_btn) {
+        grant_admin_ammo_offer(player, 1, 10, "+10 Heavy Shots");
+    }
+    if UIK.clicked(tornado_ammo_btn) {
+        grant_admin_ammo_offer(player, 4, 10, "+10 Tornado Shots");
+    }
+    if UIK.clicked(energy_ammo_btn) {
+        grant_admin_ammo_offer(player, 5, 30, "+30 Energy Cells");
+    }
+    if UIK.clicked(water_ammo_btn) {
+        grant_admin_ammo_offer(player, 9, 10, "+10 Water Balloons");
+    }
+    if UIK.clicked(lmg_ammo_btn) {
+        grant_admin_ammo_offer(player, 8, 30, "+30 LMG Rounds");
+    }
+    if UIK.clicked(tripmine_btn) {
+        buy_weapon_offer(player, .SUBSPACE_TRIPMINE, SUBSPACE_TRIPMINE_COST, "+Tripmine");
+    }
+    if UIK.clicked(shuriken_btn) {
+        buy_weapon_offer(player, .SHURIKEN, 250, "+Shuriken");
+    }
+    if UIK.clicked(fireball_btn) {
+        buy_weapon_offer(player, .FIREBALL, 350, "+Fireball");
+    }
+    if UIK.clicked(meteorite_btn) {
+        buy_weapon_offer(player, .METEORITE, 500, "+Meteorite");
+    }
+    if UIK.clicked(spoon_btn) {
+        buy_weapon_offer(player, .SPOON, 1000, "+Spoon");
+    }
+    if UIK.clicked(fish_btn) {
+        buy_weapon_offer(player, .KILLER_FISH, 2000, "+Killer Fish");
+    }
+    if UIK.clicked(giant_btn) {
+        buy_weapon_offer(player, .GIANT_GUN, giant_gun_admin_cost(player), "+Giant Gun");
+    }
+    if UIK.clicked(invisible_btn) {
+        buy_weapon_offer(player, .INVISIBLE_GUN_ADMIN, ADMIN_SHOP_GUN_COST, "+Invisible Gun");
+    }
+    if UIK.clicked(battlepass_btn) {
+        buy_weapon_offer(player, .BATTLEPASS_GUN, ADMIN_SHOP_GUN_COST, "+Battlepass Gun");
+    }
+}
+
+admin_spawn_tripmine_test_only :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    mine_pos := v2{player.entity.world_position.x + 3.0, player.entity.world_position.y};
+    spawn_subspace_tripmine(mine_pos, player.entity.id, 90.0);
+}
+
+admin_spawn_tripmine_test_trigger :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    mine_pos := v2{player.entity.world_position.x + 3.0, player.entity.world_position.y};
+    spawn_subspace_tripmine(mine_pos, player.entity.id, 90.0);
+
+    for other: component_iterator(Player) {
+        if other.entity.id == player.entity.id || other.is_dead {
+            continue;
+        }
+
+        other.entity.set_local_position({mine_pos.x + 0.6, mine_pos.y});
+        other.entity.mark_teleported();
+        break;
+    }
+}
+
+admin_apply_invisible_test :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    player.has_invisible = true;
+    player.powerup_invisible_active = true;
+    effect := new(Invisible_Effect);
+    player.entity.add_passive_effect(effect);
+}
+
+draw_admin_panel :: proc(player: Player) {
+    if !can_access_admin_panel(player) return;
+
+    UIK.begin(UIK.modal(UIK.rect_window(), 15));
+
+    shell := UIK.panel_modal(.BLACK);
+    shell.gap = 0;
+    UIK.panel_begin(shell);
+
+    title_desc := UIK.title_area_desc("Admin");
+    title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
+    exit_handle := UIK.title_area(title_desc);
+
+    body := UIK.layout_column();
+    body.width = UIK.flex(1);
+    body.height = UIK.flex(1);
+    body.padding = v4{12, 16, 12, 16};
+    body.gap = 8;
+    UIK.list_begin("admin/body_scroll", body);
+
+    if player.admin_target_username == "" {
+        player.admin_target_username = player.get_username();
+    }
+
+    UIK.text("Manage players", UIK.text_title());
+    UIK.text(format_string("Target: %", {player.admin_target_username}), UIK.text_body());
+    UIK.text(format_string("Coins: %", {player.admin_grant_amount}), UIK.text_body());
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(2));
+    target_scroll := UIK.layout_column();
+    target_scroll.width = UIK.flex(1);
+    target_scroll.height = UIK.pixels(170);
+    target_scroll.gap = 4;
+    UIK.list_begin("admin/targets", target_scroll);
+
+    target_usernames: [..]string;
+    target_handles: [..]Interact_Result;
+    for target: component_iterator(Player) {
+        username := target.get_username();
+        target_usernames.append(username);
+
+        row_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+        if username == player.admin_target_username {
+            row_desc = UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+        }
+        row_desc.panel.width = UIK.flex(1);
+        row_desc.panel.height = UIK.pixels(44);
+        target_handles.append(UIK.button(format_string("admin/target/%", {username}), username, row_desc));
+    }
+
+    if target_usernames.count == 0 {
+        UIK.text("No players online", UIK.text_body());
+    }
+
+    UIK.list_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    UIK.text("Special Maps", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    special_map_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(special_map_row);
+    backrooms_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+    backrooms_desc.panel.width = UIK.flex(1);
+    backrooms_desc.panel.height = UIK.pixels(52);
+    backrooms_btn := UIK.button("admin/map_backrooms", "Send to Backrooms", backrooms_desc);
+    normal_map_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    normal_map_desc.panel.width = UIK.flex(1);
+    normal_map_desc.panel.height = UIK.pixels(52);
+    normal_map_btn := UIK.button("admin/map_normal", "Return to Normal Map", normal_map_desc);
+    UIK.panel_end();
+
+    admin_target := find_online_player_by_username(player.admin_target_username);
+    if admin_target == null {
+        admin_target = player;
+    }
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    UIK.text("Ammo", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    ammo_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(ammo_row);
+    ammo100_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    ammo100_desc.panel.width = UIK.flex(1);
+    ammo100_desc.panel.height = UIK.pixels(52);
+    ammo100_btn := UIK.button("bonus_bullets/small", "+100 Bullets", ammo100_desc);
+    ammo500_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    ammo500_desc.panel.width = UIK.flex(1);
+    ammo500_desc.panel.height = UIK.pixels(52);
+    ammo500_btn := UIK.button("bonus_bullets/large", "+500 Bullets", ammo500_desc);
+    UIK.panel_end();
+
+    if UIK.clicked(ammo100_btn) {
+        grant_ammo_to_player(admin_target, 0, 100);
+        admin_target.ui_test_bonus_bullets_pending = true;
+        Save.set_int(admin_target, "ui_test_bonus_bullets_clicked", 1);
+    }
+    if UIK.clicked(ammo500_btn) {
+        grant_ammo_to_player(admin_target, 0, 500);
+        admin_target.ui_test_bonus_bullets_pending = true;
+        Save.set_int(admin_target, "ui_test_bonus_bullets_large_clicked", 1);
+    }
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    UIK.text("Amount presets", UIK.text_body());
+    amount_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+    UIK.panel_begin(amount_row);
+    amt10_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    amt10_desc.panel.width = UIK.flex(1);
+    amt10_desc.panel.height = UIK.pixels(42);
+    amt10_btn := UIK.button("admin/amt_10", "10", amt10_desc);
+    amt25_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    amt25_desc.panel.width = UIK.flex(1);
+    amt25_desc.panel.height = UIK.pixels(42);
+    amt25_btn := UIK.button("admin/amt_25", "25", amt25_desc);
+    amt50_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    amt50_desc.panel.width = UIK.flex(1);
+    amt50_desc.panel.height = UIK.pixels(42);
+    amt50_btn := UIK.button("admin/amt_50", "50", amt50_desc);
+    amt100_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    amt100_desc.panel.width = UIK.flex(1);
+    amt100_desc.panel.height = UIK.pixels(42);
+    amt100_btn := UIK.button("admin/amt_100", "100", amt100_desc);
+    amt250_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    amt250_desc.panel.width = UIK.flex(1);
+    amt250_desc.panel.height = UIK.pixels(42);
+    amt250_btn := UIK.button("admin/amt_250", "250", amt250_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    action_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+    UIK.panel_begin(action_row);
+
+    grant_admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    grant_admin_desc.panel.width = UIK.flex(1);
+    grant_admin_desc.panel.height = UIK.pixels(52);
+    grant_admin_btn := UIK.button("admin/grant_admin", "Grant Admin", grant_admin_desc);
+
+    revoke_admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+    revoke_admin_desc.panel.width = UIK.flex(1);
+    revoke_admin_desc.panel.height = UIK.pixels(52);
+    revoke_admin_btn := UIK.button("admin/revoke_admin", "Remove Admin", revoke_admin_desc);
+
+    grant_coins_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    grant_coins_desc.panel.width = UIK.flex(1);
+    grant_coins_desc.panel.height = UIK.pixels(52);
+    grant_coins_btn := UIK.button("admin/grant_coins", "Give Coins", grant_coins_desc);
+
+    kick_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    kick_desc.panel.width = UIK.flex(1);
+    kick_desc.panel.height = UIK.pixels(52);
+    kick_btn := UIK.button("admin/kick", "Kick", kick_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    UIK.text("Powers", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    power_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(power_row);
+    heal_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    heal_desc.panel.width = UIK.flex(1);
+    heal_desc.panel.height = UIK.pixels(52);
+    heal_btn := UIK.button("admin/fully_heal", "Fully Heal", heal_desc);
+    inv_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+    inv_desc.panel.width = UIK.flex(1);
+    inv_desc.panel.height = UIK.pixels(52);
+    inv_btn := UIK.button("admin/make_invincible", "Make Invincible", inv_desc);
+    stealth_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+    stealth_desc.panel.width = UIK.flex(1);
+    stealth_desc.panel.height = UIK.pixels(52);
+    stealth_btn := UIK.button("admin/toggle_invisible", "Toggle Invisible", stealth_desc);
+    noclip_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    noclip_desc.panel.width = UIK.flex(1);
+    noclip_desc.panel.height = UIK.pixels(52);
+    noclip_btn := UIK.button("admin/toggle_noclip", "Toggle Noclip", noclip_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    UIK.text("Guns", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    gun_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(gun_row_1);
+    ar_icon := get_asset(Texture_Asset, get_weapon_config(.ASSAULT_RIFLE).weapon_icon_path);
+    smg_icon := get_asset(Texture_Asset, get_weapon_config(.SUBMACHINE_GUN).weapon_icon_path);
+    gatling_icon := get_asset(Texture_Asset, get_weapon_config(.GATLING_GUN).weapon_icon_path);
+    ar_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    ar_desc.panel.width = UIK.flex(1);
+    ar_desc.panel.height = UIK.pixels(54);
+    ar_btn := UIK.icon_button_label("admin/grant_weapon_ar", ar_icon, "AR", ar_desc);
+    smg_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    smg_desc.panel.width = UIK.flex(1);
+    smg_desc.panel.height = UIK.pixels(54);
+    smg_btn := UIK.icon_button_label("admin/grant_weapon_smg", smg_icon, "SMG", smg_desc);
+    gatling_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    gatling_desc.panel.width = UIK.flex(1);
+    gatling_desc.panel.height = UIK.pixels(54);
+    gatling_btn := UIK.icon_button_label("admin/grant_weapon_gatling", gatling_icon, "Gatling", gatling_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    gun_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(gun_row_2);
+    shotgun_icon := get_asset(Texture_Asset, get_weapon_config(.EXPLOSIVE_SHOTGUN).weapon_icon_path);
+    ray_icon := get_asset(Texture_Asset, get_weapon_config(.RAY_GUN).weapon_icon_path);
+    hydro_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
+    shotgun_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    shotgun_desc.panel.width = UIK.flex(1);
+    shotgun_desc.panel.height = UIK.pixels(54);
+    shotgun_btn := UIK.icon_button_label("admin/grant_weapon_shotgun", shotgun_icon, "Shotgun", shotgun_desc);
+    ray_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    ray_desc.panel.width = UIK.flex(1);
+    ray_desc.panel.height = UIK.pixels(54);
+    ray_btn := UIK.icon_button_label("admin/grant_weapon_ray", ray_icon, "Ray", ray_desc);
+    hydro_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    hydro_desc.panel.width = UIK.flex(1);
+    hydro_desc.panel.height = UIK.pixels(54);
+    hydro_btn := UIK.icon_button_label("admin/grant_weapon_hydro", hydro_icon, "Hydro", hydro_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    gun_row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(gun_row_3);
+    beam_icon := get_asset(Texture_Asset, get_weapon_config(.BEAM_MACHINE).weapon_icon_path);
+    water_icon := get_asset(Texture_Asset, get_weapon_config(.WATER_GUN).weapon_icon_path);
+    missile_icon := get_asset(Texture_Asset, get_weapon_config(.MISSILE_BARRAGE).weapon_icon_path);
+    beam_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    beam_desc.panel.width = UIK.flex(1);
+    beam_desc.panel.height = UIK.pixels(54);
+    beam_btn := UIK.icon_button_label("admin/grant_weapon_beam", beam_icon, "Beam", beam_desc);
+    water_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    water_desc.panel.width = UIK.flex(1);
+    water_desc.panel.height = UIK.pixels(54);
+    water_btn := UIK.icon_button_label("admin/grant_weapon_water", water_icon, "Water", water_desc);
+    missile_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    missile_desc.panel.width = UIK.flex(1);
+    missile_desc.panel.height = UIK.pixels(54);
+    missile_btn := UIK.icon_button_label("admin/grant_weapon_missile", missile_icon, "Missile", missile_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    gun_row_4 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(gun_row_4);
+    blunder_icon := get_asset(Texture_Asset, get_weapon_config(.BLUNDERBUSS).weapon_icon_path);
+    plasma_icon := get_asset(Texture_Asset, get_weapon_config(.PLASMA_BURST).weapon_icon_path);
+    boom_icon := get_asset(Texture_Asset, get_weapon_config(.BOOMWHEEL).weapon_icon_path);
+    blunder_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    blunder_desc.panel.width = UIK.flex(1);
+    blunder_desc.panel.height = UIK.pixels(54);
+    blunder_btn := UIK.icon_button_label("admin/grant_weapon_blunder", blunder_icon, "Blunder", blunder_desc);
+    plasma_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    plasma_desc.panel.width = UIK.flex(1);
+    plasma_desc.panel.height = UIK.pixels(54);
+    plasma_btn := UIK.icon_button_label("admin/grant_weapon_plasma", plasma_icon, "Plasma", plasma_desc);
+    boom_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    boom_desc.panel.width = UIK.flex(1);
+    boom_desc.panel.height = UIK.pixels(54);
+    boom_btn := UIK.icon_button_label("admin/grant_weapon_boom", boom_icon, "Boomwheel", boom_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    special_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+    UIK.panel_begin(special_row);
+
+    summon_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+    summon_desc.panel.width = UIK.flex(1);
+    summon_desc.panel.height = UIK.pixels(52);
+    summon_btn := UIK.button("admin/summon_paperclips", "Summon Paperclips", summon_desc);
+
+    meteor_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+    meteor_desc.panel.width = UIK.flex(1);
+    meteor_desc.panel.height = UIK.pixels(52);
+    meteor_btn := UIK.button("admin/summon_meteor_boss", "Summon Meteor", meteor_desc);
+
+    fun_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    if is_fun_mode_active() {
+        fun_desc = UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    }
+    fun_desc.panel.width  = UIK.flex(1);
+    fun_desc.panel.height = UIK.pixels(52);
+    fun_btn := UIK.button("admin/fun_mode", "Fun Mode", fun_desc);
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    mimicer_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+    mimicer_desc.panel.width = UIK.flex(1);
+    mimicer_desc.panel.height = UIK.pixels(52);
+    mimicer_btn := UIK.button("admin/become_mimicer", "Become Mimicer", mimicer_desc);
+
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    UIK.text("Maps", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    map_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(map_row);
+    grass_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    grass_desc.panel.width = UIK.flex(1);
+    grass_desc.panel.height = UIK.pixels(48);
+    grass_btn := UIK.button("admin/map_grass", "Grass Map", grass_desc);
+    sand_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    sand_desc.panel.width = UIK.flex(1);
+    sand_desc.panel.height = UIK.pixels(48);
+    sand_btn := UIK.button("admin/map_sand", "Sand Map", sand_desc);
+    lava_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    lava_desc.panel.width = UIK.flex(1);
+    lava_desc.panel.height = UIK.pixels(48);
+    lava_btn := UIK.button("admin/map_lava", "Lava Map", lava_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    map_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(map_row_2);
+    ice_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    ice_desc.panel.width = UIK.flex(1);
+    ice_desc.panel.height = UIK.pixels(48);
+    ice_btn := UIK.button("admin/map_ice", "Ice Map", ice_desc);
+    island_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    island_desc.panel.width = UIK.flex(1);
+    island_desc.panel.height = UIK.pixels(48);
+    island_btn := UIK.button("admin/map_island", "Island Map", island_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    UIK.text("Testing", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    test_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(test_row);
+    test_tripmine_spawn_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    test_tripmine_spawn_desc.panel.width = UIK.flex(1);
+    test_tripmine_spawn_desc.panel.height = UIK.pixels(52);
+    test_tripmine_spawn_btn := UIK.button("admin/tripmine_spawn", "Spawn Tripmine", test_tripmine_spawn_desc);
+    test_tripmine_trigger_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    test_tripmine_trigger_desc.panel.width = UIK.flex(1);
+    test_tripmine_trigger_desc.panel.height = UIK.pixels(52);
+    test_tripmine_trigger_btn := UIK.button("admin/tripmine_trigger", "Trigger Tripmine", test_tripmine_trigger_desc);
+    test_invisible_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    test_invisible_desc.panel.width = UIK.flex(1);
+    test_invisible_desc.panel.height = UIK.pixels(52);
+    test_invisible_btn := UIK.button("admin/powerup_invisible", "Powerup Invisible", test_invisible_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    close_desc.panel.width = UIK.flex(1);
+    close_desc.panel.height = UIK.pixels(52);
+    close_btn := UIK.button("admin/close", "Close", close_desc);
+
+    UIK.list_end();
+    UIK.panel_end();
+    UIK.end();
+
+    if UIK.clicked(exit_handle) || UIK.clicked(close_btn) {
+        player.show_admin_panel = false;
+    }
+
+    if target_usernames.count > 0 {
+        for i: 0..target_usernames.count - 1 {
+            if UIK.clicked(target_handles[i]) {
+                player.admin_target_username = target_usernames[i];
+            }
+        }
+    }
+
+    if UIK.clicked(amt10_btn) {
+        player.admin_grant_amount = 10;
+    }
+    if UIK.clicked(amt25_btn) {
+        player.admin_grant_amount = 25;
+    }
+    if UIK.clicked(amt50_btn) {
+        player.admin_grant_amount = 50;
+    }
+    if UIK.clicked(amt100_btn) {
+        player.admin_grant_amount = 100;
+    }
+    if UIK.clicked(amt250_btn) {
+        player.admin_grant_amount = 250;
+    }
+
+    if UIK.clicked(grant_admin_btn) {
+        grant_admin_permission(player.admin_target_username);
+        player.play_reward_feedback(format_string("Admin +%", {player.admin_target_username}));
+    }
+
+    if UIK.clicked(revoke_admin_btn) {
+        revoke_admin_permission(player.admin_target_username);
+        player.play_reward_feedback(format_string("Admin -%", {player.admin_target_username}));
+    }
+
+    if UIK.clicked(grant_coins_btn) {
+        if grant_coins_to_username(admin_target.get_username(), player.admin_grant_amount) {
+            player.play_reward_feedback(format_string("+% to %", {player.admin_grant_amount, admin_target.get_username()}));
+        } else {
+            player.play_reward_feedback("Target not found");
+        }
+    }
+
+    if UIK.clicked(kick_btn) {
+        Server.kick_player(admin_target, STRANGER_MODE_KICK_REASON);
+        player.play_reward_feedback(format_string("Kicked %", {admin_target.get_username()}));
+    }
+
+    if UIK.clicked(summon_btn) {
+        spawn_paperclips_boss();
+        player.play_reward_feedback("Paperclips approaches!");
+    }
+
+    if UIK.clicked(meteor_btn) {
+        spawn_meteor_boss();
+        player.play_reward_feedback("Meteor incoming!");
+    }
+
+    if UIK.clicked(fun_btn) {
+        toggle_fun_mode();
+    }
+
+    if UIK.clicked(mimicer_btn) {
+        grant_mimicer_mode(player);
+        player.show_admin_panel = false;
+    }
+    if UIK.clicked(heal_btn) {
+        fully_heal_player(admin_target);
+    }
+
+    if UIK.clicked(inv_btn) {
+        set_player_invincible(admin_target, true);
+        admin_target.play_reward_feedback("Invincible");
+    }
+
+    if UIK.clicked(stealth_btn) {
+        set_player_invisible(admin_target, !admin_target.admin_invisible_active);
+        if admin_target.admin_invisible_active {
+            admin_target.play_reward_feedback("Invisible on");
+        } else {
+            admin_target.play_reward_feedback("Invisible off");
+        }
+    }
+
+    if UIK.clicked(noclip_btn) {
+        set_player_noclip(admin_target, !admin_target.is_admin_noclip);
+        if admin_target.is_admin_noclip {
+            admin_target.play_reward_feedback("Noclip on");
+        } else {
+            admin_target.play_reward_feedback("Noclip off");
+        }
+    }
+
+    if UIK.clicked(grass_btn) {
+        set_admin_map_destination(admin_target, "grass", {-24, -14}, "Grass Map");
+    }
+    if UIK.clicked(sand_btn) {
+        set_admin_map_destination(admin_target, "sand", {0, -14}, "Sand Map");
+    }
+    if UIK.clicked(lava_btn) {
+        set_admin_map_destination(admin_target, "lava", {24, -14}, "Lava Map");
+    }
+    if UIK.clicked(ice_btn) {
+        set_admin_map_destination(admin_target, "ice", {0, 14}, "Ice Map");
+    }
+    if UIK.clicked(island_btn) {
+        set_admin_map_destination(admin_target, "island", {24, 14}, "Island Map");
+    }
+    if UIK.clicked(backrooms_btn) {
+        send_player_to_backrooms(admin_target);
+    }
+    if UIK.clicked(normal_map_btn) {
+        return_player_from_backrooms(admin_target);
+    }
+
+    if UIK.clicked(ar_btn) {
+        grant_weapon_with_ammo(admin_target, .ASSAULT_RIFLE, get_weapon_config(.ASSAULT_RIFLE).ammo_first_pickup);
+    }
+    if UIK.clicked(smg_btn) {
+        grant_weapon_with_ammo(admin_target, .SUBMACHINE_GUN, get_weapon_config(.SUBMACHINE_GUN).ammo_first_pickup);
+    }
+    if UIK.clicked(gatling_btn) {
+        grant_weapon_with_ammo(admin_target, .GATLING_GUN, get_weapon_config(.GATLING_GUN).ammo_first_pickup);
+    }
+    if UIK.clicked(shotgun_btn) {
+        grant_weapon_with_ammo(admin_target, .EXPLOSIVE_SHOTGUN, get_weapon_config(.EXPLOSIVE_SHOTGUN).ammo_first_pickup);
+    }
+    if UIK.clicked(ray_btn) {
+        grant_weapon_with_ammo(admin_target, .RAY_GUN, get_weapon_config(.RAY_GUN).ammo_first_pickup);
+    }
+    if UIK.clicked(hydro_btn) {
+        grant_weapon_with_ammo(admin_target, .HYDRO_CANNON, get_weapon_config(.HYDRO_CANNON).ammo_first_pickup);
+    }
+    if UIK.clicked(beam_btn) {
+        grant_weapon_with_ammo(admin_target, .BEAM_MACHINE, get_weapon_config(.BEAM_MACHINE).ammo_first_pickup);
+    }
+    if UIK.clicked(water_btn) {
+        grant_weapon_with_ammo(admin_target, .WATER_GUN, get_weapon_config(.WATER_GUN).ammo_first_pickup);
+    }
+    if UIK.clicked(missile_btn) {
+        grant_weapon_with_ammo(admin_target, .MISSILE_BARRAGE, get_weapon_config(.MISSILE_BARRAGE).ammo_first_pickup);
+    }
+    if UIK.clicked(blunder_btn) {
+        grant_weapon_with_ammo(admin_target, .BLUNDERBUSS, get_weapon_config(.BLUNDERBUSS).ammo_first_pickup);
+    }
+    if UIK.clicked(plasma_btn) {
+        grant_weapon_with_ammo(admin_target, .PLASMA_BURST, get_weapon_config(.PLASMA_BURST).ammo_first_pickup);
+    }
+    if UIK.clicked(boom_btn) {
+        grant_weapon_with_ammo(admin_target, .BOOMWHEEL, get_weapon_config(.BOOMWHEEL).ammo_first_pickup);
+    }
+
+    if UIK.clicked(test_tripmine_spawn_btn) {
+        admin_spawn_tripmine_test_only(admin_target);
+    }
+    if UIK.clicked(test_tripmine_trigger_btn) {
+        admin_spawn_tripmine_test_trigger(admin_target);
+    }
+    if UIK.clicked(test_invisible_btn) {
+        admin_apply_invisible_test(admin_target);
+    }
+
+}

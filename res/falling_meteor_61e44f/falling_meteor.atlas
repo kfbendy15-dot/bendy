@@ -1,0 +1,112 @@
+61e44fc08963e2fc.png
+	size: 4092, 652
+	filter: Linear, Linear
+	scale: 0.5
+Lava Droplets/RUB109_LC_Lava_Droplets_1
+	bounds: 4041, 504, 16, 29
+Lava Droplets/RUB109_LC_Lava_Droplets_2
+	bounds: 4076, 499, 13, 13
+Lava Droplets/RUB109_LC_Lava_Droplets_3
+	bounds: 3959, 488, 17, 26
+Lava Droplets/RUB109_LC_Lava_Droplets_4
+	bounds: 4065, 515, 16, 32
+Lava Droplets/RUB109_LC_Lava_Droplets_5
+	bounds: 4004, 509, 24, 34
+	rotate: 90
+Lava Droplets/RUB109_LC_Lava_Droplets_6
+	bounds: 3959, 540, 20, 50
+	rotate: 90
+explosion small/explosion1
+	bounds: 2164, 435, 210, 212
+	offsets: 1, 1, 211, 223
+explosion small/explosion2
+	bounds: 3330, 473, 174, 174
+	offsets: 16, 39, 211, 223
+explosion small/explosion3
+	bounds: 2776, 448, 199, 193
+	offsets: 4, 30, 211, 223
+	rotate: 90
+explosion small/explosion4
+	bounds: 3330, 318, 160, 152
+	offsets: 25, 34, 211, 223
+explosion small/explosion5
+	bounds: 3794, 305, 167, 163
+	offsets: 20, 28, 211, 223
+	rotate: 90
+explosion small/explosion6
+	bounds: 2972, 468, 179, 176
+	offsets: 12, 22, 211, 223
+	rotate: 90
+explosion small/explosion7
+	bounds: 3151, 471, 176, 176
+	offsets: 16, 22, 211, 223
+explosion small/explosion8
+	bounds: 3507, 472, 175, 166
+	offsets: 17, 29, 211, 223
+	rotate: 90
+explosion small/explosion9
+	bounds: 3794, 475, 172, 162
+	offsets: 20, 32, 211, 223
+	rotate: 90
+meteor/fire_ember_left_frame_1
+	bounds: 3959, 563, 18, 59
+	rotate: 90
+meteor/fire_ember_left_frame_2
+	bounds: 4012, 536, 18, 50
+	rotate: 90
+meteor/fire_ember_left_frame_3
+	bounds: 4021, 558, 12, 23
+meteor/fire_ember_left_frame_4
+	bounds: 3994, 495, 11, 17
+	rotate: 90
+meteor/fire_ember_right_frame_1
+	bounds: 4068, 550, 17, 47
+meteor/fire_ember_right_frame_2
+	bounds: 3959, 517, 20, 42
+	rotate: 90
+meteor/fire_ember_right_frame_3
+	bounds: 3979, 489, 12, 25
+meteor/fire_ember_right_frame_4
+	bounds: 4060, 491, 13, 21
+meteor/fire_frame_1
+	bounds: 341, 157, 344, 490
+	offsets: 0, 0, 344, 491
+meteor/fire_frame_2
+	bounds: 3, 104, 335, 543
+	offsets: 0, 0, 335, 545
+meteor/fire_frame_3
+	bounds: 688, 190, 352, 457
+	offsets: 0, 0, 352, 458
+meteor/meteor
+	bounds: 1706, 339, 308, 296
+	rotate: 90
+meteor/meteor_big_piece_1
+	bounds: 3676, 403, 115, 244
+meteor/meteor_big_piece_2
+	bounds: 2582, 444, 203, 191
+	rotate: 90
+meteor/meteor_big_piece_3
+	bounds: 2377, 439, 202, 208
+meteor/meteor_small_piece_1
+	bounds: 4002, 584, 33, 63
+meteor/meteor_small_piece_2
+	bounds: 3959, 586, 40, 61
+meteor/meteor_small_piece_3
+	bounds: 4038, 557, 27, 40
+meteor/meteor_small_piece_4
+	bounds: 4038, 600, 47, 44
+	rotate: 90
+meteor/shockwave_airblast
+	bounds: 1547, 3, 644, 156
+	rotate: 90
+meteor/shockwave_back
+	bounds: 2005, 106, 541, 156
+	offsets: 0, 0, 541, 157
+	rotate: 90
+meteor/shockwave_blast
+	bounds: 1291, 222, 425, 253
+	rotate: 90
+meteor/shockwave_front
+	bounds: 1042, 74, 573, 245
+	offsets: 0, 0, 573, 246
+	rotate: 90

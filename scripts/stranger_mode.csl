@@ -1,0 +1,221 @@
+STRANGER_MODE_FIRE_COUNT       :: 16;
+STRANGER_MODE_FIRE_DAMAGE      :: 6.0;
+STRANGER_MODE_FIRE_TICK_RATE   :: 0.5;
+STRANGER_MODE_FIRE_RADIUS      :: 1.15;
+STRANGER_MODE_FIRE_LAYER       :: 224;
+STRANGER_MODE_OVERLAY_LAYER    :: 223;
+STRANGER_MODE_MUSIC            :: "reusable_weapons/sounds/reusable-weapons/battlepass_song.wav";
+STRANGER_MODE_KICK_REASON      :: "You Have Been Kicked By A Moderator In PCSG";
+
+Stranger_Fire_Hazard :: class : Component {
+    damage_per_tick: float;
+    tick_rate: float;
+    tick_timer: float;
+    radius: float;
+    sound_id: u64;
+    flicker_seed: float;
+
+    ao_start :: method() {
+        sprite := entity.add_component(Sprite_Renderer);
+        sprite.set_texture(core_globals.white_sprite);
+        sprite.color = {1.0, 0.25, 0.05, 0.9};
+        sprite.layer = STRANGER_MODE_FIRE_LAYER;
+        entity.set_local_scale({1.75, 1.75});
+
+        flicker_seed = get_time();
+
+        desc := SFX.default_sfx_desc();
+        desc.entity_to_follow = entity.id;
+        desc.loop = true;
+        desc.volume = 0.22;
+        desc.range_multiplier = 1.4;
+        sound_id = SFX.play(get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/burning_aura_loop.wav"), desc);
+    }
+
+    ao_update :: method(dt: float) {
+        tick_timer += dt;
+        pulse := 1.0 + sin(get_time() * 10.0 + flicker_seed) * 0.08;
+        entity.set_local_scale({1.75 * pulse, 1.75 * pulse});
+
+        if tick_timer < tick_rate {
+            return;
+        }
+        tick_timer = 0;
+
+        nearby: [..]Player;
+        Scene.get_all_components_in_range(entity.world_position, radius, ref nearby);
+        for victim: nearby {
+            if victim == null || victim.is_dead || victim.weapon_target == null {
+                continue;
+            }
+
+            dx := victim.entity.world_position.x - entity.world_position.x;
+            dy := victim.entity.world_position.y - entity.world_position.y;
+            if sqrt(dx * dx + dy * dy) > radius {
+                continue;
+            }
+
+            weapon_target_apply_damage(victim.weapon_target, damage_per_tick, entity.id);
+
+            if victim.is_local() {
+                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/take_damage.wav");
+                desc := SFX.default_sfx_desc();
+                desc.entity_to_follow = victim.entity.id;
+                desc.volume = 0.35;
+                desc.speed_perturb = 0.05;
+                SFX.play(sfx, desc);
+            }
+        }
+    }
+
+    ao_end :: method() {
+        if sound_id != 0 {
+            SFX.stop(sound_id);
+            sound_id = 0;
+        }
+    }
+}
+
+Stranger_Mode_Manager :: class : Component {
+    overlay_entity: Entity;
+    music_sound_id: u64;
+
+    ao_start :: method() {
+        overlay_entity = Scene.create_entity();
+        overlay_entity.set_local_position({0, 0});
+        overlay_entity.set_local_scale({160, 120});
+
+        overlay_sprite := overlay_entity.add_component(Sprite_Renderer);
+        overlay_sprite.set_texture(core_globals.white_sprite);
+        overlay_sprite.color = {0.55, 0.0, 0.0, 0.34};
+        overlay_sprite.layer = STRANGER_MODE_OVERLAY_LAYER;
+
+        desc := SFX.default_sfx_desc();
+        desc.entity_to_follow = entity.id;
+        desc.loop = true;
+        desc.volume = 0.32;
+        desc.range_multiplier = 8.0;
+        music_sound_id = SFX.play(get_asset(SFX_Asset, STRANGER_MODE_MUSIC), desc);
+
+        spawn_stranger_mode_fire_ring();
+        Chat.server_send_message("Stranger mode is on.");
+    }
+
+    ao_end :: method() {
+        if music_sound_id != 0 {
+            SFX.stop(music_sound_id);
+            music_sound_id = 0;
+        }
+
+        if #alive(overlay_entity) {
+            overlay_entity.destroy();
+        }
+
+        fires: [..]Stranger_Fire_Hazard;
+        for fire: component_iterator(Stranger_Fire_Hazard) {
+            fires.append(fire);
+        }
+        for fire: fires {
+            if #alive(fire.entity) {
+                fire.entity.destroy();
+            }
+        }
+
+        Chat.server_send_message("Stranger mode is off.");
+    }
+}
+
+spawn_stranger_fire_hazard :: proc(pos: v2) {
+    e := Scene.create_entity();
+    e.set_local_position(pos);
+    comp := e.add_component(Stranger_Fire_Hazard);
+    comp.damage_per_tick = STRANGER_MODE_FIRE_DAMAGE;
+    comp.tick_rate = STRANGER_MODE_FIRE_TICK_RATE;
+    comp.radius = STRANGER_MODE_FIRE_RADIUS;
+}
+
+spawn_stranger_mode_fire_ring :: proc() {
+    min_x := WORLD_BOUNDS_MIN_X + 1.0;
+    max_x := WORLD_BOUNDS_MAX_X - 1.0;
+    min_y := WORLD_BOUNDS_MIN_Y + 1.0;
+    max_y := WORLD_BOUNDS_MAX_Y - 1.0;
+
+    step_x := (max_x - min_x) / 4.0;
+    step_y := (max_y - min_y) / 4.0;
+
+    x := min_x;
+    for i: 0..4 {
+        spawn_stranger_fire_hazard({x, min_y});
+        spawn_stranger_fire_hazard({x, max_y});
+        x += step_x;
+    }
+
+    y := min_y + step_y;
+    for i: 0..2 {
+        spawn_stranger_fire_hazard({min_x, y});
+        spawn_stranger_fire_hazard({max_x, y});
+        y += step_y;
+    }
+
+    spawn_stranger_fire_hazard({0, min_y});
+    spawn_stranger_fire_hazard({0, max_y});
+    spawn_stranger_fire_hazard({min_x, 0});
+    spawn_stranger_fire_hazard({max_x, 0});
+}
+
+is_stranger_mode_active :: proc() -> bool {
+    for mgr: component_iterator(Stranger_Mode_Manager) {
+        if #alive(mgr.entity) {
+            return true;
+        }
+    }
+    return false;
+}
+
+start_stranger_mode :: proc(player: Player = null) {
+    if is_stranger_mode_active() {
+        if player != null {
+            player.play_reward_feedback("Stranger mode on");
+        }
+        return;
+    }
+
+    e := Scene.create_entity();
+    e.set_name("Stranger_Mode");
+    e.add_component(Stranger_Mode_Manager);
+
+    if player != null {
+        player.play_reward_feedback("Stranger mode on");
+    }
+}
+
+stop_stranger_mode :: proc(player: Player = null) {
+    destroyed := false;
+    managers: [..]Stranger_Mode_Manager;
+    for mgr: component_iterator(Stranger_Mode_Manager) {
+        managers.append(mgr);
+    }
+
+    for mgr: managers {
+        if #alive(mgr.entity) {
+            mgr.entity.destroy();
+            destroyed = true;
+        }
+    }
+
+    if player != null {
+        if destroyed {
+            player.play_reward_feedback("Stranger mode off");
+        } else {
+            player.play_reward_feedback("Stranger mode off");
+        }
+    }
+}
+
+strangeron :: proc(player: Player) {
+    start_stranger_mode(player);
+} @chat_command @any
+
+strangeroff :: proc(player: Player) {
+    stop_stranger_mode(player);
+} @chat_command @any

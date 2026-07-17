@@ -1,0 +1,290 @@
+reset_test_shop_state :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    items_to_destroy: [..]Item_Instance;
+    inv := player.default_inventory;
+    for i: 0..inv.capacity - 1 {
+        item := inv.get_item(i);
+        if item != null {
+            items_to_destroy.append(item);
+        }
+    }
+
+    for item: items_to_destroy {
+        Items.destroy_item_instance(item);
+    }
+
+    current := Economy.get_balance(player, "Coins");
+    if current < 100 {
+        Economy.deposit_currency(player, "Coins", 100 - current);
+    } else if current > 100 {
+        Economy.withdraw_currency(player, "Coins", current - 100);
+    }
+    Save.set_int(player, "ui_test_monetization_passes_granted", 0);
+    Save.set_int(player, "ui_test_monetization_mode", 0);
+    save_coin_balance(player);
+} @chat_command @owner_or_editor
+
+vip_test_grant :: proc(player: Player) {
+    player.has_vip = true;
+    Save.set_int(player, VIP_SAVE_KEY, 1);
+    current := Economy.get_balance(player, "Coins");
+    if current < 100 {
+        Economy.deposit_currency(player, "Coins", 100 - current);
+    } else if current > 100 {
+        Economy.withdraw_currency(player, "Coins", current - 100);
+    }
+} @chat_command @owner_or_editor
+
+open_test_shop :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    player.shop_tab_index = 0;
+    player.show_shop = true;
+    Save.set_int(player, "ui_test_show_shop", 1);
+} @chat_command @owner_or_editor
+
+open_test_monetization_tab :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    player.shop_tab_index = 1;
+    player.show_shop = true;
+    Save.set_int(player, "ui_test_monetization_mode", 1);
+    Save.set_int(player, "ui_test_show_shop", 1);
+} @chat_command @owner_or_editor
+
+monetization_test_grant_coin_passes :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    Economy.deposit_currency(player, "Coins", 1925);
+    save_coin_balance(player);
+    Save.set_int(player, "ui_test_monetization_passes_granted", 1);
+} @chat_command @owner_or_editor
+
+prepare_admin_shop_test :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    set_admin_permission(player.get_username(), true);
+    Economy.deposit_currency(player, "Coins", 5000);
+    save_coin_balance(player);
+    player.show_shop = false;
+    player.show_admin_panel = false;
+    player.show_admin_shop = false;
+    Save.set_string(player, "ui_test_current_map", "");
+    Save.set_int(player, "ui_test_spoon_hit", 0);
+    Save.set_int(player, "ui_test_killer_fish_used", 0);
+    Save.set_int(player, "ui_test_giant_gun_used", 0);
+    Save.set_int(player, "ui_test_meteor_boss_spawned", 0);
+    Save.set_string(player, "ui_test_verity_answer", "");
+} @chat_command @owner_or_editor
+
+admin_backrooms_test_send :: proc(player: Player) {
+    send_player_to_backrooms(player);
+} @chat_command @owner_or_editor
+
+admin_backrooms_test_return :: proc(player: Player) {
+    return_player_from_backrooms(player);
+} @chat_command @owner_or_editor
+
+admin_shop_test_select_maps :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    set_admin_map_destination(player, "grass", {-24, -14}, "Grass Map");
+    Save.set_int(player, "ui_test_map_grass", 1);
+    set_admin_map_destination(player, "sand", {0, -14}, "Sand Map");
+    Save.set_int(player, "ui_test_map_sand", 1);
+    set_admin_map_destination(player, "lava", {24, -14}, "Lava Map");
+    Save.set_int(player, "ui_test_map_lava", 1);
+    set_admin_map_destination(player, "ice", {0, 14}, "Ice Map");
+    Save.set_int(player, "ui_test_map_ice", 1);
+    set_admin_map_destination(player, "island", {24, 14}, "Island Map");
+    Save.set_int(player, "ui_test_map_island", 1);
+} @chat_command @owner_or_editor
+
+admin_shop_test_buy_new_items :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    buy_weapon_offer(player, .BUBBLE_GUN, 95, "+Bubble Gun");
+    buy_weapon_offer(player, .FLASHBANG, 85, "+Flashbang");
+    buy_weapon_offer(player, .GRENADE_GUN, 110, "+Grenade Gun");
+    buy_weapon_offer(player, .SHURIKEN, 250, "+Shuriken");
+    buy_weapon_offer(player, .FIREBALL, 350, "+Fireball");
+    buy_weapon_offer(player, .METEORITE, 500, "+Meteorite");
+    buy_weapon_offer(player, .SPOON, 1000, "+Spoon");
+    buy_weapon_offer(player, .KILLER_FISH, 2000, "+Killer Fish");
+    buy_weapon_offer(player, .GIANT_GUN, giant_gun_admin_cost(player), "+Giant Gun");
+} @chat_command @owner_or_editor
+
+normal_shop_test_buy_support_items :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    current := Economy.get_balance(player, "Coins");
+    if current < 1000 {
+        Economy.deposit_currency(player, "Coins", 1000 - current);
+    }
+    save_coin_balance(player);
+
+    buy_armor_offer(player);
+    buy_heal_offer(player);
+} @chat_command @owner_or_editor
+
+prepare_normal_shop_test :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    current := Economy.get_balance(player, "Coins");
+    if current < 1000 {
+        Economy.deposit_currency(player, "Coins", 1000 - current);
+    } else if current > 1000 {
+        Economy.withdraw_currency(player, "Coins", current - 1000);
+    }
+
+    if player.weapon_target != null {
+        player.weapon_target.max_health = PLAYER_MAX_HEALTH;
+        player.weapon_target.health = 60.0;
+    }
+    player.armor_bonus_health = 0;
+    player.show_shop = true;
+    save_coin_balance(player);
+    Save.set_int(player, "ui_test_show_shop", 1);
+    Save.set_int(player, "ui_test_current_health", 60);
+    Save.set_int(player, "ui_test_armor_health", PLAYER_MAX_HEALTH.(s64));
+} @chat_command @owner_or_editor
+
+admin_shop_test_grant_new_items :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    grant_weapon_with_ammo(player, .FLASHBANG, 0);
+    grant_weapon_with_ammo(player, .GRENADE_GUN, 0);
+    grant_weapon_with_ammo(player, .INVISIBLE_GUN_ADMIN, 0);
+    grant_weapon_with_ammo(player, .BATTLEPASS_GUN, 0);
+    grant_weapon_with_ammo(player, .SHURIKEN, get_weapon_config(.SHURIKEN).ammo_first_pickup);
+    grant_weapon_with_ammo(player, .FIREBALL, get_weapon_config(.FIREBALL).ammo_first_pickup);
+    grant_weapon_with_ammo(player, .METEORITE, get_weapon_config(.METEORITE).ammo_first_pickup);
+    grant_weapon_with_ammo(player, .SPOON, 0);
+    grant_weapon_with_ammo(player, .KILLER_FISH, 0);
+    grant_weapon_with_ammo(player, .GIANT_GUN, 1);
+    apply_armor_bonus(player, ARMOR_BONUS_HP);
+    fully_heal_player(player);
+} @chat_command @owner_or_editor
+
+admin_shop_test_grant_massive_bullets :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    grant_ammo_to_player(player, 0, 600);
+    Save.set_int(player, "ui_test_massive_bullets_granted", 1);
+} @chat_command @owner_or_editor
+
+admin_shop_test_grant_verity :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    grant_verity_item(player);
+} @chat_command @owner_or_editor
+
+admin_shop_test_place_verity :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    grant_verity_item(player);
+    for i: 0..player.default_inventory.capacity - 1 {
+        item := player.default_inventory.get_item(i);
+        if item == null {
+            continue;
+        }
+        if item.get_definition() == g_verity_item_def {
+            place_verity_item(player, item);
+            break;
+        }
+    }
+} @chat_command @owner_or_editor
+
+admin_shop_test_verity_chat :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    grant_verity_item(player);
+    for i: 0..player.default_inventory.capacity - 1 {
+        item := player.default_inventory.get_item(i);
+        if item == null {
+            continue;
+        }
+        if item.get_definition() == g_verity_item_def {
+            place_verity_item(player, item);
+            break;
+        }
+    }
+    handle_verity_chat_message(player, "verity, what are you?");
+} @chat_command @owner_or_editor
+
+admin_shop_test_use_spoon :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    grant_weapon_with_ammo(player, .SPOON, 0);
+    equip_weapon_item_if_present(player, .SPOON);
+    spoon_attack(player);
+} @chat_command @owner_or_editor
+
+admin_shop_test_use_killer_fish :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    grant_weapon_with_ammo(player, .KILLER_FISH, 0);
+    equip_weapon_item_if_present(player, .KILLER_FISH);
+    killer_fish_attack(player);
+} @chat_command @owner_or_editor
+
+admin_shop_test_use_giant_gun :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    grant_weapon_with_ammo(player, .GIANT_GUN, 1);
+    equip_weapon_item_if_present(player, .GIANT_GUN);
+    giant_gun_attack(player, {1, 0});
+} @chat_command @owner_or_editor
+
+admin_shop_test_use_specials :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    grant_weapon_with_ammo(player, .SPOON, 0);
+    equip_weapon_item_if_present(player, .SPOON);
+    spoon_attack(player);
+
+    grant_weapon_with_ammo(player, .KILLER_FISH, 0);
+    equip_weapon_item_if_present(player, .KILLER_FISH);
+    killer_fish_attack(player);
+
+    grant_weapon_with_ammo(player, .GIANT_GUN, 1);
+    equip_weapon_item_if_present(player, .GIANT_GUN);
+    giant_gun_attack(player, {1, 0});
+} @chat_command @owner_or_editor

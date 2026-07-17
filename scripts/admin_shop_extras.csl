@@ -1,0 +1,301 @@
+METEOR_BOSS_HEALTH       :: 420.0;
+METEOR_BOSS_SPEED        :: 170.0;
+METEOR_BOSS_ATTACK_CD    :: 2.2;
+METEOR_BOSS_STRIKE_DELAY  :: 0.65;
+
+Meteor_Strike :: class : Component {
+    owner_id: u64;
+    damage: float;
+    radius: float;
+    delay: float;
+    warned: bool;
+
+    ao_start :: method() {
+        warn := entity.add_component(Sprite_Renderer);
+        warn.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+        warn.color = {1.0, 0.2, 0.15, 0.35};
+        warn.layer = -6;
+        entity.set_local_scale({4.5, 4.5});
+    }
+
+    ao_update :: method(dt: float) {
+        delay -= dt;
+        if !warned && delay <= 0.35 {
+            warned = true;
+        }
+
+        if delay > 0 {
+            return;
+        }
+
+        apply_aoe_damage(entity.world_position, owner_id, radius, damage);
+        spawn_simple_vfx("falling_meteor_61e44f/falling_meteor.spine", "default", entity.world_position, {1.15, 1.15}, "meteor_fall_lava_explode", 1.1);
+        entity.destroy();
+    }
+}
+
+spawn_meteor_strike :: proc(pos: v2, owner_id: u64, damage: float, radius: float) {
+    strike := Scene.create_entity();
+    strike.set_local_position(pos);
+    comp := strike.add_component(Meteor_Strike);
+    comp.owner_id = owner_id;
+    comp.damage = damage;
+    comp.radius = radius;
+    comp.delay = METEOR_BOSS_STRIKE_DELAY;
+}
+
+spoon_attack :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    weapon_shoot(player, .SPOON);
+    closest := get_nearest_vs_target(player, 8.0);
+    if closest != null && !closest.is_dead {
+        Save.set_int(player, "ui_test_spoon_hit", 1);
+        away := closest.entity.world_position - player.entity.world_position;
+        if length(away) < 0.1 {
+            away = v2{1, 0};
+        }
+        away = normalize(away);
+        closest.agent.velocity = v2{away.x * 45.0, away.y * 45.0};
+        if closest.weapon_target != null {
+            weapon_target_apply_damage(closest.weapon_target, 9999.0, player.entity.id);
+        }
+        closest.play_reward_feedback("Spoon");
+    }
+}
+
+killer_fish_attack :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    weapon_shoot(player, .KILLER_FISH);
+    player.play_reward_feedback("killer fish");
+
+    alive_targets: [..]Player;
+    for other: component_iterator(Player) {
+        if other == null || other.entity.id == player.entity.id || other.is_dead {
+            continue;
+        }
+        if is_player_invisible_for_targeting(other) {
+            continue;
+        }
+        alive_targets.append(other);
+    }
+
+    if alive_targets.count > 0 {
+        victim: Player;
+        if player.vs_target_user_id != "" {
+            victim = find_online_player_by_user_id(player.vs_target_user_id);
+        }
+        if victim != null && victim.is_dead {
+            victim = null;
+        }
+        if victim == null {
+            rng: u64 = rng_root_seed();
+            idx := rng_range_int(ref rng, 0, alive_targets.count - 1);
+            victim = alive_targets[idx];
+        }
+        if victim.weapon_target != null {
+            Save.set_int(player, "ui_test_killer_fish_used", 1);
+            spawn_simple_vfx("fish_6100a0/fish.spine", "angry_fish", victim.entity.world_position, {1.1, 1.1}, "attack", 0.9);
+            weapon_target_apply_damage(victim.weapon_target, 9999.0, player.entity.id);
+            Save.set_int(victim, "ui_test_killer_fish_killed", 1);
+        }
+    }
+}
+
+giant_gun_attack :: proc(player: Player, direction: v2) {
+    if player == null {
+        return;
+    }
+
+    Save.set_int(player, "ui_test_giant_gun_used", 1);
+    weapon_shoot(player, .GIANT_GUN);
+    weapon_spawn_standard_projectile(player, direction, .GIANT_GUN);
+    destroy_weapon_item(player, .GIANT_GUN);
+}
+
+secret_admin_nuke_attack :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    Save.set_int(player, "ui_test_admin_nuke_used", 1);
+    weapon_shoot(player, .ADMIN_NUKE_GUN);
+
+    blast_pos := player.entity.world_position;
+    spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/nuke_vfx/ExplosionNuke.spine", "default", blast_pos, {1.35, 1.35}, "Nuke_explosion", 0.75);
+    spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/nuke_vfx/ExplosionNuke.spine", "default", blast_pos, {1.8, 1.8}, "Nuke_explosion", 0.85);
+
+    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/cannon_explode.wav");
+    desc := SFX.default_sfx_desc();
+    desc.set_position(blast_pos);
+    desc.volume = 0.9;
+    desc.range_multiplier = 3.5;
+    SFX.play(sfx, desc);
+
+    for other: component_iterator(Player) {
+        if other == null || other.entity.id == player.entity.id || other.is_dead {
+            continue;
+        }
+
+        if other.weapon_target != null {
+            weapon_target_apply_damage(other.weapon_target, other.weapon_target.health + 1000.0, player.entity.id);
+        }
+    }
+
+    player.play_reward_feedback("Nuke armed");
+}
+
+givemeadmingunplz :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    give_weapon(.ADMIN_NUKE_GUN, player.default_inventory);
+    if player_has_weapon(player, .ADMIN_NUKE_GUN) {
+        equip_weapon_item_if_present(player, .ADMIN_NUKE_GUN);
+        player.play_reward_feedback("Nuke ready");
+    }
+    if !player_has_weapon(player, .INVISIBLE_GUN_ADMIN) {
+        give_weapon(.INVISIBLE_GUN_ADMIN, player.default_inventory);
+    }
+    if !player_has_weapon(player, .BATTLEPASS_GUN) {
+        give_weapon(.BATTLEPASS_GUN, player.default_inventory);
+    }
+} @chat_command @owner_or_editor
+
+Meteor_Boss :: class : Component {
+    weapon_target: Weapon_Target;
+    spine: Spine_Animator;
+    attack_timer: float;
+    hit_flash_timer: float;
+    defeat_timer: float;
+    is_defeated: bool;
+
+    ao_start :: method() {
+        entity.set_local_scale({1.3, 1.3});
+
+        wt := entity.add_component(Weapon_Target);
+        wt.health = METEOR_BOSS_HEALTH;
+        wt.max_health = METEOR_BOSS_HEALTH;
+        wt.owner_entity_id = entity.id;
+        wt.on_damaged_userdata = this;
+        wt.on_damaged = proc(target: Weapon_Target, damage: float, attacker_id: u64, userdata: Object) {
+            boss := userdata.(Meteor_Boss);
+            if boss.is_defeated {
+                return;
+            }
+            if target.health <= 0 {
+                boss.is_defeated = true;
+                boss.defeat_timer = 2.0;
+                boss.play_defeat_reward(attacker_id);
+            } else {
+                boss.hit_flash_timer = 0.2;
+            }
+        };
+        weapon_target = wt;
+
+        sp := entity.add_component(Spine_Animator);
+        sp.awaken();
+        sp.set_skeleton(get_asset(Spine_Asset, "falling_meteor_61e44f/falling_meteor.spine"));
+        sp.enable_skin("default");
+        sp.refresh_skins();
+        sp.set_animation("falling_loop", true, 0);
+        spine = sp;
+
+        attack_timer = 0.8;
+        hit_flash_timer = 0;
+        defeat_timer = 0;
+        is_defeated = false;
+    }
+
+    play_defeat_reward :: method(attacker_id: u64) {
+        for player: component_iterator(Player) {
+            if player.entity.id == attacker_id {
+                player.play_reward_feedback("Meteor boss down");
+                award_coins(player, 120);
+                break;
+            }
+        }
+    }
+
+    ao_update :: method(dt: float) {
+        if is_defeated {
+            defeat_timer -= dt;
+            if defeat_timer <= 0 {
+                entity.destroy();
+            }
+            return;
+        }
+
+        pos := entity.world_position;
+
+        if hit_flash_timer > 0 {
+            hit_flash_timer -= dt;
+            spine.color_multiplier = {2.5, 0.35, 0.25, 1.0};
+        } else {
+            spine.color_multiplier = {1.0, 1.0, 1.0, 1.0};
+        }
+
+        nearest: Player;
+        nearest_dist: float = 99999;
+        for player: component_iterator(Player) {
+            if player.is_dead {
+                continue;
+            }
+            if is_player_invisible_for_targeting(player) {
+                continue;
+            }
+            dx := player.entity.world_position.x - pos.x;
+            dy := player.entity.world_position.y - pos.y;
+            dist := sqrt(dx * dx + dy * dy);
+            if dist < nearest_dist {
+                nearest_dist = dist;
+                nearest = player;
+            }
+        }
+
+        if nearest == null {
+            return;
+        }
+
+        target_pos := nearest.entity.world_position;
+        dx := target_pos.x - pos.x;
+        dy := target_pos.y - pos.y;
+        dist := sqrt(dx * dx + dy * dy);
+        if dist > 0.1 {
+            dir := normalize(v2{dx, dy});
+            entity.set_local_position(v2{pos.x + dir.x * METEOR_BOSS_SPEED * dt, pos.y + dir.y * METEOR_BOSS_SPEED * dt});
+            face_dir: float = 1.0;
+            if dx < 0 {
+                face_dir = -1.0;
+            }
+            spine.scale = v2{1.3 * face_dir, 1.3};
+        }
+
+        attack_timer -= dt;
+        if attack_timer <= 0 {
+            attack_timer = METEOR_BOSS_ATTACK_CD;
+            spawn_meteor_strike(target_pos, entity.id, 40.0, 4.5);
+        }
+    }
+}
+
+spawn_meteor_boss :: proc() {
+    for existing: component_iterator(Meteor_Boss) {
+        return;
+    }
+
+    e := Scene.create_entity();
+    e.set_local_position({8, 2});
+    e.add_component(Meteor_Boss);
+
+    for player: component_iterator(Player) {
+        Save.set_int(player, "ui_test_meteor_boss_spawned", 1);
+        break;
+    }
+}

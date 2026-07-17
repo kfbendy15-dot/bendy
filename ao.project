@@ -1,0 +1,10 @@
+{
+    csl: true
+    projects:
+    [
+        {
+            name: "Paperclip's Shooting Game!"
+            id: "6a0c88a1351297a314d131a3"
+        }
+    ]
+}

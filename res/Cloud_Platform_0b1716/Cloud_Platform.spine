@@ -1,0 +1,39 @@
+{
+"skeleton": { "hash": "ibpwIYJBiWw", "spine": "4.0.64", "x": -211, "y": -86.5, "width": 432, "height": 163 },
+"bones": [
+	{ "name": "root" },
+	{ "name": "cloud_platform", "parent": "root" }
+],
+"slots": [
+	{ "name": "cloud platform/cloud_platform", "bone": "cloud_platform", "attachment": "cloud platform/cloud_platform" }
+],
+"skins": [
+	{
+		"name": "default",
+		"attachments": {
+			"cloud platform/cloud_platform": {
+				"cloud platform/cloud_platform": { "x": 5, "y": -5, "width": 432, "height": 163 }
+			}
+		}
+	}
+],
+"animations": {
+	"float": {
+		"bones": {
+			"cloud_platform": {
+				"translate": [
+					{
+						"curve": [ 0.178, 0, 0.356, 0, 0.178, 0, 0.356, -11 ]
+					},
+					{
+						"time": 0.5333,
+						"y": -11,
+						"curve": [ 0.711, 0, 0.889, 0, 0.711, -11, 0.889, 0 ]
+					},
+					{ "time": 1.0667 }
+				]
+			}
+		}
+	}
+}
+}

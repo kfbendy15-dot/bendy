@@ -1,0 +1,32 @@
+{
+"skeleton": { "hash": "Em69SMyTBQA", "spine": "4.0.61", "x": -70.5, "y": -155.5, "width": 141, "height": 141 },
+"bones": [
+	{ "name": "root" },
+	{ "name": "Layer 1", "parent": "root", "length": 76.03, "rotation": -0.22, "y": -85 }
+],
+"slots": [
+	{ "name": "Layer 1", "bone": "Layer 1", "attachment": "Layer 1" }
+],
+"skins": [
+	{
+		"name": "default",
+		"attachments": {
+			"Layer 1": {
+				"Layer 1": { "rotation": 0.22, "width": 141, "height": 141 }
+			}
+		}
+	}
+],
+"animations": {
+	"in_flight": {
+		"bones": {
+			"Layer 1": {
+				"rotate": [
+					{},
+					{ "time": 0.6667, "value": 360.22 }
+				]
+			}
+		}
+	}
+}
+}

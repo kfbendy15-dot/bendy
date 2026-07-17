@@ -1,0 +1,1115 @@
+import "core:ao"
+import "reusable_weapons"
+import "core:dropped_items"
+
+PLAYER_MAX_HEALTH :: 100.0;
+ARMOR_BONUS_HP    :: 50.0;
+STARTING_BULLETS  :: 100;
+KILL_COINS        :: 10;
+VS_KILL_COINS     :: 25;
+BULLET_COST       :: 10;
+BULLETS_PER_BUY   :: 10;
+DASH_COST         :: 5;
+INVISIBLE_COST    :: 5;
+SKIN_COST         :: 10;
+SWORD_COST        :: 30;
+GUN_CUTTER_COST   :: 25;
+STUN_GRENADE_COST :: 35;
+LANDMINE_COST     :: 40;
+SUBSPACE_TRIPMINE_COST :: 60;
+ADMIN_SHOP_GUN_COST :: 150;
+COINS_SAVE_KEY    :: "coins";
+COINS_SAVE_VERSION_KEY :: "coins_save_version";
+COINS_SAVE_VERSION :: 1;
+PARKOUR_REWARD_KEY :: "parkour_reward_claimed";
+PLAYER_TITLE_SAVE_KEY :: "player_title";
+ADMIN_USERNAME    :: "ilikepaperclips";
+ADMIN_PERMISSION_PREFIX :: "admin_permission/";
+WORLD_BOUNDS_MIN_X :: -31.0;
+WORLD_BOUNDS_MAX_X :: 31.0;
+WORLD_BOUNDS_MIN_Y :: -20.0;
+WORLD_BOUNDS_MAX_Y :: 36.0;
+BACKROOMS_POSITION :: v2{0, 30};
+OOB_FALL_DURATION :: 1.15;
+OOB_FALL_SPEED :: 14.0;
+
+COIN_PASS_25_PRODUCT_ID  :: "6a497945b13a6795f064b96e";
+COIN_PASS_50_PRODUCT_ID  :: "6a4ef49b4370914bce23fb47";
+COIN_PASS_100_PRODUCT_ID :: "6a4ef4c34370914bce23fb65";
+COIN_PASS_250_PRODUCT_ID :: "6a4ef4e14370914bce23fb8a";
+COIN_PASS_500_PRODUCT_ID :: "6a4efb9c7587269ca48133dc";
+COIN_PASS_1000_PRODUCT_ID :: "6a4efb9d6c6f712a86c24190";
+VIP_PRODUCT_ID           :: "6a52eb28d855008fb0d0c4e8";
+VIP_SAVE_KEY             :: "vip_owned";
+VIP_CROWN_VISIBLE_SAVE_KEY :: "vip_crown_visible";
+
+coin_pass_amount_for_product :: proc(product_id: string) -> s64 {
+    if product_id == COIN_PASS_25_PRODUCT_ID { return 25; }
+    if product_id == COIN_PASS_50_PRODUCT_ID { return 50; }
+    if product_id == COIN_PASS_100_PRODUCT_ID { return 100; }
+    if product_id == COIN_PASS_250_PRODUCT_ID { return 250; }
+    if product_id == COIN_PASS_500_PRODUCT_ID { return 500; }
+    if product_id == COIN_PASS_1000_PRODUCT_ID { return 1000; }
+    return 0;
+}
+
+ao_purchase_handler :: proc(player: Player, id: string) -> bool {
+    if id == VIP_PRODUCT_ID {
+        if player != null {
+            player.has_vip = true;
+            Save.set_int(player, VIP_SAVE_KEY, 1);
+            player.play_reward_feedback("VIP unlocked");
+        }
+        return true;
+    }
+
+    amount := coin_pass_amount_for_product(id);
+    if amount > 0 {
+        if player != null {
+            award_coins(player, amount);
+        }
+        return true;
+    }
+
+    product := Purchasing.get_product(id);
+    return product.id.count > 0;
+}
+
+can_access_admin_panel :: proc(player: Player) -> bool {
+    if Game.is_editor() {
+        return true;
+    }
+
+    username := player.get_username();
+    if username == ADMIN_USERNAME {
+        return true;
+    }
+
+    return Save.get_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, username}), "") == "1";
+}
+
+destroy_weapon_item :: proc(player: Player, wt: Weapon_Type) -> bool {
+    if player == null {
+        return false;
+    }
+
+    wanted := get_weapon_item_def(wt);
+    if wanted == null {
+        return false;
+    }
+
+    for i: 0..player.default_inventory.capacity - 1 {
+        item := player.default_inventory.get_item(i);
+        if item == null {
+            continue;
+        }
+        if item.get_definition() == wanted {
+            Items.destroy_item_instance(item);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+destroy_all_weapon_items :: proc(player: Player, wt: Weapon_Type) {
+    if player == null {
+        return;
+    }
+
+    while destroy_weapon_item(player, wt) {
+    }
+}
+
+apply_armor_bonus :: proc(player: Player, amount: float) {
+    if player == null || player.weapon_target == null || amount <= 0 {
+        return;
+    }
+
+    player.armor_bonus_health += amount;
+    player.weapon_target.max_health += amount;
+    player.weapon_target.health += amount;
+    if player.weapon_target.health > player.weapon_target.max_health {
+        player.weapon_target.health = player.weapon_target.max_health;
+    }
+
+    player.play_reward_feedback(format_string("+% HP", {amount.(s64)}));
+    Save.set_int(player, "ui_test_armor_health", player.weapon_target.max_health.(s64));
+
+    if player.is_local() {
+        sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/heal_oneshot.wav");
+        desc := SFX.default_sfx_desc();
+        desc.entity_to_follow = player.entity.id;
+        desc.volume = 0.55;
+        desc.speed_perturb = 0.06;
+        SFX.play(sfx, desc);
+    }
+
+    spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/Heal_Effect/heal_effect.spine", "default", player.entity.world_position, {0.85, 0.85}, "Swirl", 0.9);
+}
+
+set_admin_permission :: proc(username: string, enabled: bool) {
+    key := format_string("%0%", {ADMIN_PERMISSION_PREFIX, username});
+    if enabled {
+        Save.set_game_string(key, "1");
+    } else {
+        Save.set_game_string(key, "0");
+    }
+}
+
+grant_admin_permission :: proc(username: string) {
+    if username == "" return;
+    set_admin_permission(username, true);
+
+    target := find_online_player_by_username(username);
+    if target != null {
+        if !player_has_weapon(target, .ADMIN_GUN) {
+            give_weapon(.ADMIN_GUN, target.default_inventory);
+        }
+        if !player_has_weapon(target, .INVISIBLE_GUN_ADMIN) {
+            give_weapon(.INVISIBLE_GUN_ADMIN, target.default_inventory);
+        }
+        if !player_has_weapon(target, .BATTLEPASS_GUN) {
+            give_weapon(.BATTLEPASS_GUN, target.default_inventory);
+        }
+        if !player_has_weapon(target, .BUILDING_TOOLS) {
+            give_weapon(.BUILDING_TOOLS, target.default_inventory);
+        }
+    }
+}
+
+revoke_admin_permission :: proc(username: string) {
+    if username == "" return;
+    if username == ADMIN_USERNAME return;
+    set_admin_permission(username, false);
+
+    target := find_online_player_by_username(username);
+    if target != null {
+        set_player_invincible(target, false);
+        set_player_invisible(target, false);
+        set_player_noclip(target, false);
+        admin_invisible_count := target.admin_gun_invisible_effect_count;
+        while admin_invisible_count > 0 {
+            remove_effect(target.entity, Admin_Weapon_Invisible_Effect, false);
+            admin_invisible_count -= 1;
+        }
+        target.admin_gun_invisible_effect_count = 0;
+
+        battlepass_count := target.battlepass_music_effect_count;
+        while battlepass_count > 0 {
+            remove_effect(target.entity, Battlepass_Music_Effect, false);
+            battlepass_count -= 1;
+        }
+        target.battlepass_music_effect_count = 0;
+        strip_admin_weapons(target);
+    }
+}
+
+find_online_player_by_username :: proc(username: string) -> Player {
+    for player: component_iterator(Player) {
+        if player.get_username() == username {
+            return player;
+        }
+    }
+    return null;
+}
+
+find_online_player_by_user_id :: proc(user_id: string) -> Player {
+    if user_id == "" {
+        return null;
+    }
+
+    for player: component_iterator(Player) {
+        if player.get_user_id() == user_id {
+            return player;
+        }
+    }
+    return null;
+}
+
+grant_coins_to_username :: proc(username: string, amount: s64) -> bool {
+    if username == "" || amount <= 0 {
+        return false;
+    }
+
+    target := find_online_player_by_username(username);
+    if target == null {
+        return false;
+    }
+
+    award_coins(target, amount);
+    return true;
+}
+
+player_has_weapon :: proc(player: Player, wt: Weapon_Type) -> bool {
+    wanted := get_weapon_item_def(wt);
+    if wanted == null {
+        return false;
+    }
+
+    for i: 0..player.default_inventory.capacity - 1 {
+        item := player.default_inventory.get_item(i);
+        if item == null {
+            continue;
+        }
+
+        if item.get_definition() == wanted {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+is_player_out_of_bounds :: proc(player: Player) -> bool {
+    pos := player.entity.world_position;
+    if pos.x < WORLD_BOUNDS_MIN_X || pos.x > WORLD_BOUNDS_MAX_X {
+        return true;
+    }
+    if pos.y < WORLD_BOUNDS_MIN_Y || pos.y > WORLD_BOUNDS_MAX_Y {
+        return true;
+    }
+    return false;
+}
+
+save_coin_balance :: proc(player: Player) {
+    Save.set_int(player, COINS_SAVE_KEY, Economy.get_balance(player, "Coins"));
+}
+
+load_saved_coins :: proc(player: Player) {
+    save_version := Save.get_int(player, COINS_SAVE_VERSION_KEY, 0);
+    if save_version < COINS_SAVE_VERSION {
+        Save.set_int(player, COINS_SAVE_VERSION_KEY, COINS_SAVE_VERSION);
+        save_coin_balance(player);
+        return;
+    }
+
+    saved := Save.get_int(player, COINS_SAVE_KEY, 0);
+    current := Economy.get_balance(player, "Coins");
+
+    if current < saved {
+        Economy.deposit_currency(player, "Coins", saved - current);
+    } else if current > saved {
+        Economy.withdraw_currency(player, "Coins", current - saved);
+    }
+
+    save_coin_balance(player);
+    Save.set_int(player, COINS_SAVE_VERSION_KEY, COINS_SAVE_VERSION);
+}
+
+award_coins :: proc(player: Player, amount: s64) {
+    Economy.deposit_currency(player, "Coins", amount);
+    save_coin_balance(player);
+    if player != null {
+        player.play_reward_feedback(format_string("+% Coins", {amount}));
+        if player.is_local() {
+            sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+            desc := SFX.default_sfx_desc();
+            desc.entity_to_follow = player.entity.id;
+            desc.volume = 0.55;
+            desc.volume_perturb = 0.1;
+            SFX.play(sfx, desc);
+        }
+    }
+}
+
+shop_price :: proc(player: Player, base_price: s64) -> s64 {
+    if player != null && player.has_vip {
+        return (base_price + 1) / 2;
+    }
+    return base_price;
+}
+
+grant_weapon_with_ammo :: proc(player: Player, wt: Weapon_Type, ammo_amount: s64) {
+    if player == null {
+        return;
+    }
+
+    if !player_has_weapon(player, wt) {
+        give_weapon(wt, player.default_inventory);
+    }
+
+    if ammo_amount > 0 {
+        set_weapon_ammo_count(player, wt, ammo_amount);
+    }
+}
+
+is_admin_only_weapon :: proc(wt: Weapon_Type) -> bool {
+    if wt == .GOLDEN_ROCKET_LAUNCHER { return true; }
+    if wt == .VOID_SPLITTER { return true; }
+    if wt == .STORMS_EYE { return true; }
+    if wt == .PLASMA_BURST { return true; }
+    if wt == .BOOMWHEEL { return true; }
+    if wt == .HYDRO_CANNON { return true; }
+    if wt == .SHURIKEN { return true; }
+    if wt == .FIREBALL { return true; }
+    if wt == .METEORITE { return true; }
+    if wt == .SPOON { return true; }
+    if wt == .KILLER_FISH { return true; }
+    if wt == .GIANT_GUN { return true; }
+    if wt == .SUBSPACE_TRIPMINE { return true; }
+    if wt == .ADMIN_GUN { return true; }
+    if wt == .ADMIN_NUKE_GUN { return true; }
+    if wt == .BUILDING_TOOLS { return true; }
+    if wt == .INVISIBLE_GUN_ADMIN { return true; }
+    if wt == .BATTLEPASS_GUN { return true; }
+    return false;
+}
+
+is_player_invisible_for_targeting :: proc(player: Player) -> bool {
+    if player == null {
+        return false;
+    }
+
+    return player.admin_invisible_active || player.admin_gun_invisible_effect_count > 0 || player.powerup_invisible_active || player.powerup_invisible_effect_count > 0;
+}
+
+strip_admin_weapons :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    destroy_all_weapon_items(player, .ADMIN_GUN);
+    destroy_all_weapon_items(player, .GOLDEN_ROCKET_LAUNCHER);
+    destroy_all_weapon_items(player, .VOID_SPLITTER);
+    destroy_all_weapon_items(player, .STORMS_EYE);
+    destroy_all_weapon_items(player, .PLASMA_BURST);
+    destroy_all_weapon_items(player, .BOOMWHEEL);
+    destroy_all_weapon_items(player, .HYDRO_CANNON);
+    destroy_all_weapon_items(player, .SHURIKEN);
+    destroy_all_weapon_items(player, .FIREBALL);
+    destroy_all_weapon_items(player, .METEORITE);
+    destroy_all_weapon_items(player, .SPOON);
+    destroy_all_weapon_items(player, .KILLER_FISH);
+    destroy_all_weapon_items(player, .GIANT_GUN);
+    destroy_all_weapon_items(player, .SUBSPACE_TRIPMINE);
+    destroy_all_weapon_items(player, .INVISIBLE_GUN_ADMIN);
+    destroy_all_weapon_items(player, .BATTLEPASS_GUN);
+    destroy_all_weapon_items(player, .ADMIN_NUKE_GUN);
+    destroy_all_weapon_items(player, .BUILDING_TOOLS);
+
+    if is_admin_only_weapon(player.equipped_weapon_type) {
+        weapon_unequip(player, player.equipped_weapon_type);
+        player.equipped_weapon_type = .NONE;
+        player.equipped_item_def = null;
+        player.handle_equipped_item_changing(-1);
+    }
+}
+
+equip_weapon_item_if_present :: proc(player: Player, wt: Weapon_Type) {
+    if player == null {
+        return;
+    }
+
+    wanted := get_weapon_item_def(wt);
+    if wanted == null {
+        return;
+    }
+
+    selected_slot := player.last_selected_index;
+    if selected_slot < 0 || selected_slot >= player.default_inventory.capacity {
+        selected_slot = 0;
+    }
+
+    for i: 0..player.default_inventory.capacity - 1 {
+        item := player.default_inventory.get_item(i);
+        if item == null {
+            continue;
+        }
+        if item.get_definition() == wanted {
+            if i != selected_slot && selected_slot >= 0 && selected_slot < player.default_inventory.capacity {
+                current := player.default_inventory.get_item(selected_slot);
+                if current != null {
+                    if Items.can_swap_items(player.default_inventory, player.default_inventory, i, selected_slot) {
+                        Items.swap_items(player.default_inventory, player.default_inventory, i, selected_slot);
+                    }
+                }
+            }
+            player.handle_equipped_item_changing(selected_slot);
+            return;
+        }
+    }
+}
+
+grant_ammo_to_player :: proc(player: Player, ammo_index: s64, amount: s64) {
+    if player == null || amount <= 0 {
+        return;
+    }
+    if ammo_index < 0 || ammo_index >= AMMO_TYPE_COUNT {
+        return;
+    }
+
+    info := get_ammo_info(ammo_index);
+    ammo_def := g_ammo_item_defs[ammo_index];
+    remaining := amount;
+    while remaining > 0 {
+        chunk := remaining;
+        if chunk > info.stack_size {
+            chunk = info.stack_size;
+        }
+
+        ammo := Items.create_item_instance(ammo_def, chunk);
+        will_destroy: bool;
+        if Items.can_move_item_to_inventory(ammo, player.default_inventory, ref will_destroy) {
+            Items.move_item_to_inventory(ammo, player.default_inventory);
+        } else {
+            Items.destroy_item_instance(ammo);
+        }
+
+        remaining -= chunk;
+    }
+}
+
+add_weapon_ammo :: proc(player: Player, wt: Weapon_Type, ammo_amount: s64) {
+    if player == null || ammo_amount <= 0 {
+        return;
+    }
+
+    current := weapon_get_ammo_count(player, wt);
+    set_weapon_ammo_count(player, wt, current + ammo_amount);
+}
+
+set_player_invincible :: proc(player: Player, enabled: bool) {
+    if player == null {
+        return;
+    }
+    player.is_admin_invincible = enabled;
+    Save.set_int(player, "ui_test_is_admin_invincible", enabled ? 1 : 0);
+}
+
+set_player_invisible :: proc(player: Player, enabled: bool) {
+    if player == null {
+        return;
+    }
+
+    if enabled {
+        player.add_invisibility_reason("admin_stealth");
+        player.add_name_invisibility_reason("admin_stealth");
+    } else {
+        player.remove_invisibility_reason("admin_stealth");
+        player.remove_name_invisibility_reason("admin_stealth");
+    }
+    player.admin_invisible_active = enabled;
+}
+
+set_player_noclip :: proc(player: Player, enabled: bool) {
+    if player == null {
+        return;
+    }
+
+    if enabled {
+        player.add_ghost_reason("admin_noclip");
+    } else {
+        player.remove_ghost_reason("admin_noclip");
+    }
+    player.is_admin_noclip = enabled;
+    Save.set_int(player, "ui_test_is_admin_noclip", enabled ? 1 : 0);
+}
+
+set_admin_map_destination :: proc(player: Player, map_key: string, position: v2, feedback: string) {
+    if player == null {
+        return;
+    }
+
+    player.entity.set_local_position(position);
+    player.entity.mark_teleported();
+    player.play_reward_feedback(feedback);
+    Save.set_string(player, "ui_test_current_map", map_key);
+}
+
+send_player_to_backrooms :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    if !player.is_in_backrooms {
+        player.backrooms_return_position = player.entity.world_position;
+    }
+    player.is_in_backrooms = true;
+    player.entity.set_local_position(BACKROOMS_POSITION);
+    player.entity.mark_teleported();
+    player.play_reward_feedback("Backrooms");
+    Save.set_int(player, "ui_test_in_backrooms", 1);
+}
+
+return_player_from_backrooms :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    if player.is_in_backrooms {
+        player.entity.set_local_position(player.backrooms_return_position);
+        player.entity.mark_teleported();
+        player.is_in_backrooms = false;
+    }
+    player.play_reward_feedback("Normal Map");
+    Save.set_int(player, "ui_test_in_backrooms", 0);
+}
+
+fully_heal_player :: proc(player: Player) {
+    if player == null || player.weapon_target == null {
+        return;
+    }
+
+    if player.is_dead {
+        if player.survive_mode_death_reason != "" {
+            remove_effect(player.entity, Death_Effect, true);
+            respawn_player(player);
+            if player.animator != null && player.animator.state_machine != null {
+                player.animator.state_machine.set_trigger("RESET");
+            }
+        } else {
+            remove_effect(player.entity, Death_Effect, false);
+        }
+    }
+
+    player.weapon_target.health = player.weapon_target.max_health;
+    player.out_of_bounds_respawn_active = false;
+    player.play_reward_feedback("Fully healed");
+
+    if player.is_local() {
+        sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/heal_oneshot.wav");
+        desc := SFX.default_sfx_desc();
+        desc.entity_to_follow = player.entity.id;
+        desc.volume = 0.6;
+        desc.speed_perturb = 0.08;
+        SFX.play(sfx, desc);
+    }
+
+    Save.set_int(player, "ui_test_last_heal_health", player.weapon_target.health.(s64));
+
+    spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/Heal_Effect/heal_effect.spine", "default", player.entity.world_position, {0.8, 0.8}, "Swirl", 1.0);
+}
+
+clear_vs_match :: proc(a: Player, b: Player) {
+    if a != null {
+        a.vs_target_user_id = "";
+    }
+    if b != null {
+        b.vs_target_user_id = "";
+    }
+}
+
+is_vs_battle :: proc(attacker: Player, victim: Player) -> bool {
+    if attacker == null || victim == null {
+        return false;
+    }
+    return attacker.vs_target_user_id == victim.get_user_id() && victim.vs_target_user_id == attacker.get_user_id();
+}
+
+get_nearest_vs_target :: proc(player: Player, max_range: float) -> Player {
+    if player == null {
+        return null;
+    }
+
+    if player.vs_target_user_id != "" {
+        target := find_online_player_by_user_id(player.vs_target_user_id);
+        if target != null && !target.is_dead && !is_player_invisible_for_targeting(target) {
+            dx := target.entity.world_position.x - player.entity.world_position.x;
+            dy := target.entity.world_position.y - player.entity.world_position.y;
+            dist := sqrt(dx * dx + dy * dy);
+            if dist <= max_range {
+                return target;
+            }
+        }
+    }
+
+    closest: Player;
+    closest_dist: float = max_range;
+    found := false;
+
+    pos := player.entity.world_position;
+    for other: component_iterator(Player) {
+        if other.entity.id == player.entity.id {
+            continue;
+        }
+        if other.is_dead {
+            continue;
+        }
+        if is_player_invisible_for_targeting(other) {
+            continue;
+        }
+
+        dx := other.entity.world_position.x - pos.x;
+        dy := other.entity.world_position.y - pos.y;
+        dist := sqrt(dx * dx + dy * dy);
+        if dist <= closest_dist {
+            closest_dist = dist;
+            closest = other;
+            found = true;
+        }
+    }
+
+    if !found {
+        return null;
+    }
+    return closest;
+}
+
+start_vs_battle :: proc(player: Player) -> bool {
+    target := get_nearest_vs_target(player, 12.0);
+    if target == null {
+        Save.set_string(player, "ui_test_vs_feedback", "Need a nearby opponent");
+        Save.set_string(player, "ui_test_vs_target", "");
+        return false;
+    }
+
+    player.vs_target_user_id = target.get_user_id();
+    target.vs_target_user_id = player.get_user_id();
+    player.play_reward_feedback(format_string("VS vs %", {target.get_username()}));
+    target.play_reward_feedback(format_string("VS vs %", {player.get_username()}));
+    Save.set_string(player, "ui_test_vs_feedback", format_string("VS vs %", {target.get_username()}));
+    Save.set_string(player, "ui_test_vs_target", target.get_user_id());
+    return true;
+}
+
+spend_coins :: proc(player: Player, amount: s64) -> bool {
+    final_amount := shop_price(player, amount);
+    if !Economy.can_withdraw_currency(player, "Coins", final_amount) {
+        return false;
+    }
+
+    Economy.withdraw_currency(player, "Coins", final_amount);
+    save_coin_balance(player);
+    return true;
+}
+
+get_spawn_point :: proc(idx: s64) -> v2 {
+    switch idx {
+        case 0: return {-15, -8};
+        case 1: return {15, -8};
+        case 2: return {-15, 8};
+        default: return {15, 8};
+    }
+}
+
+set_weapon_ammo_count :: proc(player: Player, wt: Weapon_Type, desired: s64) {
+    ammo_def := get_ammo_def_for_weapon(wt);
+    if ammo_def == null return;
+
+    current := weapon_get_ammo_count(player, wt);
+    if current > desired {
+        weapon_consume_ammo(player, wt, current - desired);
+        return;
+    }
+
+    if current < desired {
+        ammo := Items.create_item_instance(ammo_def, desired - current);
+        will_destroy: bool;
+        if Items.can_move_item_to_inventory(ammo, player.default_inventory, ref will_destroy) {
+            Items.move_item_to_inventory(ammo, player.default_inventory);
+        } else {
+            Items.destroy_item_instance(ammo);
+        }
+    }
+}
+
+ao_before_scene_load :: proc() {
+    coin_tex := get_asset(Texture_Asset, "$AO/ui/kit/Icons/weapon_tier/weapon_tier_icon_gold.png");
+    Economy.register_currency("Coins", coin_tex);
+    init_verity_admin_content();
+}
+
+ao_start :: proc() {
+}
+
+ao_update :: proc(dt: float) {
+}
+
+ao_late_update :: proc(dt: float) {
+}
+
+ensure_vip_crown_visual :: proc(player: Player) {
+    if player == null || !player.has_vip || !player.show_vip_crown {
+        return;
+    }
+
+    if !#alive(player.vip_crown_entity) {
+        crown := Scene.create_entity();
+        crown.set_parent(player.entity, false);
+        crown.set_local_position({0, 1.18});
+        crown.set_local_scale({0.78, 0.58});
+        sprite := crown.add_component(Sprite_Renderer);
+        sprite.set_texture(get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png"));
+        sprite.color = {1, 1, 1, 1};
+        sprite.layer = 5;
+        player.vip_crown_entity = crown;
+    } else {
+        player.vip_crown_entity.set_local_enabled(true);
+    }
+}
+
+Player :: class : Player_Base {
+    // Reusable weapons (required fields)
+    weapon_target: Weapon_Target;
+    equipped_weapon_type: Weapon_Type;
+    equipped_item_def: Item_Definition;
+    last_selected_index: s64;
+    boomwheel_cannon: Boomwheel_Cannon;
+
+    // Game state
+    is_dead: bool;
+    show_shop: bool;
+    show_settings: bool;
+    show_vip_crown: bool;
+    show_reward_popups: bool;
+    show_tutorial_button: bool;
+    shop_tab_index: s64;
+    show_tutorial: bool;
+    show_admin_panel: bool;
+    show_admin_shop: bool;
+    show_mimicer_selector: bool;
+    user_tag: string;
+
+    reward_feedback_text: string;
+    reward_feedback_start: float;
+    reward_feedback_duration: float;
+
+    // Purchased unlocks
+    has_dash: bool;
+    has_invisible: bool;
+    armor_bonus_health: float;
+    purchased_finger_gun: bool;
+    purchased_paper_gun: bool;
+    is_admin_user: bool;
+    is_mimicer: bool;
+    has_claimed_parkour_reward: bool;
+    admin_freeze_until: float;
+    admin_freeze_previous_speed: float;
+    out_of_bounds_respawn_active: bool;
+    out_of_bounds_respawn_start: float;
+    admin_target_username: string;
+    admin_grant_amount: s64;
+    is_admin_invincible: bool;
+    admin_invisible_active: bool;
+    admin_gun_invisible_effect_count: s64;
+    powerup_invisible_active: bool;
+    powerup_invisible_effect_count: s64;
+    battlepass_music_effect_count: s64;
+    is_admin_noclip: bool;
+    mimicer_form_target_user_id: string;
+    mimicer_form_expires_at: float;
+    mimicer_saved_look_valid: bool;
+    mimicer_saved_name_override: string;
+    mimicer_saved_do_name_color_override: bool;
+    mimicer_saved_name_color_override: v4;
+    mimicer_saved_anim_tint: v4;
+    mimicer_saved_skins: []string;
+    vs_target_user_id: string;
+    ui_test_bonus_bullets_pending: bool;
+    survive_mode_killed_by_creature: bool;
+    survive_mode_death_reason: string;
+    survive_mode_flashlight_core: Entity;
+    survive_mode_flashlight_glow: Entity;
+    has_vip: bool;
+    vip_crown_entity: Entity;
+    is_in_backrooms: bool;
+    backrooms_return_position: v2;
+
+    ao_start :: method() {
+        // Weapon target (health component)
+        wt := entity.add_component(Weapon_Target);
+        wt.health = PLAYER_MAX_HEALTH;
+        wt.max_health = PLAYER_MAX_HEALTH;
+        wt.owner_entity_id = entity.id;
+        wt.on_damaged_userdata = this;
+        wt.on_damaged = proc(target: Weapon_Target, damage: float, attacker_id: u64, userdata: Object) {
+            victim := userdata.(Player);
+            if target.health <= 0 && !victim.is_dead {
+                victim.survive_mode_killed_by_creature = false;
+                for creature: component_iterator(Survive_Mode_Creature_Marker) {
+                    if creature.entity.id == attacker_id {
+                        victim.survive_mode_killed_by_creature = true;
+                        break;
+                    }
+                }
+                effect := new(Death_Effect);
+                victim.entity.set_active_effect(effect);
+
+                // Award kill coins to attacker
+                for attacker: component_iterator(Player) {
+                    if attacker.entity.id == attacker_id {
+                        reward := KILL_COINS;
+                        if is_vs_battle(attacker, victim) {
+                            reward = VS_KILL_COINS;
+                            clear_vs_match(attacker, victim);
+                        }
+                        if attacker.has_vip {
+                            reward *= 2;
+                        }
+                        award_coins(attacker, reward);
+                        if attacker.is_local() {
+                            sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+                            desc := SFX.default_sfx_desc();
+                            desc.volume = 0.5;
+                            SFX.play(sfx, desc);
+                        }
+                        break;
+                    }
+                }
+            }
+
+        };
+        weapon_target = wt;
+
+        last_selected_index = -1;
+        init_weapon_items();
+        setup_reusable_weapons_player_state_machine(this);
+
+        Items.set_capacity(default_inventory, 20);
+        give_weapon(.ASSAULT_RIFLE, default_inventory);
+        load_saved_coins(this);
+        has_claimed_parkour_reward = Save.get_int(this, PARKOUR_REWARD_KEY, 0) != 0;
+        has_vip = Save.get_int(this, VIP_SAVE_KEY, 0) != 0;
+        show_vip_crown = Save.get_int(this, VIP_CROWN_VISIBLE_SAVE_KEY, 1) != 0;
+        show_reward_popups = Save.get_int(this, "show_reward_popups", 1) != 0;
+        show_tutorial_button = Save.get_int(this, "show_tutorial_button", 1) != 0;
+        Save.set_int(this, "ui_test_sword_base_damage", get_weapon_config(.SWORD).base_damage.(s64));
+
+        // 100 starting AR rounds
+        ammo := Items.create_item_instance(g_ammo_item_defs[0], STARTING_BULLETS);
+        Items.move_item_to_inventory(ammo, default_inventory);
+
+        if can_access_admin_panel(this) {
+            if !player_has_weapon(this, .ADMIN_GUN) {
+                give_weapon(.ADMIN_GUN, default_inventory);
+            }
+            if !player_has_weapon(this, .INVISIBLE_GUN_ADMIN) {
+                give_weapon(.INVISIBLE_GUN_ADMIN, default_inventory);
+            }
+            if !player_has_weapon(this, .BATTLEPASS_GUN) {
+                give_weapon(.BATTLEPASS_GUN, default_inventory);
+            }
+            if !player_has_weapon(this, .BUILDING_TOOLS) {
+                give_weapon(.BUILDING_TOOLS, default_inventory);
+            }
+        }
+
+        // Assign random spawn point
+        rng := rng_root_seed();
+        idx := rng_range_int(ref rng, 0, 3);
+        entity.set_local_position(get_spawn_point(idx));
+
+        username := get_username();
+        is_admin_user = username == ADMIN_USERNAME;
+        user_tag = Save.get_string(this, PLAYER_TITLE_SAVE_KEY, "");
+        is_mimicer = false;
+        shop_tab_index = 0;
+        show_mimicer_selector = false;
+        armor_bonus_health = 0;
+        admin_target_username = "";
+        admin_grant_amount = 25;
+        is_admin_invincible = false;
+        admin_invisible_active = false;
+        admin_gun_invisible_effect_count = 0;
+        powerup_invisible_active = false;
+        powerup_invisible_effect_count = 0;
+        battlepass_music_effect_count = 0;
+        is_admin_noclip = false;
+        show_admin_shop = false;
+        mimicer_form_target_user_id = "";
+        mimicer_form_expires_at = 0;
+        mimicer_saved_look_valid = false;
+        mimicer_saved_name_override = "";
+        mimicer_saved_do_name_color_override = false;
+        mimicer_saved_name_color_override = {1, 1, 1, 1};
+        mimicer_saved_anim_tint = {1, 1, 1, 1};
+        vs_target_user_id = "";
+        is_in_backrooms = false;
+        backrooms_return_position = entity.world_position;
+        if Game.is_editor() {
+            entity.set_name("Player");
+            set_name_override("Player");
+        }
+        if user_tag.count == 0 && get_user_id() == "59zttiotnra" {
+            user_tag = "Mr Fancy";
+            name_color_override = {1.0, 0.86, 0.18, 1.0};
+        } else if user_tag.count == 0 && get_user_id() == "ilikehotpockets" {
+            user_tag = "Hot Pockets";
+            name_color_override = {1.0, 0.86, 0.18, 1.0};
+        } else if user_tag.count == 0 && is_admin_user {
+            user_tag = "PAPERCLIP";
+            name_color_override = {1.0, 0.84, 0.18, 1.0};
+        }
+    }
+
+    ao_update :: method(dt: float) {
+        ensure_vip_crown_visual(this);
+
+        if has_vip && show_vip_crown && !#alive(vip_crown_entity) {
+            ensure_vip_crown_visual(this);
+        } else if (!show_vip_crown || !has_vip) && #alive(vip_crown_entity) {
+            vip_crown_entity.set_local_enabled(false);
+        }
+
+        if admin_freeze_until > 0 && get_time() >= admin_freeze_until {
+            agent.movement_speed = admin_freeze_previous_speed;
+            admin_freeze_until = 0;
+        }
+
+        if !is_dead && !out_of_bounds_respawn_active && is_player_out_of_bounds(this) {
+            out_of_bounds_respawn_active = true;
+            out_of_bounds_respawn_start = get_time();
+            agent.velocity = {0, 0};
+            agent.input_this_frame = {0, 0};
+            if animator != null && animator.instance != null && animator.instance.state_machine != null {
+                animator.instance.state_machine.set_trigger("Fall_To_Ground_Hurt");
+            }
+        }
+
+        if out_of_bounds_respawn_active {
+            elapsed := get_time() - out_of_bounds_respawn_start;
+            pos := entity.local_position;
+            entity.set_local_position({pos.x, pos.y - OOB_FALL_SPEED * dt});
+            agent.velocity = {0, 0};
+            agent.input_this_frame = {0, 0};
+
+            if elapsed >= OOB_FALL_DURATION {
+                out_of_bounds_respawn_active = false;
+                respawn_player(this);
+                if animator != null && animator.instance != null && animator.instance.state_machine != null {
+                    animator.instance.state_machine.set_trigger("Teleport_Appear");
+                }
+            }
+        }
+
+        if weapon_target != null {
+            Save.set_int(this, "ui_test_current_health", weapon_target.health.(s64));
+            if is_admin_invincible {
+                Save.set_int(this, "ui_test_invincible_health", weapon_target.health.(s64));
+            }
+        }
+
+        if ui_test_bonus_bullets_pending {
+            Save.set_int(this, "ui_test_ar_ammo_after_bonus", weapon_get_ammo_count(this, .ASSAULT_RIFLE));
+        }
+
+        if is_mimicer && mimicer_form_target_user_id != "" && mimicer_form_expires_at > 0 && get_time() >= mimicer_form_expires_at {
+            restore_mimicer_form(this);
+        }
+    }
+
+    play_reward_feedback :: method(text: string) {
+        reward_feedback_text = text;
+        reward_feedback_start = get_time();
+        reward_feedback_duration = 1.0;
+    }
+
+    ao_late_update :: method(dt: float) {
+        if show_admin_panel && !can_access_admin_panel(this) {
+            show_admin_panel = false;
+        }
+        if show_admin_shop && !can_access_admin_panel(this) {
+            show_admin_shop = false;
+        }
+
+        if is_local_or_server() {
+            draw_hud(this);
+            draw_player_statuses();
+            draw_leaderboard(this);
+            if show_shop {
+                draw_shop(this);
+            }
+            if show_tutorial {
+                draw_tutorial(this);
+            }
+            if show_admin_panel && can_access_admin_panel(this) {
+                draw_admin_panel(this);
+            }
+            if show_admin_shop && can_access_admin_panel(this) {
+                draw_admin_shop(this);
+            }
+            if show_mimicer_selector {
+                draw_mimicer_selector(this);
+            }
+        }
+
+        if is_local_or_server() && !is_dead {
+            if is_mimicer {
+                draw_ability_button(this, Mimicer_Attack_Ability, 0);
+                draw_ability_button(this, Mimicer_Dash_Ability, 1);
+                draw_ability_button(this, Mimicer_Shapeshift_Ability, 2);
+            } else {
+                // Draw fire ability based on equipped weapon
+                if equipped_weapon_type != .NONE {
+                    config := get_weapon_config(equipped_weapon_type);
+                    switch config.fire_mode {
+                        case .CONTINUOUS:  { draw_ability_button(this, Continuous_Fire_Ability, 0); }
+                        case .SINGLE_SHOT: { draw_ability_button(this, Single_Shot_Ability, 0); }
+                        case .SPREAD:      { draw_ability_button(this, Spread_Shot_Ability, 0); }
+                        case .LOBBED:      { draw_ability_button(this, Lobbed_Shot_Ability, 0); }
+                        case .BEAM:        { draw_ability_button(this, Beam_Ability, 0); }
+                        case .SPECIAL:     { draw_ability_button(this, Special_Ability, 0); }
+                    }
+                }
+
+                if has_dash      { draw_ability_button(this, Dash_Ability, 2); }
+                if has_invisible { draw_ability_button(this, Invisible_Ability, 3); }
+            }
+
+            // Hotbar
+            options := Inventory_Draw_Options.default();
+            options.hotbar_item_count = 6;
+            options.enable_selection = true;
+            options.scroll_item_selection = true;
+            options.keyboard_item_selection = true;
+            options.enable_use_from_hotbar = false;
+            hotbar := Items.draw_hotbar(this, default_inventory, options);
+            if #alive(hotbar.dropped_item) {
+                defn := hotbar.dropped_item.get_definition();
+                if defn != null && defn.#type == Verity_Item_Definition {
+                    place_verity_item(this, hotbar.dropped_item);
+                } else {
+                    dropped: Dropped_Item;
+                    if Dropped_Item.handle_dropped_item(hotbar, entity.world_position, ref dropped) {
+                        rng := rng_root_seed();
+                        dropped.do_spawn_animation(ref rng);
+                    }
+                }
+            }
+            handle_equipped_item_changing(hotbar.selected_item_index);
+        }
+    }
+
+    ao_can_use_ability :: method(ability: Ability_Base) -> bool {
+        if is_dead return false;
+        if out_of_bounds_respawn_active return false;
+        return true;
+    }
+
+    ao_end :: method() {
+        save_coin_balance(this);
+        Save.set_int(this, PARKOUR_REWARD_KEY, has_claimed_parkour_reward ? 1 : 0);
+    }
+
+    handle_equipped_item_changing :: method(selected_index: s64) {
+        selected_item: Item_Instance;
+        if selected_index >= 0 && selected_index < default_inventory.capacity {
+            selected_item = default_inventory.get_item(selected_index);
+        }
+
+        new_def: Item_Definition;
+        if selected_item != null {
+            new_def = selected_item.get_definition();
+        }
+
+        if selected_index == last_selected_index && new_def == equipped_item_def return;
+        last_selected_index = selected_index;
+        if new_def == equipped_item_def return;
+
+        if equipped_weapon_type != .NONE {
+            weapon_unequip(this, equipped_weapon_type);
+            equipped_weapon_type = .NONE;
+        }
+        equipped_item_def = null;
+
+        if new_def != null {
+            wt := get_weapon_type_for_item(new_def);
+            if wt != .NONE {
+                weapon_equip(this, wt);
+                equipped_weapon_type = wt;
+                equipped_item_def = new_def;
+            }
+        }
+    }
+}

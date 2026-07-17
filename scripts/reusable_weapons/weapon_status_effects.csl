@@ -1,0 +1,505 @@
+Weapon_Stun_Effect :: class : Effect_Base {
+    stun_reason: string;
+    stun_duration: float;
+
+    effect_start :: method() {
+        player_specific.freeze_player = true;
+        player_specific.disable_movement_inputs = true;
+
+        if stun_reason == "" {
+            stun_reason = format_string("weapon_stun/%/%", {player.get_user_id(), get_frame_number()});
+        }
+
+        player.add_freeze_reason(stun_reason);
+        player.add_disable_movement_input_reason(stun_reason);
+        set_duration(stun_duration);
+    }
+
+    effect_update :: method(dt: float) {
+        if #alive(player) {
+            player.agent.velocity = {0, 0};
+            player.agent.input_this_frame = {0, 0};
+        }
+    }
+
+    effect_end :: method(interrupt: bool) {
+        player.remove_freeze_reason(stun_reason);
+        player.remove_disable_movement_input_reason(stun_reason);
+    }
+}
+
+apply_weapon_stun :: proc(target: Player, duration: float, reason_prefix: string) {
+    if target == null || duration <= 0 {
+        return;
+    }
+
+    stun := new(Weapon_Stun_Effect);
+    stun.stun_reason = format_string("%/%/%", {reason_prefix, target.get_user_id(), get_frame_number()});
+    stun.stun_duration = duration;
+    target.entity.add_passive_effect(stun);
+}
+
+stun_and_damage_players_in_radius :: proc(pos: v2, owner_id: u64, radius: float, damage: float, stun_duration: float, stun_reason_prefix: string) {
+    nearby: [..]Player;
+    Scene.get_all_components_in_range(pos, radius, ref nearby);
+
+    for victim: nearby {
+        if victim == null || victim.entity.id == owner_id || victim.is_dead {
+            continue;
+        }
+
+        if damage > 0 && victim.weapon_target != null {
+            weapon_target_apply_damage(victim.weapon_target, damage, owner_id);
+        }
+
+        if stun_duration > 0 && !victim.is_dead {
+            apply_weapon_stun(victim, stun_duration, stun_reason_prefix);
+        }
+    }
+}
+
+melee_swing_players_in_radius :: proc(attacker: Player, center: v2, radius: float, damage: float, stun_duration: float) {
+    if attacker == null {
+        return;
+    }
+
+    stun_and_damage_players_in_radius(center, attacker.entity.id, radius, damage, stun_duration, format_string("melee/%", {attacker.get_user_id()}));
+}
+
+Landmine_Trap :: class : Component {
+    owner_id: u64;
+    damage: float;
+    stun_duration: float;
+    trigger_radius: float;
+    arm_delay: float;
+    max_lifetime: float;
+    lifetime: float;
+    armed: bool;
+    detonated: bool;
+
+    ao_update :: method(dt: float) {
+        lifetime += dt;
+        if !armed && lifetime >= arm_delay {
+            armed = true;
+        }
+
+        if lifetime >= max_lifetime {
+            entity.destroy();
+            return;
+        }
+
+        if !armed || detonated {
+            return;
+        }
+
+        nearby: [..]Player;
+        Scene.get_all_components_in_range(entity.world_position, trigger_radius, ref nearby);
+        for victim: nearby {
+            if victim == null || victim.entity.id == owner_id || victim.is_dead {
+                continue;
+            }
+
+            detonated = true;
+            if victim.weapon_target != null {
+                weapon_target_apply_damage(victim.weapon_target, damage, owner_id);
+            }
+            stun_and_damage_players_in_radius(entity.world_position, owner_id, trigger_radius, 0, stun_duration, format_string("landmine/%", {owner_id}));
+
+            sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/dynamite_explode.wav");
+            desc := SFX.default_sfx_desc();
+            desc.set_position(entity.world_position);
+            desc.range_multiplier = 2.0;
+            SFX.play(sfx, desc);
+
+            spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/electric_burst/014ANT_Electric_Shockwave.spine", "default", entity.world_position, {0.9, 0.9}, "Shockwave_Burst", 0.65);
+            entity.destroy();
+            return;
+        }
+    }
+}
+
+spawn_landmine :: proc(pos: v2, owner_id: u64, damage: float, stun_duration: float) {
+    mine_entity := Scene.create_entity();
+    mine_entity.set_local_position(pos);
+    mine_entity.set_local_scale({0.9, 0.9});
+
+    sprite := mine_entity.add_component(Sprite_Renderer);
+    sprite.set_texture(get_asset(Texture_Asset, "mine_on_0a827f.png"));
+
+    mine := mine_entity.add_component(Landmine_Trap);
+    mine.owner_id = owner_id;
+    mine.damage = damage;
+    mine.stun_duration = stun_duration;
+    mine.trigger_radius = 1.15;
+    mine.arm_delay = 0.45;
+    mine.max_lifetime = 18.0;
+}
+
+Pink_Tint_Effect :: class : Effect_Base {
+    previous_tint: v4;
+    previous_tint_valid: bool;
+
+    effect_start :: method() {
+        if #alive(player) && player.animator != null {
+            previous_tint = player.animator.get_tint();
+            previous_tint_valid = true;
+            player.animator.set_tint({1.9, 0.45, 1.8, 1.0});
+        }
+        set_duration(0.8);
+    }
+
+    effect_end :: method(interrupt: bool) {
+        if previous_tint_valid && #alive(player) && player.animator != null {
+            player.animator.set_tint(previous_tint);
+        }
+    }
+}
+
+Pink_Floor_Flash :: class : Component {
+    elapsed: float;
+    lifetime: float;
+
+    ao_start :: method() {
+        sprite := entity.add_component(Sprite_Renderer);
+        sprite.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+        sprite.color = {1.0, 0.35, 0.9, 0.35};
+        sprite.layer = -8;
+        entity.set_local_scale({4.6, 4.6});
+    }
+
+    ao_update :: method(dt: float) {
+        elapsed += dt;
+        if lifetime <= 0 {
+            lifetime = 0.9;
+        }
+        if elapsed >= lifetime {
+            entity.destroy();
+        }
+    }
+}
+
+spawn_subspace_floor_flash :: proc(pos: v2) {
+    flash := Scene.create_entity();
+    flash.set_local_position(pos);
+    flash.add_component(Pink_Floor_Flash);
+}
+
+apply_pink_tint_to_players :: proc(pos: v2, radius: float, owner_id: u64) {
+    nearby: [..]Player;
+    Scene.get_all_components_in_range(pos, radius, ref nearby);
+
+    for victim: nearby {
+        if victim == null || victim.entity.id == owner_id || victim.is_dead {
+            continue;
+        }
+
+        effect := new(Pink_Tint_Effect);
+        victim.entity.add_passive_effect(effect);
+    }
+}
+
+spawn_subspace_tripmine_explosion :: proc(pos: v2, owner_id: u64, damage: float, radius: float) {
+    for victim: component_iterator(Player) {
+        if victim != null && victim.entity.id == owner_id {
+            Save.set_int(victim, "ui_test_tripmine_detonated", 1);
+            break;
+        }
+    }
+
+    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/dynamite_explode.wav");
+    desc := SFX.default_sfx_desc();
+    desc.set_position(pos);
+    desc.range_multiplier = 3.0;
+    SFX.play(sfx, desc);
+
+    apply_pink_tint_to_players(pos, radius, owner_id);
+    spawn_subspace_floor_flash(pos);
+    apply_aoe_damage(pos, owner_id, radius, damage);
+
+    burst := spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/nuke_vfx/ExplosionNuke.spine", "default", pos, {1.9, 1.9}, "Nuke_explosion", 0.75);
+    if burst != null {
+        spine := burst.get_component(Spine_Animator);
+        if spine != null {
+            spine.color_multiplier = {1.9, 0.35, 1.75, 1.0};
+        }
+    }
+}
+
+Subspace_Tripmine_Trap :: class : Component {
+    owner_id: u64;
+    damage: float;
+    trigger_radius: float;
+    explosion_radius: float;
+    arm_delay: float;
+    max_lifetime: float;
+    lifetime: float;
+    armed: bool;
+    detonated: bool;
+
+    ao_update :: method(dt: float) {
+        lifetime += dt;
+        if !armed && lifetime >= arm_delay {
+            armed = true;
+        }
+
+        if lifetime >= max_lifetime {
+            entity.destroy();
+            return;
+        }
+
+        if !armed || detonated {
+            return;
+        }
+
+        nearby: [..]Player;
+        Scene.get_all_components_in_range(entity.world_position, trigger_radius, ref nearby);
+        for victim: nearby {
+            if victim == null || victim.entity.id == owner_id || victim.is_dead {
+                continue;
+            }
+
+            detonated = true;
+            spawn_subspace_tripmine_explosion(entity.world_position, owner_id, damage, explosion_radius);
+            entity.destroy();
+            return;
+        }
+    }
+}
+
+spawn_subspace_tripmine :: proc(pos: v2, owner_id: u64, damage: float) {
+    mine_entity := Scene.create_entity();
+    mine_entity.set_local_position(pos);
+    mine_entity.set_local_scale({0.95, 0.95});
+
+    sprite := mine_entity.add_component(Sprite_Renderer);
+    sprite.set_texture(get_asset(Texture_Asset, "mine_on_0a827f.png"));
+    sprite.color = {1.9, 0.45, 1.8, 1.0};
+
+    mine := mine_entity.add_component(Subspace_Tripmine_Trap);
+    mine.owner_id = owner_id;
+    mine.damage = damage;
+    mine.trigger_radius = 1.45;
+    mine.explosion_radius = 5.2;
+    mine.arm_delay = 0.35;
+    mine.max_lifetime = 5.5;
+}
+
+Bubble_Prison_Effect :: class : Effect_Base {
+    freeze_reason: string;
+    duration: float;
+    bubble_entity: Entity;
+
+    effect_start :: method() {
+        player_specific.freeze_player = true;
+        player_specific.disable_movement_inputs = true;
+
+        if freeze_reason == "" {
+            freeze_reason = format_string("bubble_gun/%/%", {player.get_user_id(), get_frame_number()});
+        }
+
+        player.add_freeze_reason(freeze_reason);
+        player.add_disable_movement_input_reason(freeze_reason);
+
+        bubble_entity = Scene.create_entity();
+        bubble_entity.set_parent(player.entity, false);
+        bubble_entity.set_local_position({0, 0});
+        bubble_entity.set_local_scale({1.8, 1.8});
+
+        sprite := bubble_entity.add_component(Sprite_Renderer);
+        sprite.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+        sprite.color = {0.4, 0.8, 1.0, 0.22};
+        sprite.layer = 1;
+
+        if duration <= 0 {
+            duration = 3.0;
+        }
+        set_duration(duration);
+    }
+
+    effect_update :: method(dt: float) {
+        if #alive(player) {
+            player.agent.velocity = {0, 0};
+            player.agent.input_this_frame = {0, 0};
+        }
+    }
+
+    effect_end :: method(interrupt: bool) {
+        player.remove_freeze_reason(freeze_reason);
+        player.remove_disable_movement_input_reason(freeze_reason);
+        if #alive(bubble_entity) {
+            bubble_entity.destroy();
+        }
+    }
+}
+
+apply_bubble_prison :: proc(target: Player, duration: float) {
+    if target == null || duration <= 0 {
+        return;
+    }
+
+    effect := new(Bubble_Prison_Effect);
+    effect.duration = duration;
+    target.entity.add_passive_effect(effect);
+}
+
+Flashbang_Blind_Effect :: class : Effect_Base {
+    freeze_reason: string;
+    duration: float;
+    previous_tint: v4;
+    previous_tint_valid: bool;
+
+    effect_start :: method() {
+        player_specific.freeze_player = true;
+        player_specific.disable_movement_inputs = true;
+
+        if freeze_reason == "" {
+            freeze_reason = format_string("flashbang/%/%", {player.get_user_id(), get_frame_number()});
+        }
+
+        player.add_freeze_reason(freeze_reason);
+        player.add_disable_movement_input_reason(freeze_reason);
+
+        if #alive(player) && player.animator != null {
+            previous_tint = player.animator.get_tint();
+            previous_tint_valid = true;
+            player.animator.set_tint({2.0, 2.0, 2.0, 1.0});
+        }
+
+        if duration <= 0 {
+            duration = 1.5;
+        }
+        set_duration(duration);
+    }
+
+    effect_update :: method(dt: float) {
+        if #alive(player) {
+            player.agent.velocity = {0, 0};
+            player.agent.input_this_frame = {0, 0};
+        }
+    }
+
+    effect_end :: method(interrupt: bool) {
+        player.remove_freeze_reason(freeze_reason);
+        player.remove_disable_movement_input_reason(freeze_reason);
+        if previous_tint_valid && #alive(player) && player.animator != null {
+            player.animator.set_tint(previous_tint);
+        }
+    }
+}
+
+apply_flashbang :: proc(target: Player, duration: float) {
+    if target == null || duration <= 0 {
+        return;
+    }
+
+    effect := new(Flashbang_Blind_Effect);
+    effect.duration = duration;
+    target.entity.add_passive_effect(effect);
+}
+
+flashbang_players_in_radius :: proc(pos: v2, owner_id: u64, radius: float, duration: float) {
+    nearby: [..]Player;
+    Scene.get_all_components_in_range(pos, radius, ref nearby);
+
+    for victim: nearby {
+        if victim == null || victim.entity.id == owner_id || victim.is_dead {
+            continue;
+        }
+
+        apply_flashbang(victim, duration);
+    }
+}
+
+Admin_Weapon_Invisible_Effect :: class : Effect_Base {
+    invis_reason: string;
+    duration: float;
+
+    effect_start :: method() {
+        if invis_reason == "" {
+            invis_reason = format_string("admin_weapon_invisible/%/%", {player.get_user_id(), get_frame_number()});
+        }
+
+        if #alive(player) {
+            p := player.(Player);
+            p.admin_gun_invisible_effect_count += 1;
+            player.add_invisibility_reason(invis_reason);
+            player.add_name_invisibility_reason(invis_reason);
+        }
+
+        if duration <= 0 {
+            duration = 4.0;
+        }
+        set_duration(duration);
+    }
+
+    effect_end :: method(interrupt: bool) {
+        if #alive(player) {
+            p := player.(Player);
+            if p.admin_gun_invisible_effect_count > 0 {
+                p.admin_gun_invisible_effect_count -= 1;
+            }
+            player.remove_invisibility_reason(invis_reason);
+            player.remove_name_invisibility_reason(invis_reason);
+        }
+    }
+}
+
+apply_admin_weapon_invisibility :: proc(target: Player, duration: float) {
+    if target == null || duration <= 0 {
+        return;
+    }
+    if target.admin_gun_invisible_effect_count > 0 {
+        return;
+    }
+
+    effect := new(Admin_Weapon_Invisible_Effect);
+    effect.duration = duration;
+    target.entity.add_passive_effect(effect);
+}
+
+Battlepass_Music_Effect :: class : Effect_Base {
+    sound_id: u64;
+    duration: float;
+
+    effect_start :: method() {
+        p := player.(Player);
+        p.battlepass_music_effect_count += 1;
+
+        if duration <= 0 {
+            duration = 3600.0;
+        }
+
+        desc := SFX.default_sfx_desc();
+        desc.entity_to_follow = player.entity.id;
+        desc.loop = true;
+        desc.volume = 0.35;
+        desc.range_multiplier = 2.5;
+        sound_id = SFX.play(get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/battlepass_song.wav"), desc);
+
+        set_duration(duration);
+    }
+
+    effect_end :: method(interrupt: bool) {
+        p := player.(Player);
+        if p.battlepass_music_effect_count > 0 {
+            p.battlepass_music_effect_count -= 1;
+        }
+        if sound_id != 0 {
+            SFX.stop(sound_id);
+            sound_id = 0;
+        }
+    }
+}
+
+start_battlepass_music :: proc(player: Player, duration: float) {
+    if player == null || duration <= 0 {
+        return;
+    }
+    if player.battlepass_music_effect_count > 0 {
+        return;
+    }
+
+    effect := new(Battlepass_Music_Effect);
+    effect.duration = duration;
+    player.entity.add_passive_effect(effect);
+}

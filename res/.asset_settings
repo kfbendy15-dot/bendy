@@ -1,0 +1,32 @@
+[
+  {
+    "id": "lava-cracked-ground-tile_d30606.png",
+    "texture": {
+      "wrap_repeat": true,
+      "crop": [
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "Sand_Tile_Pixel_25fdd9.png",
+    "texture": {
+      "wrap_repeat": true,
+      "crop": [
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "grass_tile_e5684d.png",
+    "texture": {
+      "wrap_repeat": true
+    }
+  }
+]

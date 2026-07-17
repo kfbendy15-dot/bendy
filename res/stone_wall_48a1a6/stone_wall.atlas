@@ -1,0 +1,67 @@
+48a1a6733e392147.png
+	size: 2048, 256
+	filter: Linear, Linear
+images/Rock Particles/Pebble 1
+	bounds: 264, 32, 49, 55
+	offsets: 1, 1, 51, 57
+images/Rock Particles/Pebble 2
+	bounds: 208, 28, 59, 50
+	offsets: 1, 1, 61, 52
+	rotate: 90
+images/Rock Particles/Pebble 3
+	bounds: 349, 12, 25, 29
+	offsets: 1, 2, 27, 32
+images/Rock Particles/Pebble 4
+	bounds: 319, 47, 40, 30
+	offsets: 1, 1, 42, 32
+	rotate: 90
+images/Rock Particles/Pebble 5
+	bounds: 319, 10, 24, 31
+	offsets: 1, 1, 26, 33
+images/Rock Particles/Pebble 6
+	bounds: 1265, 8, 123, 93
+	offsets: 1, 1, 125, 95
+	rotate: 90
+images/Rock Particles/Pebble 7
+	bounds: 83, 15, 62, 72
+	offsets: 1, 1, 64, 74
+images/bouncing wall
+	bounds: 6, 93, 157, 473
+	rotate: 90
+images/dust/Dust
+	bounds: 1420, 72, 178, 162
+	offsets: 1, 1, 180, 164
+	rotate: 90
+images/dust/DustSmall
+	bounds: 151, 22, 51, 65
+	offsets: 1, 1, 53, 66
+images/dust/dust particle
+	bounds: 6, 6, 81, 71
+	offsets: 1, 1, 83, 73
+	rotate: 90
+images/dust/dust particle 2
+	bounds: 1020, 137, 282, 113
+	offsets: 1, 1, 284, 115
+images/dust/dust particle 3
+	bounds: 853, 32, 218, 161
+	offsets: 1, 1, 220, 163
+	rotate: 90
+images/dust/dust particle 4
+	bounds: 1308, 142, 108, 106
+	offsets: 1, 1, 110, 108
+	rotate: 90
+images/dust/dust particle 5
+	bounds: 1155, 10, 121, 104
+	offsets: 1, 1, 123, 106
+	rotate: 90
+images/dust/dust_cloudA
+	bounds: 668, 51, 199, 179
+	offsets: 1, 1, 201, 181
+	rotate: 90
+images/dust/dust_cloudB
+	bounds: 485, 42, 177, 208
+	offsets: 1, 1, 179, 209
+images/dust/dust_cloudC
+	bounds: 1020, 6, 125, 129
+	offsets: 1, 1, 127, 131
+	rotate: 90

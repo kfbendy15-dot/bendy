@@ -1,0 +1,33 @@
+89d2278c59b26b2b.png
+	size: 188, 188
+	filter: Linear, Linear
+patform
+	bounds: 6, 61, 124, 119
+	offsets: 1, 1, 126, 121
+platform shards/platform shards Copy
+	bounds: 83, 14, 18, 60
+	offsets: 1, 4, 20, 64
+	rotate: 90
+platform shards/platform shards Copy 2
+	bounds: 6, 35, 20, 71
+	offsets: 1, 1, 22, 72
+	rotate: 90
+platform shards/platform shards Copy 3
+	bounds: 136, 131, 49, 29
+	offsets: 1, 1, 51, 31
+	rotate: 90
+platform shards/platform shards Copy 4
+	bounds: 149, 18, 14, 15
+	offsets: 1, 1, 16, 17
+	rotate: 90
+platform shards/platform shards Copy 5
+	bounds: 149, 18, 14, 15
+	offsets: 1, 1, 16, 17
+	rotate: 90
+platform shards/platform shards Copy 6
+	bounds: 163, 52, 17, 73
+	offsets: 1, 0, 19, 73
+platform shards/platform shards Copy 7
+	bounds: 136, 38, 87, 21
+	offsets: 1, 1, 89, 23
+	rotate: 90

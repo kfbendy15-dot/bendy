@@ -1,0 +1,10 @@
+9db5247abecaa5be.png
+	size: 404, 404
+	filter: Linear, Linear
+shadow
+	bounds: 2, 177, 288, 222
+	offsets: 12, 14, 312, 250
+shine
+	bounds: 292, 259, 140, 107
+	offsets: 6, 7, 152, 122
+	rotate: 90

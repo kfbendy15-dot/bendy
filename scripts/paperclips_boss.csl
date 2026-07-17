@@ -1,0 +1,269 @@
+PAPERCLIPS_BOSS_HEALTH       :: 500.0;
+PAPERCLIPS_BOSS_MELEE_DMG    :: 10.0;
+PAPERCLIPS_BOSS_GUN_DMG      :: 25.0;
+PAPERCLIPS_BOSS_MELEE_RNG    :: 2.2;
+PAPERCLIPS_BOSS_GUN_RNG      :: 14.0;
+PAPERCLIPS_BOSS_SPEED        :: 220.0;
+PAPERCLIPS_BOSS_SCALE        :: 2.8;
+PAPERCLIPS_BOSS_MELEE_CD     :: 1.2;
+PAPERCLIPS_BOSS_GUN_CD       :: 2.5;
+PAPERCLIPS_BOSS_DEFEAT_DELAY :: 2.0;
+PAPERCLIPS_BOSS_SPAWN_DELAY  :: 1.5;
+
+Paperclips_Projectile :: class : Component {
+    direction:   v2;
+    speed:       float;
+    damage:      float;
+    attacker_id: u64;
+    lifetime:    float;
+
+    ao_update :: method(dt: float) {
+        lifetime -= dt;
+        if lifetime <= 0 {
+            entity.destroy();
+            return;
+        }
+
+        pos     := entity.local_position;
+        new_pos := v2{pos.x + direction.x * speed * dt, pos.y + direction.y * speed * dt};
+        entity.set_local_position(new_pos);
+
+        nearby: [..]Weapon_Target;
+        Scene.get_all_components_in_range(new_pos, 1.0, ref nearby);
+        for wt: nearby {
+            if wt.owner_entity_id == attacker_id continue;
+            if wt.health <= 0 continue;
+            weapon_target_apply_damage(wt, damage, attacker_id);
+            entity.destroy();
+            return;
+        }
+    }
+}
+
+Paperclips_Boss :: class : Component {
+    weapon_target:   Weapon_Target;
+    spine:           Spine_Animator;
+    state_machine:   State_Machine;
+    is_defeated:     bool;
+    melee_timer:     float;
+    gun_timer:       float;
+    hit_flash_timer: float;
+    defeat_timer:    float;
+    spawn_timer:     float;
+
+    ao_start :: method() {
+        entity.set_local_scale({PAPERCLIPS_BOSS_SCALE, PAPERCLIPS_BOSS_SCALE});
+
+        wt             := entity.add_component(Weapon_Target);
+        wt.health      = PAPERCLIPS_BOSS_HEALTH;
+        wt.max_health  = PAPERCLIPS_BOSS_HEALTH;
+        wt.owner_entity_id = entity.id;
+        wt.on_damaged_userdata = this;
+        wt.on_damaged = proc(target: Weapon_Target, damage: float, attacker_id: u64, userdata: Object) {
+            boss := userdata.(Paperclips_Boss);
+            if boss.is_defeated return;
+            if target.health <= 0 {
+                boss.on_defeated(attacker_id);
+            } else {
+                boss.hit_flash_timer = 0.15;
+            }
+        };
+        weapon_target = wt;
+
+        sp := entity.add_component(Spine_Animator);
+        sp.awaken();
+        sp.set_skeleton(get_asset(Spine_Asset, "$AO/streamed_character"));
+        sp.enable_skin("base/crewchsia");
+        sp.enable_skin("body/dino_suit");
+        sp.enable_skin("hat/cooking_pan");
+        sp.enable_skin("face/cute_eyes");
+        sp.refresh_skins();
+        sp.scale            = v2{0.9, 0.9};
+        sp.color_multiplier = {1.2, 1.0, 0.2, 1.0};
+        spine = sp;
+
+        sm    := State_Machine.create();
+        layer := sm.create_layer("main", 0);
+
+        is_moving_var := sm.create_variable("is_moving", .BOOL);
+        attack_trig   := sm.create_variable("attack", .TRIGGER);
+        shoot_trig    := sm.create_variable("shoot", .TRIGGER);
+        die_trig      := sm.create_variable("die", .TRIGGER);
+
+        spawn_state  := layer.create_state("Grow_Big", false);
+        idle_state   := layer.create_state("Idle", true);
+        run_state    := layer.create_state("Run", true);
+        attack_state := layer.create_state("Attack_Melee_1", false);
+        shoot_state  := layer.create_state("Shoot_Gun_mIK", false);
+        death_state  := layer.create_state("Death_No_HP", false);
+
+        layer.set_initial_state(spawn_state);
+        layer.create_transition(spawn_state, idle_state, true);
+
+        t_idle_run := layer.create_transition(idle_state, run_state, false);
+        t_idle_run.create_bool_condition(is_moving_var, true);
+        t_run_idle := layer.create_transition(run_state, idle_state, false);
+        t_run_idle.create_bool_condition(is_moving_var, false);
+
+        to_attack := layer.create_global_transition(attack_state, false);
+        to_attack.create_trigger_condition(attack_trig);
+        layer.create_transition(attack_state, idle_state, true);
+
+        to_shoot := layer.create_global_transition(shoot_state, false);
+        to_shoot.create_trigger_condition(shoot_trig);
+        layer.create_transition(shoot_state, idle_state, true);
+
+        to_death := layer.create_global_transition(death_state, false);
+        to_death.create_trigger_condition(die_trig);
+
+        sp.set_state_machine(sm, true);
+        state_machine = sm;
+
+        melee_timer     = 0;
+        gun_timer       = 2.0;
+        hit_flash_timer = 0;
+        defeat_timer    = 0;
+        spawn_timer     = PAPERCLIPS_BOSS_SPAWN_DELAY;
+        is_defeated     = false;
+    }
+
+    on_defeated :: method(attacker_id: u64) {
+        is_defeated  = true;
+        defeat_timer = PAPERCLIPS_BOSS_DEFEAT_DELAY;
+        state_machine.set_trigger("die");
+
+        for player: component_iterator(Player) {
+            if player.entity.id == attacker_id {
+                player.play_reward_feedback("I KILLED PAPERCLIPS!!!");
+                award_coins(player, 100);
+                if player.is_local() {
+                    sfx  := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+                    d    := SFX.default_sfx_desc();
+                    d.entity_to_follow = player.entity.id;
+                    d.volume       = 1.0;
+                    d.speed_perturb = 0.05;
+                    SFX.play(sfx, d);
+                }
+                break;
+            }
+        }
+    }
+
+    ao_update :: method(dt: float) {
+        if is_defeated {
+            defeat_timer -= dt;
+            if defeat_timer <= 0 {
+                entity.destroy();
+            }
+            return;
+        }
+
+        if hit_flash_timer > 0 {
+            hit_flash_timer -= dt;
+            spine.color_multiplier = {2.5, 0.2, 0.2, 1.0};
+        } else {
+            spine.color_multiplier = {1.2, 1.0, 0.2, 1.0};
+        }
+
+        if spawn_timer > 0 {
+            spawn_timer -= dt;
+            return;
+        }
+
+        melee_timer -= dt;
+        gun_timer   -= dt;
+
+        pos := entity.local_position;
+
+        nearest:      Player;
+        nearest_dist: float = 99999;
+        for player: component_iterator(Player) {
+            if player.is_dead continue;
+            if is_player_invisible_for_targeting(player) continue;
+            ppos := player.entity.local_position;
+            dx   := ppos.x - pos.x;
+            dy   := ppos.y - pos.y;
+            dist := sqrt(dx * dx + dy * dy);
+            if dist < nearest_dist {
+                nearest_dist = dist;
+                nearest      = player;
+            }
+        }
+
+        if nearest == null return;
+
+        tpos := nearest.entity.local_position;
+        dx   := tpos.x - pos.x;
+        dy   := tpos.y - pos.y;
+        dist := nearest_dist;
+
+        face_dir: float = 1.0;
+        if dx < 0 { face_dir = -1.0; }
+        spine.scale = v2{0.9 * face_dir, 0.9};
+
+        is_moving := dist > PAPERCLIPS_BOSS_MELEE_RNG + 0.5;
+        state_machine.set_bool("is_moving", is_moving);
+
+        if dist > PAPERCLIPS_BOSS_MELEE_RNG {
+            nx      := dx / dist;
+            ny      := dy / dist;
+            new_pos := v2{pos.x + nx * PAPERCLIPS_BOSS_SPEED * dt, pos.y + ny * PAPERCLIPS_BOSS_SPEED * dt};
+            entity.set_local_position(new_pos);
+        }
+
+        if dist <= PAPERCLIPS_BOSS_MELEE_RNG && melee_timer <= 0 {
+            melee_timer = PAPERCLIPS_BOSS_MELEE_CD;
+            state_machine.set_trigger("attack");
+            if nearest.weapon_target != null && nearest.weapon_target.health > 0 {
+                weapon_target_apply_damage(nearest.weapon_target, PAPERCLIPS_BOSS_MELEE_DMG, entity.id);
+                if nearest.is_local() {
+                    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/bullet_hit.wav");
+                    d   := SFX.default_sfx_desc();
+                    d.entity_to_follow = nearest.entity.id;
+                    d.volume = 0.6;
+                    SFX.play(sfx, d);
+                }
+            }
+        }
+
+        if dist > PAPERCLIPS_BOSS_MELEE_RNG && dist <= PAPERCLIPS_BOSS_GUN_RNG && gun_timer <= 0 {
+            gun_timer = PAPERCLIPS_BOSS_GUN_CD;
+            state_machine.set_trigger("shoot");
+            fire_at(tpos);
+        }
+    }
+
+    fire_at :: method(target_pos: v2) {
+        pos  := entity.local_position;
+        dx   := target_pos.x - pos.x;
+        dy   := target_pos.y - pos.y;
+        dist := sqrt(dx * dx + dy * dy);
+        if dist < 0.001 return;
+
+        proj_e := Scene.create_entity();
+        proj_e.set_local_position(pos);
+        proj_e.set_local_scale({0.5, 0.5});
+
+        sprite     := proj_e.add_component(Sprite_Renderer);
+        bullet_tex := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/bullet.png");
+        sprite.set_texture(bullet_tex);
+        sprite.color = {1.0, 0.85, 0.0, 1.0};
+        sprite.layer = 1;
+
+        proj            := proj_e.add_component(Paperclips_Projectile);
+        proj.direction  = v2{dx / dist, dy / dist};
+        proj.speed      = 12.0;
+        proj.damage     = PAPERCLIPS_BOSS_GUN_DMG;
+        proj.attacker_id = entity.id;
+        proj.lifetime   = 2.5;
+    }
+}
+
+spawn_paperclips_boss :: proc() {
+    for existing: component_iterator(Paperclips_Boss) {
+        return;
+    }
+    e := Scene.create_entity();
+    e.set_local_position({0, 0});
+    e.add_component(Paperclips_Boss);
+}

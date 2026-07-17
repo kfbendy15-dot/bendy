@@ -1,0 +1,13 @@
+mimicer_become_self :: proc(player: Player) {
+    grant_mimicer_mode(player);
+} @chat_command @owner_or_editor
+
+mimicer_mark_test_actions :: proc(player: Player) {
+    grant_mimicer_mode(player);
+    Save.set_int(player, "ui_test_mimicer_attack_pressed", 1);
+    Save.set_int(player, "ui_test_mimicer_attack_used", 1);
+    Save.set_int(player, "ui_test_mimicer_dash_pressed", 1);
+    Save.set_int(player, "ui_test_mimicer_dash_used", 1);
+    Save.set_int(player, "ui_test_mimicer_shapeshift_pressed", 1);
+    Save.set_int(player, "ui_test_mimicer_shapeshift_opened", 1);
+} @chat_command @owner_or_editor

@@ -1,0 +1,46 @@
+Manipulable_Target :: class : Component {
+    holder: Player @ao_serialize;
+    hold_direction: v2 @ao_serialize;
+    hold_offset: v2 @ao_serialize;
+    hold_distance: float @ao_serialize;
+    lift_height: float @ao_serialize;
+
+    ao_start :: method() {
+        if hold_distance <= 0 {
+            hold_distance = 2.3;
+        }
+        if lift_height == 0 {
+            lift_height = 1.25;
+        }
+    }
+
+    begin_hold :: method(player: Player, direction: v2) {
+        holder = player;
+        hold_direction = direction;
+        hold_offset = {0, lift_height};
+        if direction.x != 0 || direction.y != 0 {
+            hold_offset = {direction.x * hold_distance, direction.y * hold_distance + lift_height};
+        }
+    }
+
+    end_hold :: method() {
+        holder = null;
+    }
+
+    ao_update :: method(dt: float) {
+        _ := dt;
+        if holder == null {
+            return;
+        }
+
+        if !#alive(holder.entity) {
+            holder = null;
+            return;
+        }
+
+        target_pos := holder.entity.world_position;
+        target_pos.x += hold_offset.x;
+        target_pos.y += hold_offset.y;
+        entity.set_local_position(target_pos);
+    }
+}

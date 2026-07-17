@@ -1,0 +1,245 @@
+{
+"skeleton": { "hash": "pgxfitpZGUQ", "spine": "4.0.49", "x": -63, "y": -60, "width": 126, "height": 121 },
+"bones": [
+	{ "name": "root" },
+	{ "name": "platform", "parent": "root" },
+	{ "name": "platform_shard1", "parent": "platform" },
+	{ "name": "platform_shard2", "parent": "platform" },
+	{ "name": "platform_shard3", "parent": "platform" },
+	{ "name": "platform_shard4", "parent": "platform" },
+	{ "name": "platform_shard5", "parent": "platform" },
+	{ "name": "platform_shard6", "parent": "platform" },
+	{ "name": "platform_shard7", "parent": "platform" }
+],
+"slots": [
+	{ "name": "platform", "bone": "platform", "attachment": "patform" },
+	{ "name": "platform_shard1", "bone": "platform_shard1" },
+	{ "name": "platform_shard2", "bone": "platform_shard2" },
+	{ "name": "platform_shard3", "bone": "platform_shard3" },
+	{ "name": "platform_shard4", "bone": "platform_shard4" },
+	{ "name": "platform_shard5", "bone": "platform_shard5" },
+	{ "name": "platform_shard6", "bone": "platform_shard6" },
+	{ "name": "platform_shard7", "bone": "platform_shard7" }
+],
+"skins": [
+	{
+		"name": "default",
+		"attachments": {
+			"platform": {
+				"patform": { "y": 0.5, "width": 126, "height": 121 }
+			},
+			"platform_shard1": {
+				"platform shards/platform shards Copy": { "width": 20, "height": 64 }
+			},
+			"platform_shard2": {
+				"platform shards/platform shards Copy 2": { "width": 22, "height": 72 }
+			},
+			"platform_shard3": {
+				"platform shards/platform shards Copy 3": { "x": 0.5, "y": 0.5, "width": 51, "height": 31 }
+			},
+			"platform_shard4": {
+				"platform shards/platform shards Copy 4": { "y": 0.5, "width": 16, "height": 17 }
+			},
+			"platform_shard5": {
+				"platform shards/platform shards Copy 5": { "y": 0.5, "width": 16, "height": 17 }
+			},
+			"platform_shard6": {
+				"platform shards/platform shards Copy 6": { "x": 0.5, "y": 0.5, "width": 19, "height": 73 }
+			},
+			"platform_shard7": {
+				"platform shards/platform shards Copy 7": { "x": 0.5, "y": 0.5, "width": 89, "height": 23 }
+			}
+		}
+	}
+],
+"animations": {
+	"appear": {
+		"bones": {
+			"platform": {
+				"scale": [
+					{
+						"x": 0.29,
+						"y": 0.29,
+						"curve": [ 0.056, 0.29, 0.194, 1.115, 0.056, 0.29, 0.194, 1.115 ]
+					},
+					{
+						"time": 0.25,
+						"x": 1.115,
+						"y": 1.115,
+						"curve": [ 0.278, 1.115, 0.389, 1, 0.278, 1.115, 0.389, 1 ]
+					},
+					{ "time": 0.4167 }
+				]
+			}
+		}
+	},
+	"break": {
+		"slots": {
+			"platform": {
+				"attachment": [
+					{ "name": null }
+				]
+			},
+			"platform_shard1": {
+				"attachment": [
+					{ "name": "platform shards/platform shards Copy" },
+					{ "time": 0.25, "name": null }
+				]
+			},
+			"platform_shard2": {
+				"attachment": [
+					{ "name": "platform shards/platform shards Copy 2" },
+					{ "time": 0.2917, "name": null }
+				]
+			},
+			"platform_shard3": {
+				"attachment": [
+					{ "name": "platform shards/platform shards Copy 3" },
+					{ "time": 0.2917, "name": null }
+				]
+			},
+			"platform_shard4": {
+				"attachment": [
+					{ "name": "platform shards/platform shards Copy 4" },
+					{ "time": 0.25, "name": null }
+				]
+			},
+			"platform_shard5": {
+				"attachment": [
+					{ "name": "platform shards/platform shards Copy 5" },
+					{ "time": 0.3333, "name": null }
+				]
+			},
+			"platform_shard6": {
+				"attachment": [
+					{ "name": "platform shards/platform shards Copy 6" },
+					{ "time": 0.25, "name": null }
+				]
+			},
+			"platform_shard7": {
+				"attachment": [
+					{ "name": "platform shards/platform shards Copy 7" },
+					{ "time": 0.3333, "name": null }
+				]
+			}
+		},
+		"bones": {
+			"platform_shard1": {
+				"rotate": [
+					{
+						"curve": [ 0.083, 71.1, 0.167, 106.65 ]
+					},
+					{ "time": 0.25, "value": 106.65 }
+				],
+				"translate": [
+					{
+						"x": -55.28,
+						"y": 30.64,
+						"curve": [ 0.083, -144.24, 0.167, -188.72, 0.064, 94.04, 0.167, 76.15 ]
+					},
+					{ "time": 0.25, "x": -188.72, "y": 71.78 }
+				]
+			},
+			"platform_shard2": {
+				"rotate": [
+					{
+						"curve": [ 0.097, -45.15, 0.194, -67.73 ]
+					},
+					{ "time": 0.2917, "value": -67.73 }
+				],
+				"translate": [
+					{
+						"x": 52.57,
+						"y": 21.2,
+						"curve": [ 0.097, 156.76, 0.194, 208.85, 0.095, 160.64, 0.194, 157.22 ]
+					},
+					{ "time": 0.2917, "x": 208.85, "y": 157.22 }
+				]
+			},
+			"platform_shard3": {
+				"rotate": [
+					{
+						"time": 0.0417,
+						"curve": [ 0.125, -107.1, 0.208, -160.65 ]
+					},
+					{ "time": 0.2917, "value": -160.65 }
+				],
+				"translate": [
+					{
+						"time": 0.0417,
+						"x": 22.22,
+						"y": 11.2,
+						"curve": [ 0.125, 107.43, 0.208, 150.04, 0.127, -1.82, 0.208, -42.8 ]
+					},
+					{ "time": 0.2917, "x": 150.04, "y": -42.8 }
+				]
+			},
+			"platform_shard4": {
+				"rotate": [
+					{
+						"curve": [ 0.083, 68.8, 0.167, 200.78 ]
+					},
+					{ "time": 0.25, "value": 200.78 }
+				],
+				"translate": [
+					{
+						"x": -7.62,
+						"y": -20.33,
+						"curve": [ 0.083, -82.28, 0.167, -119.61, 0.083, -105.99, 0.167, -148.82 ]
+					},
+					{ "time": 0.25, "x": -119.61, "y": -148.82 }
+				]
+			},
+			"platform_shard5": {
+				"rotate": [
+					{
+						"curve": [ 0.111, 80.22, 0.222, 334.5 ]
+					},
+					{ "time": 0.3333, "value": 334.5 }
+				],
+				"translate": [
+					{
+						"x": 2.54,
+						"y": 40.02,
+						"curve": [ 0.111, -106.69, 0.222, -161.31, 0.111, 122.85, 0.281, 63.74 ]
+					},
+					{ "time": 0.3333, "x": -161.31, "y": 69.49 }
+				]
+			},
+			"platform_shard6": {
+				"rotate": [
+					{
+						"curve": [ 0.083, -89.89, 0.167, -134.83 ]
+					},
+					{ "time": 0.25, "value": -134.83 }
+				],
+				"translate": [
+					{
+						"x": 52.08,
+						"y": -23.5,
+						"curve": [ 0.083, 133.13, 0.167, 173.65, 0.083, -126.23, 0.167, -177.6 ]
+					},
+					{ "time": 0.25, "x": 173.65, "y": -177.6 }
+				]
+			},
+			"platform_shard7": {
+				"rotate": [
+					{
+						"curve": [ 0.111, 94.82, 0.222, 142.24 ]
+					},
+					{ "time": 0.3333, "value": 142.24 }
+				],
+				"translate": [
+					{
+						"x": 0.64,
+						"y": 3.18,
+						"curve": [ 0.111, -97.01, 0.222, -145.83, 0.111, -78.37, 0.222, -119.15 ]
+					},
+					{ "time": 0.3333, "x": -145.83, "y": -119.15 }
+				]
+			}
+		}
+	},
+	"idle": {}
+}
+}

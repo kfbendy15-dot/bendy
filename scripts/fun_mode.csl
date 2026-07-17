@@ -1,0 +1,210 @@
+RED_CHASER_HEALTH    :: 80.0;
+RED_CHASER_SPEED     :: 190.0;
+RED_CHASER_MELEE_DMG :: 5.0;
+RED_CHASER_MELEE_RNG :: 2.0;
+RED_CHASER_MELEE_CD  :: 1.5;
+RED_CHASER_RETARGET  :: 5.0;
+MAX_RED_CHASERS      :: 4;
+CHASER_SPAWN_INTERVAL :: 8.0;
+
+Red_Chaser :: class : Component {
+    spine:         Spine_Animator;
+    weapon_target: Weapon_Target;
+    target_player: Player;
+    state_machine: State_Machine;
+    melee_timer:   float;
+    retarget_timer: float;
+    chaser_dead:   bool;
+
+    ao_start :: method() {
+        wt            := entity.add_component(Weapon_Target);
+        wt.health     = RED_CHASER_HEALTH;
+        wt.max_health = RED_CHASER_HEALTH;
+        wt.owner_entity_id = entity.id;
+        wt.on_damaged_userdata = this;
+        wt.on_damaged = proc(target: Weapon_Target, damage: float, attacker_id: u64, userdata: Object) {
+            chaser := userdata.(Red_Chaser);
+            if target.health <= 0 && !chaser.chaser_dead {
+                chaser.chaser_dead = true;
+                chaser.entity.destroy();
+            }
+        };
+        weapon_target = wt;
+
+        sp := entity.add_component(Spine_Animator);
+        sp.awaken();
+        sp.set_skeleton(get_asset(Spine_Asset, "$AO/streamed_character"));
+        sp.enable_skin("base/crewchsia");
+        sp.refresh_skins();
+        sp.color_multiplier = {2.0, 0.15, 0.15, 1.0};
+        sp.scale = v2{0.7, 0.7};
+        spine = sp;
+
+        sm    := State_Machine.create();
+        layer := sm.create_layer("main", 0);
+        is_moving_var := sm.create_variable("is_moving", .BOOL);
+        idle_state := layer.create_state("Idle", true);
+        run_state  := layer.create_state("Run", true);
+        layer.set_initial_state(idle_state);
+        t1 := layer.create_transition(idle_state, run_state, false);
+        t1.create_bool_condition(is_moving_var, true);
+        t2 := layer.create_transition(run_state, idle_state, false);
+        t2.create_bool_condition(is_moving_var, false);
+        sp.set_state_machine(sm, true);
+        state_machine = sm;
+
+        melee_timer    = 0;
+        retarget_timer = 0;
+        chaser_dead    = false;
+        pick_target();
+    }
+
+    pick_target :: method() {
+        players: [..]Player;
+        for p: component_iterator(Player) {
+            if p.is_dead {
+                continue;
+            }
+            if is_player_invisible_for_targeting(p) {
+                continue;
+            }
+            players.append(p);
+        }
+        if players.count == 0 {
+            target_player  = null;
+            retarget_timer = RED_CHASER_RETARGET;
+            return;
+        }
+        rng := rng_root_seed();
+        idx := rng_range_int(ref rng, 0, players.count - 1);
+        target_player  = players[idx];
+        retarget_timer = RED_CHASER_RETARGET;
+    }
+
+    ao_update :: method(dt: float) {
+        if chaser_dead return;
+
+        melee_timer    -= dt;
+        retarget_timer -= dt;
+
+        if retarget_timer <= 0 { pick_target(); }
+        if target_player != null && target_player.is_dead { pick_target(); }
+
+        if target_player == null {
+            state_machine.set_bool("is_moving", false);
+            return;
+        }
+
+        pos  := entity.local_position;
+        tpos := target_player.entity.local_position;
+        dx   := tpos.x - pos.x;
+        dy   := tpos.y - pos.y;
+        dist := sqrt(dx * dx + dy * dy);
+
+        face_dir: float = 1.0;
+        if dx < 0 { face_dir = -1.0; }
+        spine.scale = v2{0.7 * face_dir, 0.7};
+
+        state_machine.set_bool("is_moving", dist > RED_CHASER_MELEE_RNG);
+
+        if dist > RED_CHASER_MELEE_RNG {
+            nx      := dx / dist;
+            ny      := dy / dist;
+            new_pos := v2{pos.x + nx * RED_CHASER_SPEED * dt, pos.y + ny * RED_CHASER_SPEED * dt};
+            entity.set_local_position(new_pos);
+        }
+
+        if dist <= RED_CHASER_MELEE_RNG && melee_timer <= 0 {
+            melee_timer = RED_CHASER_MELEE_CD;
+            if target_player.weapon_target != null && target_player.weapon_target.health > 0 {
+                weapon_target_apply_damage(target_player.weapon_target, RED_CHASER_MELEE_DMG, entity.id);
+                if target_player.is_local() {
+                    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/bullet_hit.wav");
+                    d   := SFX.default_sfx_desc();
+                    d.entity_to_follow = target_player.entity.id;
+                    d.volume = 0.4;
+                    SFX.play(sfx, d);
+                }
+            }
+        }
+    }
+}
+
+Fun_Mode_Manager :: class : Component {
+    spawn_timer: float;
+    spawn_count: s64;
+
+    ao_start :: method() {
+        spawn_timer = CHASER_SPAWN_INTERVAL;
+        spawn_count = 0;
+        spawn_chaser();
+        spawn_chaser();
+        spawn_chaser();
+        spawn_chaser();
+    }
+
+    spawn_chaser :: method() {
+        x: float;
+        y: float;
+        idx := spawn_count % 4;
+        switch idx {
+            case 0: { x = -18; y = -10; }
+            case 1: { x = 18;  y = -10; }
+            case 2: { x = -18; y = 10;  }
+            default:{ x = 18;  y = 10;  }
+        }
+        e := Scene.create_entity();
+        e.set_local_position({x, y});
+        e.add_component(Red_Chaser);
+        spawn_count += 1;
+    }
+
+    ao_update :: method(dt: float) {
+        t     := get_time();
+        phase: float = 0.0;
+        for player: component_iterator(Player) {
+            if player.animator != null {
+                r := sin(t * 3.0 + phase) * 0.5 + 1.0;
+                g := sin(t * 3.0 + phase + 2.094) * 0.5 + 1.0;
+                b := sin(t * 3.0 + phase + 4.189) * 0.5 + 1.0;
+                player.animator.color_multiplier = {r, g, b, 1.0};
+            }
+            phase += 1.047;
+        }
+
+        spawn_timer -= dt;
+        if spawn_timer <= 0 {
+            spawn_timer = CHASER_SPAWN_INTERVAL;
+            alive: s64 = 0;
+            for c: component_iterator(Red_Chaser) { alive += 1; }
+            if alive < MAX_RED_CHASERS { spawn_chaser(); }
+        }
+    }
+
+    ao_end :: method() {
+        for player: component_iterator(Player) {
+            if player.animator != null {
+                player.animator.color_multiplier = {1.0, 1.0, 1.0, 1.0};
+            }
+        }
+        chasers: [..]Red_Chaser;
+        for c: component_iterator(Red_Chaser) { chasers.append(c); }
+        for c: chasers { c.entity.destroy(); }
+    }
+}
+
+toggle_fun_mode :: proc() {
+    for mgr: component_iterator(Fun_Mode_Manager) {
+        mgr.entity.destroy();
+        return;
+    }
+    e := Scene.create_entity();
+    e.add_component(Fun_Mode_Manager);
+}
+
+is_fun_mode_active :: proc() -> bool {
+    for mgr: component_iterator(Fun_Mode_Manager) {
+        return true;
+    }
+    return false;
+}

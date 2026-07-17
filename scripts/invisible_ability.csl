@@ -1,0 +1,57 @@
+Invisible_Effect :: class : Effect_Base {
+    invis_reason: string;
+
+    effect_start :: method() {
+        p := player.(Player);
+        p.powerup_invisible_active = true;
+        p.powerup_invisible_effect_count += 1;
+
+        if invis_reason == "" {
+            invis_reason = format_string("powerup_stealth/%/%", {player.get_user_id(), get_frame_number()});
+        }
+
+        player.add_invisibility_reason(invis_reason);
+        player.add_name_invisibility_reason(invis_reason);
+        set_duration(5.0);
+    }
+
+    effect_end :: method(interrupt: bool) {
+        p := player.(Player);
+        if p.powerup_invisible_effect_count > 0 {
+            p.powerup_invisible_effect_count -= 1;
+        }
+        if p.powerup_invisible_effect_count == 0 {
+            p.powerup_invisible_active = false;
+        }
+        player.remove_invisibility_reason(invis_reason);
+        player.remove_name_invisibility_reason(invis_reason);
+    }
+}
+
+Invisible_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Invisible";
+        icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/lock_closed.png");
+    }
+
+    can_use :: method() -> bool {
+        return player.(Player).has_invisible;
+    }
+
+    on_update :: method(params: ref Ability_Update_Params) {
+        if params.clicked && params.can_use {
+            current_cooldown = 12.0;
+            effect := new(Invisible_Effect);
+            player.entity.add_passive_effect(effect);
+
+            if player.is_local() {
+                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+                desc := SFX.default_sfx_desc();
+                desc.entity_to_follow = player.entity.id;
+                desc.volume = 0.4;
+                desc.speed_perturb = 0.2;
+                SFX.play(sfx, desc);
+            }
+        }
+    }
+}

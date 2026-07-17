@@ -1,0 +1,107 @@
+Player_Leaderboard_Row :: struct {
+    player: Player;
+    coins: s64;
+    display_name: string;
+}
+
+build_player_display_name :: proc(player: Player) -> string {
+    username := player.get_username();
+    if player.user_tag.count > 0 {
+        return format_string("% [%]", {username, player.user_tag});
+    }
+    return username;
+}
+
+insert_leaderboard_row :: proc(rows: ref [4]Player_Leaderboard_Row, row_count: ref s64, row: Player_Leaderboard_Row) {
+    if row_count < 4 {
+        i := row_count;
+        while i > 0 {
+            prev := i - 1;
+            if rows[prev].coins >= row.coins {
+                break;
+            }
+            rows[i] = rows[prev];
+            i -= 1;
+        }
+        rows[i] = row;
+        row_count += 1;
+        return;
+    }
+
+    if row.coins <= rows[3].coins {
+        return;
+    }
+
+    i := 3;
+    while i > 0 {
+        prev := i - 1;
+        if rows[prev].coins >= row.coins {
+            break;
+        }
+        rows[i] = rows[prev];
+        i -= 1;
+    }
+    rows[i] = row;
+}
+
+draw_player_statuses :: proc() {
+    for player: component_iterator(Player) {
+        draw_health_bar(player);
+    }
+}
+
+draw_leaderboard :: proc(viewer: Player) {
+    rows: [4]Player_Leaderboard_Row;
+    row_count: s64 = 0;
+
+    for player: component_iterator(Player) {
+        row := Player_Leaderboard_Row{};
+        row.player = player;
+        row.coins = Economy.get_balance(player, "Coins");
+        row.display_name = build_player_display_name(player);
+        insert_leaderboard_row(ref rows, ref row_count, row);
+    }
+
+    UIK.begin(UIK.window(UIK.rect_sidebar_right()));
+
+    shell := UIK.panel_modal(.BLACK);
+    shell.padding = v4{12, 12, 12, 12};
+    shell.gap = 6;
+    UIK.panel_begin(shell);
+
+    UIK.text("Leaderboard", UIK.text_title());
+    UIK.divider(1.0, {1, 1, 1, 0.18});
+
+    i := 0;
+    while i < row_count {
+        row := rows[i];
+
+        entry := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+        entry.cross_align = .CENTER;
+        UIK.panel_begin(entry);
+
+        rank_desc := UIK.text_body();
+        rank_desc.size_multiplier = 0.82;
+        if row.player == viewer {
+            rank_desc.color = {1.0, 0.88, 0.28, 1.0};
+        }
+        UIK.text(format_string("%.", {i + 1}), rank_desc);
+
+        name_desc := UIK.text_body();
+        name_desc.size_multiplier = 0.82;
+        if row.player == viewer {
+            name_desc.color = {1.0, 0.88, 0.28, 1.0};
+        }
+        UIK.text(row.display_name, name_desc);
+
+        UIK.spacer(UIK.flex(1), UIK.pixels(1));
+    coin_tex := get_asset(Texture_Asset, "$AO/ui/kit/Icons/weapon_tier/weapon_tier_icon_gold.png");
+        UIK.currency(coin_tex, row.coins, UIK.text_body());
+
+        UIK.panel_end();
+        i += 1;
+    }
+
+    UIK.panel_end();
+    UIK.end();
+}

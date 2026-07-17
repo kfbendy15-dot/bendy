@@ -1,0 +1,83 @@
+respawn_player :: proc(player: Player) {
+    player.survive_mode_killed_by_creature = false;
+    player.survive_mode_death_reason = "";
+    rng := rng_root_seed();
+    idx := rng_range_int(ref rng, 0, 3);
+    player.entity.set_local_position(get_spawn_point(idx));
+    player.entity.mark_teleported();
+    player.agent.velocity = {0, 0};
+    player.agent.input_this_frame = {0, 0};
+    player.weapon_target.health = player.weapon_target.max_health;
+    player.is_dead = false;
+    player.out_of_bounds_respawn_active = false;
+}
+
+Death_Effect :: class : Effect_Base {
+    death_reason: string;
+    lock_respawn_until_survive_mode_ends: bool;
+
+    effect_start :: method() {
+        player_specific.freeze_player = true;
+        if death_reason == "" {
+            death_reason = format_string("death/%/%", {player.get_user_id(), get_frame_number()});
+        }
+        player.add_freeze_reason(death_reason);
+        player.add_disable_movement_input_reason(death_reason);
+        player.add_name_invisibility_reason(death_reason);
+        lock_respawn_until_survive_mode_ends = player.(Player).survive_mode_killed_by_creature;
+        player.(Player).survive_mode_death_reason = death_reason;
+        player.animator.state_machine.set_trigger("death");
+        player.(Player).is_dead = true;
+    }
+
+    effect_update :: method(dt: float) {
+        time_left := 3.0 - get_elapsed_time();
+        if lock_respawn_until_survive_mode_ends {
+            if time_left <= 0 {
+                return;
+            }
+        }
+
+        if player.is_local() && !lock_respawn_until_survive_mode_ends {
+            UI.push_screen_draw_context();
+            defer UI.pop_draw_context();
+
+            ts := UI.default_text_settings();
+            ts.size = 60;
+            ts.halign = .CENTER;
+            ts.valign = .CENTER;
+            ts.color = {1, 0.3, 0.3, 1};
+            ts.do_outline = true;
+            ts.outline_thickness = 3;
+            ts.outline_color = {0, 0, 0, 1};
+
+            rect := UI.get_screen_rect().center_rect().grow(50);
+            UI.text(rect, ts, "Respawning in %", {time_left.(int) + 1});
+        }
+        if time_left <= 0 {
+            remove_effect(false);
+            return;
+        }
+    }
+
+    effect_end :: method(interrupt: bool) {
+        if death_reason != "" {
+            player.remove_freeze_reason(death_reason);
+            player.remove_disable_movement_input_reason(death_reason);
+            player.remove_name_invisibility_reason(death_reason);
+        }
+
+        if interrupt {
+            player.(Player).survive_mode_killed_by_creature = false;
+            player.(Player).survive_mode_death_reason = "";
+            return;
+        }
+
+        if lock_respawn_until_survive_mode_ends {
+            return;
+        }
+
+        respawn_player(player.(Player));
+        player.animator.state_machine.set_trigger("RESET");
+    }
+}

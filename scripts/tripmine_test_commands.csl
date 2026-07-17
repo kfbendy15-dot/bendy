@@ -1,0 +1,181 @@
+tripmine_test_make_admin :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    set_admin_permission(player.get_username(), true);
+    Save.set_string(player, "ui_test_current_map", "");
+    if !player_has_weapon(player, .ADMIN_GUN) {
+        give_weapon(.ADMIN_GUN, player.default_inventory);
+    }
+    if !player_has_weapon(player, .INVISIBLE_GUN_ADMIN) {
+        give_weapon(.INVISIBLE_GUN_ADMIN, player.default_inventory);
+    }
+    if !player_has_weapon(player, .BATTLEPASS_GUN) {
+        give_weapon(.BATTLEPASS_GUN, player.default_inventory);
+    }
+    if !player_has_weapon(player, .BUILDING_TOOLS) {
+        give_weapon(.BUILDING_TOOLS, player.default_inventory);
+    }
+} @chat_command @owner_or_editor
+
+tripmine_test_reset :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    reset_test_shop_state(player);
+    player.show_admin_panel = false;
+    player.show_admin_shop = false;
+    player.admin_invisible_active = false;
+    player.admin_gun_invisible_effect_count = 0;
+    player.powerup_invisible_active = false;
+    player.powerup_invisible_effect_count = 0;
+    player.battlepass_music_effect_count = 0;
+    Save.set_int(player, "ui_test_tripmine_detonated", 0);
+    Save.set_int(player, "ui_test_tripmine_placed", 0);
+    Save.set_int(player, "ui_test_health_bar_hidden", 0);
+    set_player_invisible(player, false);
+} @chat_command @owner_or_editor
+
+tripmine_test_clear_flags :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    Save.set_int(player, "ui_test_tripmine_detonated", 0);
+    Save.set_int(player, "ui_test_tripmine_placed", 0);
+    Save.set_int(player, "ui_test_health_bar_hidden", 0);
+} @chat_command @owner_or_editor
+
+tripmine_test_spawn_trigger_scenario :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    mine_pos := v2{player.entity.world_position.x + 3.0, player.entity.world_position.y};
+    spawn_subspace_tripmine(mine_pos, player.entity.id, 90.0);
+
+    for other: component_iterator(Player) {
+        if other.entity.id == player.entity.id || other.is_dead {
+            continue;
+        }
+
+        other.entity.set_local_position({mine_pos.x + 0.6, mine_pos.y});
+        other.entity.mark_teleported();
+        break;
+    }
+} @chat_command @owner_or_editor
+
+tripmine_test_spawn_only :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    mine_pos := v2{player.entity.world_position.x + 3.0, player.entity.world_position.y};
+    spawn_subspace_tripmine(mine_pos, player.entity.id, 90.0);
+} @chat_command @owner_or_editor
+
+tripmine_test_prepare_tripmine_weapon :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    items_to_destroy: [..]Item_Instance;
+    inv := player.default_inventory;
+    for i: 0..inv.capacity - 1 {
+        item := inv.get_item(i);
+        if item != null {
+            items_to_destroy.append(item);
+        }
+    }
+    for item: items_to_destroy {
+        Items.destroy_item_instance(item);
+    }
+
+    give_weapon(.SUBSPACE_TRIPMINE, player.default_inventory);
+
+    selected_slot := -1;
+    for i: 0..player.default_inventory.capacity - 1 {
+        item := player.default_inventory.get_item(i);
+        if item == null {
+            continue;
+        }
+        if item.get_definition() == get_weapon_item_def(.SUBSPACE_TRIPMINE) {
+            selected_slot = i;
+            break;
+        }
+    }
+
+    if selected_slot >= 0 {
+        player.handle_equipped_item_changing(selected_slot);
+    }
+} @chat_command @owner_or_editor
+
+tripmine_test_move_other_player_near_self :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    target_pos := v2{player.entity.world_position.x + 1.1, player.entity.world_position.y};
+    for other: component_iterator(Player) {
+        if other.entity.id == player.entity.id || other.is_dead {
+            continue;
+        }
+
+        other.entity.set_local_position(target_pos);
+        other.entity.mark_teleported();
+        break;
+    }
+} @chat_command @owner_or_editor
+
+tripmine_test_grant_invisible_powerup :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    player.has_invisible = true;
+    player.powerup_invisible_active = true;
+    effect := new(Invisible_Effect);
+    player.entity.add_passive_effect(effect);
+} @chat_command @owner_or_editor
+
+tripmine_test_force_powerup_invisible :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    player.has_invisible = true;
+    player.powerup_invisible_active = true;
+    effect := new(Invisible_Effect);
+    player.entity.add_passive_effect(effect);
+} @chat_command @owner_or_editor
+
+tripmine_test_enable_admin_invisible :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    tripmine_test_make_admin(player);
+    set_player_invisible(player, true);
+} @chat_command @owner_or_editor
+
+tripmine_test_disable_admin_invisible :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    set_player_invisible(player, false);
+} @chat_command @owner_or_editor
+
+tripmine_test_spawn_powerup_invisible :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    if !player.has_invisible {
+        player.has_invisible = true;
+    }
+    effect := new(Invisible_Effect);
+    player.entity.add_passive_effect(effect);
+} @chat_command @owner_or_editor

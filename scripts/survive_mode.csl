@@ -1,0 +1,197 @@
+SURVIVE_MODE_SPAWN_INTERVAL :: 8.0;
+SURVIVE_MODE_MAX_CHASERS :: 1;
+SURVIVE_MODE_DARKNESS_LAYER :: 220;
+SURVIVE_MODE_FLASHLIGHT_LAYER :: 221;
+
+Survive_Mode_Creature_Marker :: class : Component {
+}
+
+ensure_survive_mode_flashlight :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    if !#alive(player.survive_mode_flashlight_glow) {
+        glow := Scene.create_entity();
+        glow.set_parent(player.entity, false);
+        glow.set_local_position({0, 0.25});
+        glow.set_local_scale({5.6, 5.6});
+
+        sprite := glow.add_component(Sprite_Renderer);
+        sprite.set_texture(core_globals.white_sprite);
+        sprite.color = {1.0, 0.96, 0.75, 0.10};
+        sprite.layer = SURVIVE_MODE_FLASHLIGHT_LAYER;
+        glow.set_local_enabled(!player.is_dead);
+
+        player.survive_mode_flashlight_glow = glow;
+    } else {
+        player.survive_mode_flashlight_glow.set_local_enabled(!player.is_dead);
+    }
+
+    if !#alive(player.survive_mode_flashlight_core) {
+        core := Scene.create_entity();
+        core.set_parent(player.entity, false);
+        core.set_local_position({0, 0.25});
+        core.set_local_scale({2.4, 2.4});
+
+        sprite := core.add_component(Sprite_Renderer);
+        sprite.set_texture(core_globals.white_sprite);
+        sprite.color = {1.0, 0.98, 0.82, 0.28};
+        sprite.layer = (SURVIVE_MODE_FLASHLIGHT_LAYER + 1).(s32);
+        core.set_local_enabled(!player.is_dead);
+
+        player.survive_mode_flashlight_core = core;
+    } else {
+        player.survive_mode_flashlight_core.set_local_enabled(!player.is_dead);
+    }
+}
+
+clear_survive_mode_flashlights :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    if #alive(player.survive_mode_flashlight_core) {
+        player.survive_mode_flashlight_core.destroy();
+    }
+    if #alive(player.survive_mode_flashlight_glow) {
+        player.survive_mode_flashlight_glow.destroy();
+    }
+    player.survive_mode_flashlight_core = null;
+    player.survive_mode_flashlight_glow = null;
+}
+
+spawn_survive_mode_chaser :: proc(spawn_count: s64) {
+    x: float;
+    y: float;
+    idx := spawn_count % 4;
+    switch idx {
+        case 0: { x = -18; y = -10; }
+        case 1: { x = 18;  y = -10; }
+        case 2: { x = -18; y = 10; }
+        default:{ x = 18;  y = 10; }
+    }
+
+    e := Scene.create_entity();
+    e.set_local_position({x, y});
+    e.add_component(Survive_Mode_Creature_Marker);
+    e.add_component(Red_Chaser);
+}
+
+Survive_Mode_Manager :: class : Component {
+    darkness_entity: Entity;
+    spawn_timer: float;
+    spawn_count: s64;
+
+    ao_start :: method() {
+        darkness_entity = Scene.create_entity();
+        darkness_entity.set_local_position({0, 0});
+        darkness_entity.set_local_scale({160, 120});
+
+        sprite := darkness_entity.add_component(Sprite_Renderer);
+        sprite.set_texture(core_globals.white_sprite);
+        sprite.color = {0, 0, 0, 0.72};
+        sprite.layer = SURVIVE_MODE_DARKNESS_LAYER;
+
+        spawn_timer = 0;
+        spawn_count = 0;
+
+        for player: component_iterator(Player) {
+            ensure_survive_mode_flashlight(player);
+        }
+
+        spawn_survive_mode_chaser(spawn_count);
+        spawn_count += 1;
+    }
+
+    ao_update :: method(dt: float) {
+        living_players: s64 = 0;
+        any_players: bool = false;
+        for player: component_iterator(Player) {
+            any_players = true;
+            ensure_survive_mode_flashlight(player);
+            if !player.is_dead {
+                living_players += 1;
+            }
+        }
+
+        if any_players && living_players == 0 {
+            entity.destroy();
+            return;
+        }
+
+        spawn_timer -= dt;
+        if spawn_timer <= 0 {
+            alive_chasers: s64 = 0;
+            for marker: component_iterator(Survive_Mode_Creature_Marker) {
+                if #alive(marker.entity) {
+                    alive_chasers += 1;
+                }
+            }
+
+            if alive_chasers < SURVIVE_MODE_MAX_CHASERS {
+                spawn_survive_mode_chaser(spawn_count);
+                spawn_count += 1;
+            }
+            spawn_timer = SURVIVE_MODE_SPAWN_INTERVAL;
+        }
+    }
+
+    ao_end :: method() {
+        chasers: [..]Survive_Mode_Creature_Marker;
+        for c: component_iterator(Survive_Mode_Creature_Marker) {
+            chasers.append(c);
+        }
+        for c: chasers {
+            c.entity.destroy();
+        }
+
+        for player: component_iterator(Player) {
+            clear_survive_mode_flashlights(player);
+            if player.is_dead {
+                if remove_effect(player.entity, Death_Effect, true) {
+                    // effect_end handles cleanup
+                }
+                respawn_player(player);
+                if player.animator != null && player.animator.state_machine != null {
+                    player.animator.state_machine.set_trigger("RESET");
+                }
+            } else {
+                player.survive_mode_killed_by_creature = false;
+                player.survive_mode_death_reason = "";
+            }
+        }
+
+        if #alive(darkness_entity) {
+            darkness_entity.destroy();
+        }
+    }
+}
+
+toggle_survive_mode :: proc(player: Player = null) {
+    for mgr: component_iterator(Survive_Mode_Manager) {
+        mgr.entity.destroy();
+        if player != null {
+            player.play_reward_feedback("Survive mode off");
+        }
+        return;
+    }
+
+    e := Scene.create_entity();
+    e.add_component(Survive_Mode_Manager);
+    if player != null {
+        player.play_reward_feedback("Survive mode on");
+    }
+    Chat.server_send_message("Survive mode started.");
+}
+
+is_survive_mode_active :: proc() -> bool {
+    for mgr: component_iterator(Survive_Mode_Manager) {
+        return true;
+    }
+    return false;
+}
+
+survivemode :: proc(player: Player) {
+    toggle_survive_mode(player);
+} @chat_command @any

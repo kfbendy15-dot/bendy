@@ -1,0 +1,1974 @@
+{
+"skeleton": { "hash": "ytVTiaHZbvs", "spine": "4.0.64", "x": -293.22, "y": 185.86, "width": 615, "height": 592 },
+"bones": [
+	{ "name": "root", "rotation": -0.23 },
+	{ "name": "ground", "parent": "root", "x": 0.35, "y": -85 },
+	{ "name": "shockwave_blast", "parent": "ground" },
+	{ "name": "meteor", "parent": "root", "x": -8.44, "y": 483.15 },
+	{ "name": "meteor_big_piece_1", "parent": "meteor", "x": -440.41, "y": 170.61 },
+	{ "name": "meteor_big_piece_3", "parent": "meteor", "x": -57.25, "y": 507.2 },
+	{ "name": "meteor_small_piece_2", "parent": "meteor", "x": -311.51, "y": 532.57 },
+	{ "name": "meteor_small_piece_3", "parent": "meteor", "x": 236.32, "y": 554.61 },
+	{ "name": "meteor_big_piece_2", "parent": "meteor", "x": 440.45, "y": 276.54 },
+	{ "name": "meteor_small_piece_1", "parent": "meteor", "x": 399.87, "y": 109.68 },
+	{ "name": "meteor_small_piece_4", "parent": "meteor", "x": -319.88, "y": -244.79 },
+	{ "name": "ember_left", "parent": "meteor", "x": -113.46, "y": 493.56 },
+	{ "name": "ember_right", "parent": "meteor", "x": 180.23, "y": 480.77 },
+	{ "name": "shockwave", "parent": "ground", "x": -0.1, "y": 25.1 },
+	{ "name": "shockwave_airblast", "parent": "ground" },
+	{ "name": "explosion", "parent": "ground", "x": -10.35, "y": 550.99 },
+	{ "name": "meteor_lego_piece_1", "parent": "meteor", "x": 8.44, "y": -483.15 },
+	{ "name": "meteor_lego_piece_2", "parent": "meteor", "x": 8.44, "y": -483.15 },
+	{ "name": "meteor_lego_piece_3", "parent": "meteor", "x": 8.44, "y": -483.15 },
+	{ "name": "meteor_lego_piece_4", "parent": "meteor", "x": 8.44, "y": -483.15 },
+	{ "name": "meteor_lego_piece_5", "parent": "meteor", "x": 8.44, "y": -483.15 },
+	{ "name": "meteor_rock", "parent": "meteor", "x": 27.47, "y": -1.31 },
+	{ "name": "lava", "parent": "ground", "x": 1.25, "y": -64.06 },
+	{ "name": "Lava_Droplets_5", "parent": "lava", "length": 16.65, "rotation": 129.33, "x": -117.88, "y": -10.46 },
+	{ "name": "Lava_Droplets_1", "parent": "lava", "length": 14.63, "rotation": 96.57, "x": -34.67, "y": -10.93 },
+	{ "name": "Lava_Droplets_2", "parent": "lava", "x": 42.03, "y": -0.11 },
+	{ "name": "Lava_Droplets_3", "parent": "lava", "x": 102.61, "y": 0.13 },
+	{ "name": "Lava_Droplets_4", "parent": "lava", "x": -77.9, "y": -107.24 },
+	{ "name": "Lava_Droplets_6", "parent": "lava", "length": 23.48, "rotation": 94.18, "x": 45.71, "y": -109.15 },
+	{ "name": "Lava_Droplets_7", "parent": "lava", "length": 14.63, "rotation": 96.57, "x": -34.67, "y": -10.93 },
+	{ "name": "Lava_Droplets_8", "parent": "lava", "x": 42.03, "y": -0.11 },
+	{ "name": "Lava_Droplets_9", "parent": "lava", "x": 102.61, "y": 0.13 },
+	{ "name": "Lava_Droplets_10", "parent": "lava", "x": -77.9, "y": -107.24 },
+	{ "name": "Lava_Droplets_11", "parent": "lava", "length": 16.65, "rotation": 129.33, "x": -117.88, "y": -10.46 },
+	{ "name": "Lava_Droplets_12", "parent": "lava", "length": 23.48, "rotation": 94.18, "x": 45.71, "y": -109.15 }
+],
+"slots": [
+	{ "name": "shockwave_airblast", "bone": "shockwave_airblast" },
+	{ "name": "shockwave_back", "bone": "shockwave" },
+	{ "name": "meteor_fire", "bone": "meteor" },
+	{ "name": "ember_left", "bone": "ember_left" },
+	{ "name": "ember_right", "bone": "ember_right" },
+	{ "name": "meteor", "bone": "meteor_rock", "attachment": "meteor/meteor" },
+	{ "name": "explosion", "bone": "explosion" },
+	{ "name": "meteor_lego_piece_1", "bone": "meteor_lego_piece_1" },
+	{ "name": "meteor_lego_piece_2", "bone": "meteor_lego_piece_2" },
+	{ "name": "meteor_lego_piece_3", "bone": "meteor_lego_piece_3" },
+	{ "name": "meteor_lego_piece_4", "bone": "meteor_lego_piece_4" },
+	{ "name": "meteor_lego_piece_5", "bone": "meteor_lego_piece_5" },
+	{ "name": "meteor_big_piece_1", "bone": "meteor_big_piece_1" },
+	{ "name": "meteor_big_piece_2", "bone": "meteor_big_piece_2" },
+	{ "name": "meteor_big_piece_3", "bone": "meteor_big_piece_3" },
+	{ "name": "meteor_small_piece_1", "bone": "meteor_small_piece_1" },
+	{ "name": "meteor_small_piece_2", "bone": "meteor_small_piece_2" },
+	{ "name": "meteor_small_piece_3", "bone": "meteor_small_piece_3" },
+	{ "name": "meteor_small_piece_4", "bone": "meteor_small_piece_4" },
+	{ "name": "shockwave_blast", "bone": "shockwave_blast" },
+	{ "name": "shockwave_front", "bone": "shockwave" },
+	{ "name": "Lava_Droplets_1", "bone": "Lava_Droplets_1" },
+	{ "name": "Lava_Droplets_7", "bone": "Lava_Droplets_7" },
+	{ "name": "Lava_Droplets_2", "bone": "Lava_Droplets_2" },
+	{ "name": "Lava_Droplets_8", "bone": "Lava_Droplets_8" },
+	{ "name": "Lava_Droplets_3", "bone": "Lava_Droplets_3" },
+	{ "name": "Lava_Droplets_9", "bone": "Lava_Droplets_9" },
+	{ "name": "Lava_Droplets_4", "bone": "Lava_Droplets_4" },
+	{ "name": "Lava_Droplets_10", "bone": "Lava_Droplets_10" },
+	{ "name": "Lava_Droplets_5", "bone": "Lava_Droplets_5" },
+	{ "name": "Lava_Droplets_11", "bone": "Lava_Droplets_11" },
+	{ "name": "Lava_Droplets_6", "bone": "Lava_Droplets_6" },
+	{ "name": "Lava_Droplets_12", "bone": "Lava_Droplets_12" }
+],
+"skins": [
+	{
+		"name": "default",
+		"attachments": {
+			"ember_left": {
+				"meteor/fire_ember_left_frame_1": { "x": 3.15, "y": 7.67, "rotation": 0.23, "width": 35, "height": 117 },
+				"meteor/fire_ember_left_frame_2": { "x": 12.42, "y": 65.21, "rotation": 0.23, "width": 35, "height": 100 },
+				"meteor/fire_ember_left_frame_3": { "x": 9.6, "y": 143.7, "rotation": 0.23, "width": 23, "height": 46 },
+				"meteor/fire_ember_left_frame_4": { "x": 19.41, "y": 190.74, "rotation": 0.23, "width": 22, "height": 34 }
+			},
+			"ember_right": {
+				"meteor/fire_ember_right_frame_1": { "x": -2.55, "y": 23.63, "rotation": 0.23, "width": 33, "height": 93 },
+				"meteor/fire_ember_right_frame_2": { "x": -13.22, "y": 66.59, "rotation": 0.23, "width": 39, "height": 84 },
+				"meteor/fire_ember_right_frame_3": { "x": -7.5, "y": 135.11, "rotation": 0.23, "width": 24, "height": 49 },
+				"meteor/fire_ember_right_frame_4": { "x": -19.71, "y": 187.06, "rotation": 0.23, "width": 26, "height": 41 }
+			},
+			"explosion": {
+				"explosion small/explosion1": { "x": 2.06, "y": 17.66, "width": 421, "height": 445 },
+				"explosion small/explosion2": { "x": 2.06, "y": 17.66, "width": 421, "height": 445 },
+				"explosion small/explosion3": { "x": 2.06, "y": 17.66, "width": 421, "height": 445 },
+				"explosion small/explosion4": { "x": 2.06, "y": 17.66, "width": 421, "height": 445 },
+				"explosion small/explosion5": { "x": 2.06, "y": 17.66, "width": 421, "height": 445 },
+				"explosion small/explosion6": { "x": 2.06, "y": 17.66, "width": 421, "height": 445 },
+				"explosion small/explosion7": { "x": 2.06, "y": 17.66, "width": 421, "height": 445 },
+				"explosion small/explosion8": { "x": 2.06, "y": 17.66, "width": 421, "height": 445 },
+				"explosion small/explosion9": { "x": 2.06, "y": 17.66, "width": 421, "height": 445 }
+			},
+			"Lava_Droplets_1": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_1": { "x": 6.6, "y": -0.34, "rotation": -96.57, "width": 31, "height": 57 }
+			},
+			"Lava_Droplets_2": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_2": { "x": -0.85, "y": 0.28, "width": 26, "height": 26 }
+			},
+			"Lava_Droplets_3": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_3": { "x": -0.75, "y": 0.78, "width": 33, "height": 51 }
+			},
+			"Lava_Droplets_4": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_4": { "x": -1.07, "y": -0.78, "width": 32, "height": 64 }
+			},
+			"Lava_Droplets_5": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_5": { "x": 15.49, "y": -3.58, "rotation": -129.33, "width": 47, "height": 67 }
+			},
+			"Lava_Droplets_6": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_6": { "x": 10.66, "y": 2.23, "rotation": -94.18, "width": 39, "height": 100 }
+			},
+			"Lava_Droplets_7": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_1": { "x": 6.6, "y": -0.34, "rotation": -96.57, "width": 31, "height": 57 }
+			},
+			"Lava_Droplets_8": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_2": { "x": -0.85, "y": 0.28, "width": 26, "height": 26 }
+			},
+			"Lava_Droplets_9": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_3": { "x": -0.75, "y": 0.78, "width": 33, "height": 51 }
+			},
+			"Lava_Droplets_10": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_4": { "x": -1.07, "y": -0.78, "width": 32, "height": 64 }
+			},
+			"Lava_Droplets_11": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_5": { "x": 15.49, "y": -3.58, "rotation": -129.33, "width": 47, "height": 67 }
+			},
+			"Lava_Droplets_12": {
+				"Lava Droplets/RUB109_LC_Lava_Droplets_6": { "x": 10.66, "y": 2.23, "rotation": -94.18, "width": 39, "height": 100 }
+			},
+			"meteor": {
+				"meteor/meteor": { "x": -6.71, "y": 0.07, "rotation": 0.23, "width": 615, "height": 592 }
+			},
+			"meteor_big_piece_1": {
+				"meteor/meteor_big_piece_1": { "x": 30.92, "y": 8.39, "rotation": 0.23, "width": 230, "height": 487 }
+			},
+			"meteor_big_piece_2": {
+				"meteor/meteor_big_piece_2": { "x": -67.17, "y": -38.83, "rotation": 0.23, "width": 406, "height": 381 }
+			},
+			"meteor_big_piece_3": {
+				"meteor/meteor_big_piece_3": { "x": 12.37, "y": 14.29, "rotation": 0.23, "width": 403, "height": 416 }
+			},
+			"meteor_fire": {
+				"meteor/fire_frame_1": { "x": 18.57, "y": 165.75, "rotation": 0.23, "width": 687, "height": 982 },
+				"meteor/fire_frame_2": { "x": 19.91, "y": 205.76, "rotation": 0.23, "width": 670, "height": 1090 },
+				"meteor/fire_frame_3": { "x": 22.19, "y": 137.27, "rotation": 0.23, "width": 703, "height": 916 }
+			},
+			"meteor_small_piece_1": {
+				"meteor/meteor_small_piece_1": { "x": 2.43, "y": -0.86, "rotation": 0.23, "width": 66, "height": 126 }
+			},
+			"meteor_small_piece_2": {
+				"meteor/meteor_small_piece_2": { "x": 3.59, "y": -2.15, "rotation": 0.23, "width": 80, "height": 122 }
+			},
+			"meteor_small_piece_3": {
+				"meteor/meteor_small_piece_3": { "x": -0.33, "y": -0.97, "rotation": 0.23, "width": 53, "height": 79 }
+			},
+			"meteor_small_piece_4": {
+				"meteor/meteor_small_piece_4": { "x": 8.61, "y": 5.69, "rotation": 0.23, "width": 94, "height": 88 }
+			},
+			"shockwave_airblast": {
+				"meteor/shockwave_airblast": { "x": 2.88, "y": -25.63, "rotation": 0.23, "width": 1287, "height": 311 }
+			},
+			"shockwave_back": {
+				"meteor/shockwave_back": { "x": 18.25, "y": 129.83, "rotation": 0.23, "width": 1081, "height": 314 }
+			},
+			"shockwave_blast": {
+				"meteor/shockwave_blast": { "x": 22.12, "y": 161.95, "rotation": 0.23, "width": 850, "height": 506 }
+			},
+			"shockwave_front": {
+				"meteor/shockwave_front": { "x": 9.25, "y": 129.79, "rotation": 0.23, "width": 1146, "height": 492 }
+			}
+		}
+	}
+],
+"events": {
+	"lava_puddle_appear": {}
+},
+"animations": {
+	"falling_loop": {
+		"slots": {
+			"ember_left": {
+				"attachment": [
+					{ "time": 0.1667, "name": "meteor/fire_ember_left_frame_1" },
+					{ "time": 0.25, "name": "meteor/fire_ember_left_frame_2" },
+					{ "time": 0.3333, "name": "meteor/fire_ember_left_frame_3" },
+					{ "time": 0.4167, "name": "meteor/fire_ember_left_frame_4" },
+					{ "time": 0.5, "name": null },
+					{ "time": 0.6667, "name": "meteor/fire_ember_left_frame_1" },
+					{ "time": 0.75, "name": "meteor/fire_ember_left_frame_2" },
+					{ "time": 0.8333, "name": "meteor/fire_ember_left_frame_3" },
+					{ "time": 0.9167, "name": "meteor/fire_ember_left_frame_4" },
+					{ "time": 1, "name": null }
+				]
+			},
+			"ember_right": {
+				"attachment": [
+					{ "name": "meteor/fire_ember_right_frame_1" },
+					{ "time": 0.0833, "name": "meteor/fire_ember_right_frame_2" },
+					{ "time": 0.1667, "name": "meteor/fire_ember_right_frame_3" },
+					{ "time": 0.25, "name": "meteor/fire_ember_right_frame_4" },
+					{ "time": 0.3333, "name": null },
+					{ "time": 0.5, "name": "meteor/fire_ember_right_frame_1" },
+					{ "time": 0.5833, "name": "meteor/fire_ember_right_frame_2" },
+					{ "time": 0.6667, "name": "meteor/fire_ember_right_frame_3" },
+					{ "time": 0.75, "name": "meteor/fire_ember_right_frame_4" },
+					{ "time": 0.8333, "name": null }
+				]
+			},
+			"meteor_fire": {
+				"attachment": [
+					{ "name": "meteor/fire_frame_1" },
+					{ "time": 0.0833, "name": "meteor/fire_frame_2" },
+					{ "time": 0.1667, "name": "meteor/fire_frame_3" },
+					{ "time": 0.25, "name": "meteor/fire_frame_1" },
+					{ "time": 0.3333, "name": "meteor/fire_frame_2" },
+					{ "time": 0.4167, "name": "meteor/fire_frame_3" },
+					{ "time": 0.5, "name": "meteor/fire_frame_1" },
+					{ "time": 0.5833, "name": "meteor/fire_frame_2" },
+					{ "time": 0.6667, "name": "meteor/fire_frame_3" },
+					{ "time": 0.75, "name": "meteor/fire_frame_1" },
+					{ "time": 0.8333, "name": "meteor/fire_frame_2" },
+					{ "time": 0.9167, "name": "meteor/fire_frame_3" },
+					{ "time": 1, "name": "meteor/fire_frame_1" }
+				]
+			}
+		},
+		"bones": {
+			"meteor": {
+				"translate": [
+					{ "x": 8.44, "y": -483.15 }
+				],
+				"scale": [
+					{
+						"curve": [ 0.083, 1, 0.167, 0.94, 0.083, 1, 0.167, 1.061 ]
+					},
+					{
+						"time": 0.25,
+						"x": 0.94,
+						"y": 1.061,
+						"curve": [ 0.333, 0.94, 0.417, 1, 0.333, 1.061, 0.417, 1 ]
+					},
+					{
+						"time": 0.5,
+						"curve": [ 0.583, 1, 0.667, 0.94, 0.583, 1, 0.667, 1.061 ]
+					},
+					{
+						"time": 0.75,
+						"x": 0.94,
+						"y": 1.061,
+						"curve": [ 0.833, 0.94, 0.917, 0.98, 0.833, 1.061, 0.917, 1.02 ]
+					},
+					{ "time": 1 }
+				]
+			},
+			"meteor_rock": {
+				"rotate": [
+					{ "value": 360 },
+					{ "time": 1 }
+				]
+			}
+		}
+	},
+	"lava_explode": {
+		"slots": {
+			"explosion": {
+				"rgba": [
+					{
+						"time": 0.3333,
+						"color": "ffffffff",
+						"curve": [ 0.389, 1, 0.403, 1, 0.389, 1, 0.403, 1, 0.389, 1, 0.403, 1, 0.389, 1, 0.403, 0 ]
+					},
+					{ "time": 0.4583, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "explosion small/explosion1" },
+					{ "time": 0.0417, "name": "explosion small/explosion2" },
+					{ "time": 0.0833, "name": "explosion small/explosion3" },
+					{ "time": 0.125, "name": "explosion small/explosion4" },
+					{ "time": 0.1667, "name": "explosion small/explosion5" },
+					{ "time": 0.2083, "name": "explosion small/explosion6" },
+					{ "time": 0.25, "name": "explosion small/explosion7" },
+					{ "time": 0.2917, "name": "explosion small/explosion8" },
+					{ "time": 0.375, "name": "explosion small/explosion9" },
+					{ "time": 0.4583, "name": null }
+				]
+			},
+			"Lava_Droplets_1": {
+				"rgba": [
+					{
+						"time": 0.5,
+						"color": "ffffffff",
+						"curve": [ 0.556, 1, 0.611, 1, 0.556, 1, 0.611, 1, 0.556, 1, 0.611, 1, 0.556, 1, 0.611, 0 ]
+					},
+					{ "time": 0.6667, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_1" },
+					{ "time": 0.6667, "name": null }
+				]
+			},
+			"Lava_Droplets_2": {
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_2" },
+					{ "time": 0.4167, "name": null }
+				]
+			},
+			"Lava_Droplets_3": {
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_3" },
+					{ "time": 0.5, "name": null }
+				]
+			},
+			"Lava_Droplets_4": {
+				"rgba": [
+					{
+						"time": 0.4167,
+						"color": "ffffffff",
+						"curve": [ 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 0 ]
+					},
+					{ "time": 0.5833, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_4" },
+					{ "time": 0.5833, "name": null }
+				]
+			},
+			"Lava_Droplets_5": {
+				"rgba": [
+					{
+						"time": 0.25,
+						"color": "ffffffff",
+						"curve": [ 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 0 ]
+					},
+					{ "time": 0.4167, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_5" },
+					{ "time": 0.4167, "name": null }
+				]
+			},
+			"Lava_Droplets_6": {
+				"rgba": [
+					{
+						"time": 0.25,
+						"color": "ffffffff",
+						"curve": [ 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 0 ]
+					},
+					{ "time": 0.4167, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_6" },
+					{ "time": 0.4167, "name": null }
+				]
+			},
+			"Lava_Droplets_7": {
+				"rgba": [
+					{
+						"time": 0.4167,
+						"color": "ffffffff",
+						"curve": [ 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 0 ]
+					},
+					{ "time": 0.5833, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_1" },
+					{ "time": 0.5833, "name": null }
+				]
+			},
+			"Lava_Droplets_8": {
+				"rgba": [
+					{
+						"time": 0.5833,
+						"color": "ffffffff",
+						"curve": [ 0.639, 1, 0.694, 1, 0.639, 1, 0.694, 1, 0.639, 1, 0.694, 1, 0.639, 1, 0.694, 0 ]
+					},
+					{ "time": 0.75, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_2" },
+					{ "time": 0.75, "name": null }
+				]
+			},
+			"Lava_Droplets_9": {
+				"rgba": [
+					{
+						"time": 0.3333,
+						"color": "ffffffff",
+						"curve": [ 0.389, 1, 0.444, 1, 0.389, 1, 0.444, 1, 0.389, 1, 0.444, 1, 0.389, 1, 0.444, 0 ]
+					},
+					{ "time": 0.5, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_3" },
+					{ "time": 0.5, "name": null }
+				]
+			},
+			"Lava_Droplets_10": {
+				"rgba": [
+					{
+						"time": 0.3333,
+						"color": "ffffffff",
+						"curve": [ 0.389, 1, 0.444, 1, 0.389, 1, 0.444, 1, 0.389, 1, 0.444, 1, 0.389, 1, 0.444, 0 ]
+					},
+					{ "time": 0.5, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_4" },
+					{ "time": 0.5, "name": null }
+				]
+			},
+			"Lava_Droplets_11": {
+				"rgba": [
+					{
+						"time": 0.3333,
+						"color": "ffffffff",
+						"curve": [ 0.389, 1, 0.444, 1, 0.389, 1, 0.444, 1, 0.389, 1, 0.444, 1, 0.389, 1, 0.444, 0 ]
+					},
+					{ "time": 0.5, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_5" },
+					{ "time": 0.5, "name": null }
+				]
+			},
+			"Lava_Droplets_12": {
+				"rgba": [
+					{
+						"time": 0.25,
+						"color": "ffffffff",
+						"curve": [ 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 0 ]
+					},
+					{ "time": 0.4167, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "Lava Droplets/RUB109_LC_Lava_Droplets_6" },
+					{ "time": 0.4167, "name": null }
+				]
+			},
+			"meteor": {
+				"attachment": [
+					{ "name": null }
+				]
+			},
+			"meteor_big_piece_1": {
+				"rgba": [
+					{
+						"time": 0.25,
+						"color": "ffffffff",
+						"curve": [ 0.278, 1, 0.306, 1, 0.278, 1, 0.306, 1, 0.278, 1, 0.306, 1, 0.278, 1, 0.306, 0 ]
+					},
+					{ "time": 0.3333, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "meteor/meteor_big_piece_1" },
+					{ "time": 0.3333, "name": null }
+				]
+			},
+			"meteor_big_piece_2": {
+				"rgba": [
+					{
+						"time": 0.25,
+						"color": "ffffffff",
+						"curve": [ 0.278, 1, 0.306, 1, 0.278, 1, 0.306, 1, 0.278, 1, 0.306, 1, 0.278, 1, 0.306, 0 ]
+					},
+					{ "time": 0.3333, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "meteor/meteor_big_piece_2" },
+					{ "time": 0.3333, "name": null }
+				]
+			},
+			"meteor_big_piece_3": {
+				"rgba": [
+					{
+						"time": 0.0833,
+						"color": "ffffffff",
+						"curve": [ 0.111, 1, 0.222, 1, 0.111, 1, 0.222, 1, 0.111, 1, 0.222, 1, 0.111, 1, 0.222, 0 ]
+					},
+					{ "time": 0.25, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "meteor/meteor_big_piece_3" },
+					{ "time": 0.25, "name": null }
+				]
+			},
+			"meteor_small_piece_1": {
+				"rgba": [
+					{
+						"time": 0.25,
+						"color": "ffffffff",
+						"curve": [ 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 0 ]
+					},
+					{ "time": 0.4167, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "meteor/meteor_small_piece_1" },
+					{ "time": 0.4167, "name": null }
+				]
+			},
+			"meteor_small_piece_2": {
+				"attachment": [
+					{ "name": "meteor/meteor_small_piece_2" },
+					{ "time": 0.25, "name": null }
+				]
+			},
+			"meteor_small_piece_3": {
+				"attachment": [
+					{ "name": "meteor/meteor_small_piece_3" },
+					{ "time": 0.3333, "name": null }
+				]
+			},
+			"meteor_small_piece_4": {
+				"attachment": [
+					{ "name": "meteor/meteor_small_piece_4" },
+					{ "time": 0.25, "name": null }
+				]
+			},
+			"shockwave_airblast": {
+				"rgba": [
+					{
+						"time": 0.1667,
+						"color": "ffffffff",
+						"curve": [ 0.222, 1, 0.278, 1, 0.222, 1, 0.278, 1, 0.222, 1, 0.278, 1, 0.222, 1, 0.278, 0 ]
+					},
+					{ "time": 0.3333, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "meteor/shockwave_airblast" },
+					{ "time": 0.3333, "name": null }
+				]
+			},
+			"shockwave_back": {
+				"rgba": [
+					{
+						"time": 0.4167,
+						"color": "ffffffff",
+						"curve": [ 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 0 ]
+					},
+					{ "time": 0.5833, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "meteor/shockwave_back" },
+					{ "time": 0.5833, "name": null }
+				]
+			},
+			"shockwave_blast": {
+				"rgba": [
+					{
+						"time": 0.25,
+						"color": "ffffffff",
+						"curve": [ 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 1, 0.306, 1, 0.361, 0 ]
+					},
+					{ "time": 0.4167, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.0833, "name": "meteor/shockwave_blast" },
+					{ "time": 0.4167, "name": null }
+				]
+			},
+			"shockwave_front": {
+				"rgba": [
+					{
+						"time": 0.4167,
+						"color": "ffffffff",
+						"curve": [ 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 1, 0.472, 1, 0.528, 0 ]
+					},
+					{ "time": 0.5833, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "name": "meteor/shockwave_front" },
+					{ "time": 0.5833, "name": null }
+				]
+			}
+		},
+		"bones": {
+			"meteor": {
+				"translate": [
+					{ "x": 8.22, "y": -428.8 }
+				]
+			},
+			"shockwave": {
+				"translate": [
+					{
+						"time": 0.25,
+						"curve": [ 0.361, 0, 0.472, 0.13, 0.361, 0, 0.472, -30.64 ]
+					},
+					{ "time": 0.5833, "x": 0.38, "y": -91.92 }
+				],
+				"scale": [
+					{
+						"x": 0.676,
+						"y": 0.459,
+						"curve": [ 0.083, 1.559, 0.167, 1.677, 0.084, 1.345, 0.169, 1.718 ]
+					},
+					{
+						"time": 0.25,
+						"x": 2,
+						"y": 2,
+						"curve": [ 0.359, 2.424, 0.472, 2.24, 0.361, 2.386, 0.472, 1.77 ]
+					},
+					{ "time": 0.5833, "x": 2.719, "y": 1.309 }
+				]
+			},
+			"shockwave_airblast": {
+				"scale": [
+					{
+						"x": 0.553,
+						"y": 0.553,
+						"curve": [ 0.111, 1.897, 0.222, 2.569, 0.111, 1.897, 0.222, 2.569 ]
+					},
+					{ "time": 0.3333, "x": 2.569, "y": 2.569 }
+				]
+			},
+			"shockwave_blast": {
+				"scale": [
+					{
+						"time": 0.0833,
+						"curve": [ 0.194, 1.826, 0.306, 2.239, 0.194, 1.826, 0.306, 2.239 ]
+					},
+					{ "time": 0.4167, "x": 2.239, "y": 2.239 }
+				]
+			},
+			"explosion": {
+				"translate": [
+					{
+						"x": 13.54,
+						"y": -375.99,
+						"curve": [ 0.25, 13.3, 0.208, 30.3, 0.25, -317.69, 0.208, -72.47 ]
+					},
+					{ "time": 0.4583, "x": 30.3, "y": -72.47 }
+				],
+				"scale": [
+					{
+						"curve": [ 0.25, 2.333, 0.014, 2.274, 0.25, 2.333, 0.014, 2.274 ]
+					},
+					{
+						"time": 0.0417,
+						"x": 2.422,
+						"y": 2.422,
+						"curve": [ 0.292, 3.756, 0.208, 4.422, 0.292, 3.756, 0.208, 4.422 ]
+					},
+					{ "time": 0.4583, "x": 4.422, "y": 4.422 }
+				]
+			},
+			"meteor_big_piece_1": {
+				"rotate": [
+					{
+						"curve": [ 0.139, -6.68, 0.194, -6.1 ]
+					},
+					{ "time": 0.3333, "value": -6.1 }
+				],
+				"translate": [
+					{
+						"x": 193.65,
+						"y": -26.34,
+						"curve": [ 0.139, -309.21, 0.189, -678.5, 0.139, 352.84, 0.194, 542.44 ]
+					},
+					{ "time": 0.3333, "x": -964.73, "y": 542.44 }
+				]
+			},
+			"meteor_big_piece_2": {
+				"rotate": [
+					{
+						"value": -13,
+						"curve": [ 0.111, -24.19, 0.222, -29.79 ]
+					},
+					{ "time": 0.3333, "value": -29.79 }
+				],
+				"translate": [
+					{
+						"x": -185.84,
+						"y": -73.09,
+						"curve": [ 0.112, 224.07, 0.219, 690.01, 0.111, 210.31, 0.222, 352.01 ]
+					},
+					{ "time": 0.3333, "x": 1060.43, "y": 352.01 }
+				]
+			},
+			"meteor_big_piece_3": {
+				"rotate": [
+					{
+						"curve": [ 0.083, 9.04, 0.167, -3.42 ]
+					},
+					{ "time": 0.25, "value": -3.42 }
+				],
+				"translate": [
+					{
+						"x": 89.37,
+						"y": -371.18,
+						"curve": [ 0.086, 215.79, 0.165, 461.79, 0.08, -122.1, 0.157, 25.86 ]
+					},
+					{ "time": 0.25, "x": 510.25, "y": 142.88 }
+				],
+				"scale": [
+					{
+						"curve": [ 0.083, 1.23, 0.167, 1.345, 0.083, 1.23, 0.167, 1.345 ]
+					},
+					{ "time": 0.25, "x": 1.345, "y": 1.345 }
+				],
+				"shear": [
+					{
+						"curve": [ 0.083, 0, 0.167, 0, 0.083, 9.38, 0.167, 14.07 ]
+					},
+					{ "time": 0.25, "y": 14.07 }
+				]
+			},
+			"meteor_small_piece_1": {
+				"rotate": [
+					{
+						"curve": [ 0.139, -16.59, 0.278, -24.88 ]
+					},
+					{ "time": 0.4167, "value": -24.88 }
+				],
+				"translate": [
+					{
+						"x": -11.58,
+						"y": -26.75,
+						"curve": [ 0.14, 593.32, 0.278, 1329.56, 0.139, 215.77, 0.278, 337.03 ]
+					},
+					{ "time": 0.4167, "x": 1741.66, "y": 337.03 }
+				]
+			},
+			"meteor_small_piece_2": {
+				"rotate": [
+					{
+						"curve": [ 0.083, 5.02, 0.167, 7.52 ]
+					},
+					{ "time": 0.25, "value": 7.52 }
+				],
+				"translate": [
+					{
+						"x": 230.23,
+						"y": -132.21,
+						"curve": [ 0.084, -273.16, 0.168, -617.26, 0.083, 704.66, 0.167, 1123.1 ]
+					},
+					{ "time": 0.25, "x": -920.91, "y": 1123.1 }
+				]
+			},
+			"meteor_small_piece_3": {
+				"rotate": [
+					{
+						"curve": [ 0.111, -15.29, 0.222, -22.94 ]
+					},
+					{ "time": 0.3333, "value": -22.94 }
+				],
+				"translate": [
+					{
+						"x": 76.04,
+						"y": -220.04,
+						"curve": [ 0.111, 741.95, 0.221, 1226.72, 0.111, 379.92, 0.222, 679.91 ]
+					},
+					{ "time": 0.3333, "x": 1530.38, "y": 679.91 }
+				]
+			},
+			"meteor_small_piece_4": {
+				"rotate": [
+					{
+						"curve": [ 0.083, 77.1, 0.167, 115.66 ]
+					},
+					{ "time": 0.25, "value": 115.66 }
+				],
+				"translate": [
+					{
+						"x": 163.7,
+						"y": 162.2,
+						"curve": [ 0.083, 163.7, 0.167, -1462.37, 0.082, 195.03, 0.166, 210.08 ]
+					},
+					{ "time": 0.25, "x": -1462.37, "y": 225.53 }
+				]
+			},
+			"Lava_Droplets_12": {
+				"rotate": [
+					{
+						"value": -63.12,
+						"curve": [ 0.125, -63.12, 0.292, -87.95 ]
+					},
+					{ "time": 0.4167, "value": -108.79 }
+				],
+				"translate": [
+					{
+						"x": 69.52,
+						"y": -34.4,
+						"curve": [ 0.123, 342.93, 0.291, 912.06, 0.132, 132.02, 0.291, 382.02 ]
+					},
+					{ "time": 0.4167, "x": 1184.75, "y": 156.16 }
+				],
+				"scale": [
+					{ "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_11": {
+				"rotate": [
+					{
+						"value": 110.11,
+						"curve": [ 0.174, 125.71, 0.334, 101.87 ]
+					},
+					{ "time": 0.5, "value": 92.82 }
+				],
+				"translate": [
+					{
+						"x": 165.62,
+						"y": 93.59,
+						"curve": [ 0.167, 584.85, 0.333, 794.46, 0.167, 959.21, 0.333, 1392.02 ]
+					},
+					{ "time": 0.5, "x": 794.46, "y": 1392.02 }
+				],
+				"scale": [
+					{ "x": -2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_10": {
+				"rotate": [
+					{
+						"value": 16.88,
+						"curve": [ 0.185, 62.69, 0.336, 70.01 ]
+					},
+					{ "time": 0.5, "value": 58.39 }
+				],
+				"translate": [
+					{
+						"x": -26.92,
+						"y": 221.64,
+						"curve": [ 0.171, -547.24, 0.334, -737.28, 0.167, 874.66, 0.333, 1306.35 ]
+					},
+					{ "time": 0.5, "x": -1122.94, "y": 1201.17 }
+				],
+				"scale": [
+					{ "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_9": {
+				"rotate": [
+					{
+						"value": -42.48,
+						"curve": [ 0.167, -55.48, 0.333, -61.98 ]
+					},
+					{ "time": 0.5, "value": -61.98 }
+				],
+				"translate": [
+					{
+						"x": -83.91,
+						"y": -80.87,
+						"curve": [ 0.191, 263.37, 0.321, 572.22, 0.167, 602.26, 0.333, 943.82 ]
+					},
+					{ "time": 0.5, "x": 1025.79, "y": 943.82 }
+				],
+				"scale": [
+					{ "x": -2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_8": {
+				"translate": [
+					{
+						"x": -156.95,
+						"y": -93.55,
+						"curve": [ 0.143, 40.83, 0.279, 209.66, 0.139, 1023.5, 0.278, 1582.03 ]
+					},
+					{
+						"time": 0.4167,
+						"x": 390.95,
+						"y": 1582.03,
+						"curve": [ 0.523, 530.98, 0.639, 764.76, 0.528, 1582.03, 0.649, 1294.69 ]
+					},
+					{ "time": 0.75, "x": 764.76, "y": 989.92 }
+				],
+				"scale": [
+					{ "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_7": {
+				"rotate": [
+					{
+						"value": 65.71,
+						"curve": [ 0.194, 65.71, 0.391, 79.75 ]
+					},
+					{ "time": 0.5833, "value": 114.96 }
+				],
+				"translate": [
+					{
+						"x": -147.25,
+						"y": -41.48,
+						"curve": [ 0.205, -633.23, 0.39, -1153.85, 0.198, 731.06, 0.391, 236.74 ]
+					},
+					{ "time": 0.5833, "x": -1419.41, "y": -4.68 }
+				],
+				"scale": [
+					{ "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_6": {
+				"rotate": [
+					{
+						"value": 46.09,
+						"curve": [ 0.107, 74.97, 0.299, 99.19 ]
+					},
+					{ "time": 0.4167, "value": 103.94 }
+				],
+				"translate": [
+					{
+						"x": -217.29,
+						"y": 121.76,
+						"curve": [ 0.111, -730.82, 0.303, -1135.26, 0.115, 642.77, 0.306, 681.25 ]
+					},
+					{ "time": 0.4167, "x": -1339.78, "y": 553.43 }
+				],
+				"scale": [
+					{ "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_5": {
+				"rotate": [
+					{
+						"value": 49.01,
+						"curve": [ 0.112, 5.16, 0.305, 72.39 ]
+					},
+					{ "time": 0.4167, "value": 72.39 }
+				],
+				"translate": [
+					{
+						"x": -67.44,
+						"y": -128.24,
+						"curve": [ 0.112, -380.91, 0.306, -763.52, 0.111, -80.58, 0.306, 2.69 ]
+					},
+					{ "time": 0.4167, "x": -965.61, "y": -128.07 }
+				],
+				"scale": [
+					{ "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_4": {
+				"rotate": [
+					{
+						"value": -54.01,
+						"curve": [ 0.237, -58.71, 0.494, -80.26 ]
+					},
+					{ "time": 0.5833, "value": -96.38 }
+				],
+				"translate": [
+					{
+						"x": 198,
+						"y": 51.6,
+						"curve": [ 0.194, 760.12, 0.39, 1495.47, 0.194, 455.31, 0.405, 894.62 ]
+					},
+					{ "time": 0.5833, "x": 1629.68, "y": 657.16 }
+				],
+				"scale": [
+					{ "x": -2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_3": {
+				"rotate": [
+					{
+						"value": 22.31,
+						"curve": [ 0.167, 47.16, 0.333, 59.58 ]
+					},
+					{ "time": 0.5, "value": 59.58 }
+				],
+				"translate": [
+					{
+						"x": -190.47,
+						"y": -7.95,
+						"curve": [ 0.151, -432.02, 0.335, -805.74, 0.167, 589.64, 0.333, 993.11 ]
+					},
+					{ "time": 0.5, "x": -1076.15, "y": 888.44 }
+				],
+				"scale": [
+					{ "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_2": {
+				"rotate": [
+					{
+						"curve": [ 0.139, -40.26, 0.278, -60.4 ]
+					},
+					{ "time": 0.4167, "value": -60.4 }
+				],
+				"translate": [
+					{
+						"x": 33.44,
+						"y": 2.61,
+						"curve": [ 0.135, 279.86, 0.278, 557.93, 0.139, 600.56, 0.278, 899.53 ]
+					},
+					{ "time": 0.4167, "x": 743.78, "y": 899.53 }
+				],
+				"scale": [
+					{ "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_1": {
+				"rotate": [
+					{
+						"value": -3.73,
+						"curve": [ 0.139, 2.83, 0.417, 6.11 ]
+					},
+					{
+						"time": 0.4167,
+						"value": 6.11,
+						"curve": [ 0.5, 6.11, 0.583, 2.4 ]
+					},
+					{ "time": 0.6667, "value": -5.03 }
+				],
+				"translate": [
+					{
+						"x": 6.87,
+						"y": 137.54,
+						"curve": [ 0.139, -112.82, 0.417, -172.67, 0.139, 1041.06, 0.278, 1492.82 ]
+					},
+					{
+						"time": 0.4167,
+						"x": -172.67,
+						"y": 1492.82,
+						"curve": [ 0.507, -203.64, 0.583, -250.28, 0.5, 1492.82, 0.583, 1316.54 ]
+					},
+					{ "time": 0.6667, "x": -271.27, "y": 963.99 }
+				],
+				"scale": [
+					{ "x": 2, "y": 2 }
+				]
+			},
+			"lava": {
+				"translate": [
+					{ "x": 46.55, "y": 354.19 }
+				]
+			}
+		},
+		"drawOrder": [
+			{
+				"offsets": [
+					{ "slot": "explosion", "offset": 12 },
+					{ "slot": "meteor_big_piece_3", "offset": 17 },
+					{ "slot": "shockwave_front", "offset": 12 }
+				]
+			}
+		],
+		"events": [
+			{ "time": 0.25, "name": "lava_puddle_appear" }
+		]
+	},
+	"meteor_falling_b": {
+		"slots": {
+			"ember_left": {
+				"attachment": [
+					{ "time": 0.1667, "name": "meteor/fire_ember_left_frame_1" },
+					{ "time": 0.25, "name": "meteor/fire_ember_left_frame_2" },
+					{ "time": 0.3333, "name": "meteor/fire_ember_left_frame_3" },
+					{ "time": 0.4167, "name": "meteor/fire_ember_left_frame_4" },
+					{ "time": 0.5, "name": null }
+				]
+			},
+			"ember_right": {
+				"attachment": [
+					{ "name": "meteor/fire_ember_right_frame_1" },
+					{ "time": 0.0833, "name": "meteor/fire_ember_right_frame_2" },
+					{ "time": 0.1667, "name": "meteor/fire_ember_right_frame_3" },
+					{ "time": 0.25, "name": "meteor/fire_ember_right_frame_4" },
+					{ "time": 0.3333, "name": null }
+				]
+			},
+			"meteor_fire": {
+				"attachment": [
+					{ "name": "meteor/fire_frame_1" },
+					{ "time": 0.0833, "name": "meteor/fire_frame_2" },
+					{ "time": 0.1667, "name": "meteor/fire_frame_3" },
+					{ "time": 0.25, "name": "meteor/fire_frame_1" },
+					{ "time": 0.3333, "name": "meteor/fire_frame_2" },
+					{ "time": 0.4167, "name": "meteor/fire_frame_3" },
+					{ "time": 0.5, "name": "meteor/fire_frame_1" }
+				]
+			}
+		},
+		"bones": {
+			"meteor": {
+				"translate": [
+					{
+						"x": -0.07,
+						"y": 1598.83,
+						"curve": [ 0.167, -0.07, 0.333, 2.77, 0.167, 1598.83, 0.333, 904.84 ]
+					},
+					{ "time": 0.5, "x": 8.44, "y": -483.15 }
+				],
+				"scale": [
+					{
+						"curve": [ 0.083, 1, 0.167, 0.968, 0.083, 1, 0.167, 1.032 ]
+					},
+					{
+						"time": 0.25,
+						"x": 0.968,
+						"y": 1.032,
+						"curve": [ 0.333, 0.968, 0.417, 1, 0.333, 1.032, 0.417, 1 ]
+					},
+					{ "time": 0.5 }
+				]
+			}
+		}
+	},
+	"meteor_fall_lava_explode": {
+		"slots": {
+			"ember_left": {
+				"attachment": [
+					{ "time": 0.1667, "name": "meteor/fire_ember_left_frame_1" },
+					{ "time": 0.25, "name": "meteor/fire_ember_left_frame_2" },
+					{ "time": 0.3333, "name": "meteor/fire_ember_left_frame_3" },
+					{ "time": 0.4167, "name": "meteor/fire_ember_left_frame_4" },
+					{ "time": 0.5, "name": null }
+				]
+			},
+			"ember_right": {
+				"attachment": [
+					{ "name": "meteor/fire_ember_right_frame_1" },
+					{ "time": 0.0833, "name": "meteor/fire_ember_right_frame_2" },
+					{ "time": 0.1667, "name": "meteor/fire_ember_right_frame_3" },
+					{ "time": 0.25, "name": "meteor/fire_ember_right_frame_4" },
+					{ "time": 0.3333, "name": null }
+				]
+			},
+			"explosion": {
+				"rgba": [
+					{
+						"time": 0.8333,
+						"color": "ffffffff",
+						"curve": [ 0.889, 1, 0.903, 1, 0.889, 1, 0.903, 1, 0.889, 1, 0.903, 1, 0.889, 1, 0.903, 0 ]
+					},
+					{ "time": 0.9583, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "explosion small/explosion1" },
+					{ "time": 0.5417, "name": "explosion small/explosion2" },
+					{ "time": 0.5833, "name": "explosion small/explosion3" },
+					{ "time": 0.625, "name": "explosion small/explosion4" },
+					{ "time": 0.6667, "name": "explosion small/explosion5" },
+					{ "time": 0.7083, "name": "explosion small/explosion6" },
+					{ "time": 0.75, "name": "explosion small/explosion7" },
+					{ "time": 0.7917, "name": "explosion small/explosion8" },
+					{ "time": 0.875, "name": "explosion small/explosion9" },
+					{ "time": 0.9583, "name": null }
+				]
+			},
+			"Lava_Droplets_1": {
+				"rgba": [
+					{
+						"time": 1,
+						"color": "ffffffff",
+						"curve": [ 1.056, 1, 1.111, 1, 1.056, 1, 1.111, 1, 1.056, 1, 1.111, 1, 1.056, 1, 1.111, 0 ]
+					},
+					{ "time": 1.1667, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_1" },
+					{ "time": 1.1667, "name": null }
+				]
+			},
+			"Lava_Droplets_2": {
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_2" },
+					{ "time": 0.9167, "name": null }
+				]
+			},
+			"Lava_Droplets_3": {
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_3" },
+					{ "time": 1, "name": null }
+				]
+			},
+			"Lava_Droplets_4": {
+				"rgba": [
+					{
+						"time": 0.9167,
+						"color": "ffffffff",
+						"curve": [ 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 0 ]
+					},
+					{ "time": 1.0833, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_4" },
+					{ "time": 1.0833, "name": null }
+				]
+			},
+			"Lava_Droplets_5": {
+				"rgba": [
+					{
+						"time": 0.75,
+						"color": "ffffffff",
+						"curve": [ 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 0 ]
+					},
+					{ "time": 0.9167, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_5" },
+					{ "time": 0.9167, "name": null }
+				]
+			},
+			"Lava_Droplets_6": {
+				"rgba": [
+					{
+						"time": 0.75,
+						"color": "ffffffff",
+						"curve": [ 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 0 ]
+					},
+					{ "time": 0.9167, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_6" },
+					{ "time": 0.9167, "name": null }
+				]
+			},
+			"Lava_Droplets_7": {
+				"rgba": [
+					{
+						"time": 0.9167,
+						"color": "ffffffff",
+						"curve": [ 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 0 ]
+					},
+					{ "time": 1.0833, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_1" },
+					{ "time": 1.0833, "name": null }
+				]
+			},
+			"Lava_Droplets_8": {
+				"rgba": [
+					{
+						"time": 1.0833,
+						"color": "ffffffff",
+						"curve": [ 1.139, 1, 1.194, 1, 1.139, 1, 1.194, 1, 1.139, 1, 1.194, 1, 1.139, 1, 1.194, 0 ]
+					},
+					{ "time": 1.25, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_2" },
+					{ "time": 1.25, "name": null }
+				]
+			},
+			"Lava_Droplets_9": {
+				"rgba": [
+					{
+						"time": 0.8333,
+						"color": "ffffffff",
+						"curve": [ 0.889, 1, 0.944, 1, 0.889, 1, 0.944, 1, 0.889, 1, 0.944, 1, 0.889, 1, 0.944, 0 ]
+					},
+					{ "time": 1, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_3" },
+					{ "time": 1, "name": null }
+				]
+			},
+			"Lava_Droplets_10": {
+				"rgba": [
+					{
+						"time": 0.8333,
+						"color": "ffffffff",
+						"curve": [ 0.889, 1, 0.944, 1, 0.889, 1, 0.944, 1, 0.889, 1, 0.944, 1, 0.889, 1, 0.944, 0 ]
+					},
+					{ "time": 1, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_4" },
+					{ "time": 1, "name": null }
+				]
+			},
+			"Lava_Droplets_11": {
+				"rgba": [
+					{
+						"time": 0.8333,
+						"color": "ffffffff",
+						"curve": [ 0.889, 1, 0.944, 1, 0.889, 1, 0.944, 1, 0.889, 1, 0.944, 1, 0.889, 1, 0.944, 0 ]
+					},
+					{ "time": 1, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_5" },
+					{ "time": 1, "name": null }
+				]
+			},
+			"Lava_Droplets_12": {
+				"rgba": [
+					{
+						"time": 0.75,
+						"color": "ffffffff",
+						"curve": [ 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 0 ]
+					},
+					{ "time": 0.9167, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "Lava Droplets/RUB109_LC_Lava_Droplets_6" },
+					{ "time": 0.9167, "name": null }
+				]
+			},
+			"meteor": {
+				"attachment": [
+					{ "time": 0.5, "name": null }
+				]
+			},
+			"meteor_big_piece_1": {
+				"rgba": [
+					{
+						"time": 0.75,
+						"color": "ffffffff",
+						"curve": [ 0.778, 1, 0.806, 1, 0.778, 1, 0.806, 1, 0.778, 1, 0.806, 1, 0.778, 1, 0.806, 0 ]
+					},
+					{ "time": 0.8333, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "meteor/meteor_big_piece_1" },
+					{ "time": 0.8333, "name": null }
+				]
+			},
+			"meteor_big_piece_2": {
+				"rgba": [
+					{
+						"time": 0.75,
+						"color": "ffffffff",
+						"curve": [ 0.778, 1, 0.806, 1, 0.778, 1, 0.806, 1, 0.778, 1, 0.806, 1, 0.778, 1, 0.806, 0 ]
+					},
+					{ "time": 0.8333, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "meteor/meteor_big_piece_2" },
+					{ "time": 0.8333, "name": null }
+				]
+			},
+			"meteor_big_piece_3": {
+				"rgba": [
+					{
+						"time": 0.5833,
+						"color": "ffffffff",
+						"curve": [ 0.611, 1, 0.722, 1, 0.611, 1, 0.722, 1, 0.611, 1, 0.722, 1, 0.611, 1, 0.722, 0 ]
+					},
+					{ "time": 0.75, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "meteor/meteor_big_piece_3" },
+					{ "time": 0.75, "name": null }
+				]
+			},
+			"meteor_fire": {
+				"attachment": [
+					{ "name": "meteor/fire_frame_1" },
+					{ "time": 0.0833, "name": "meteor/fire_frame_2" },
+					{ "time": 0.1667, "name": "meteor/fire_frame_3" },
+					{ "time": 0.25, "name": "meteor/fire_frame_1" },
+					{ "time": 0.3333, "name": "meteor/fire_frame_2" },
+					{ "time": 0.4167, "name": "meteor/fire_frame_3" },
+					{ "time": 0.5, "name": null }
+				]
+			},
+			"meteor_small_piece_1": {
+				"rgba": [
+					{
+						"time": 0.75,
+						"color": "ffffffff",
+						"curve": [ 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 0 ]
+					},
+					{ "time": 0.9167, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "meteor/meteor_small_piece_1" },
+					{ "time": 0.9167, "name": null }
+				]
+			},
+			"meteor_small_piece_2": {
+				"attachment": [
+					{ "time": 0.5, "name": "meteor/meteor_small_piece_2" },
+					{ "time": 0.75, "name": null }
+				]
+			},
+			"meteor_small_piece_3": {
+				"attachment": [
+					{ "time": 0.5, "name": "meteor/meteor_small_piece_3" },
+					{ "time": 0.8333, "name": null }
+				]
+			},
+			"meteor_small_piece_4": {
+				"attachment": [
+					{ "time": 0.5, "name": "meteor/meteor_small_piece_4" },
+					{ "time": 0.75, "name": null }
+				]
+			},
+			"shockwave_airblast": {
+				"rgba": [
+					{
+						"time": 0.6667,
+						"color": "ffffffff",
+						"curve": [ 0.722, 1, 0.778, 1, 0.722, 1, 0.778, 1, 0.722, 1, 0.778, 1, 0.722, 1, 0.778, 0 ]
+					},
+					{ "time": 0.8333, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "meteor/shockwave_airblast" },
+					{ "time": 0.8333, "name": null }
+				]
+			},
+			"shockwave_back": {
+				"rgba": [
+					{
+						"time": 0.9167,
+						"color": "ffffffff",
+						"curve": [ 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 0 ]
+					},
+					{ "time": 1.0833, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "meteor/shockwave_back" },
+					{ "time": 1.0833, "name": null }
+				]
+			},
+			"shockwave_blast": {
+				"rgba": [
+					{
+						"time": 0.75,
+						"color": "ffffffff",
+						"curve": [ 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 1, 0.806, 1, 0.861, 0 ]
+					},
+					{ "time": 0.9167, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5833, "name": "meteor/shockwave_blast" },
+					{ "time": 0.9167, "name": null }
+				]
+			},
+			"shockwave_front": {
+				"rgba": [
+					{
+						"time": 0.9167,
+						"color": "ffffffff",
+						"curve": [ 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 1, 0.972, 1, 1.028, 0 ]
+					},
+					{ "time": 1.0833, "color": "ffffff00" }
+				],
+				"attachment": [
+					{ "time": 0.5, "name": "meteor/shockwave_front" },
+					{ "time": 1.0833, "name": null }
+				]
+			}
+		},
+		"bones": {
+			"meteor": {
+				"translate": [
+					{
+						"x": -0.07,
+						"y": 1716.85,
+						"curve": [ 0.167, -0.07, 0.333, 2.7, 0.055, 1608.35, 0.333, 922.95 ]
+					},
+					{ "time": 0.5, "x": 8.22, "y": -428.8 }
+				],
+				"scale": [
+					{
+						"curve": [ 0.083, 1, 0.167, 0.94, 0.083, 1, 0.167, 1.061 ]
+					},
+					{
+						"time": 0.25,
+						"x": 0.94,
+						"y": 1.061,
+						"curve": [ 0.333, 0.94, 0.417, 1, 0.333, 1.061, 0.417, 1 ]
+					},
+					{ "time": 0.5 }
+				]
+			},
+			"meteor_rock": {
+				"rotate": [
+					{ "value": 360 },
+					{ "time": 0.5, "value": 180 }
+				]
+			},
+			"shockwave": {
+				"translate": [
+					{
+						"time": 0.75,
+						"curve": [ 0.861, 0, 0.972, 0.13, 0.861, 0, 0.972, -30.64 ]
+					},
+					{ "time": 1.0833, "x": 0.38, "y": -91.92 }
+				],
+				"scale": [
+					{
+						"time": 0.5,
+						"x": 0.676,
+						"y": 0.459,
+						"curve": [ 0.583, 1.559, 0.667, 1.677, 0.584, 1.345, 0.669, 1.718 ]
+					},
+					{
+						"time": 0.75,
+						"x": 2,
+						"y": 2,
+						"curve": [ 0.859, 2.424, 0.972, 2.24, 0.861, 2.386, 0.972, 1.77 ]
+					},
+					{ "time": 1.0833, "x": 2.719, "y": 1.309 }
+				]
+			},
+			"shockwave_airblast": {
+				"scale": [
+					{
+						"time": 0.5,
+						"x": 0.553,
+						"y": 0.553,
+						"curve": [ 0.611, 1.897, 0.722, 2.569, 0.611, 1.897, 0.722, 2.569 ]
+					},
+					{ "time": 0.8333, "x": 2.569, "y": 2.569 }
+				]
+			},
+			"explosion": {
+				"translate": [
+					{
+						"time": 0.5,
+						"x": 13.54,
+						"y": -375.99,
+						"curve": [ 0.75, 13.3, 0.708, 30.3, 0.75, -317.69, 0.708, -72.47 ]
+					},
+					{ "time": 0.9583, "x": 30.3, "y": -72.47 }
+				],
+				"scale": [
+					{
+						"time": 0.5,
+						"curve": [ 0.75, 2.333, 0.514, 2.274, 0.75, 2.333, 0.514, 2.274 ]
+					},
+					{
+						"time": 0.5417,
+						"x": 2.422,
+						"y": 2.422,
+						"curve": [ 0.792, 3.756, 0.708, 4.422, 0.792, 3.756, 0.708, 4.422 ]
+					},
+					{ "time": 0.9583, "x": 4.422, "y": 4.422 }
+				]
+			},
+			"meteor_big_piece_1": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"curve": [ 0.639, -6.68, 0.694, -6.1 ]
+					},
+					{ "time": 0.8333, "value": -6.1 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": 193.65,
+						"y": -26.34,
+						"curve": [ 0.639, -309.21, 0.689, -678.5, 0.639, 352.84, 0.694, 542.44 ]
+					},
+					{ "time": 0.8333, "x": -964.73, "y": 542.44 }
+				]
+			},
+			"meteor_big_piece_2": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"value": -13,
+						"curve": [ 0.611, -24.19, 0.722, -29.79 ]
+					},
+					{ "time": 0.8333, "value": -29.79 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": -185.84,
+						"y": -73.09,
+						"curve": [ 0.612, 224.07, 0.719, 690.01, 0.611, 210.31, 0.722, 352.01 ]
+					},
+					{ "time": 0.8333, "x": 1060.43, "y": 352.01 }
+				]
+			},
+			"meteor_big_piece_3": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"curve": [ 0.583, 9.04, 0.667, -3.42 ]
+					},
+					{ "time": 0.75, "value": -3.42 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": 89.37,
+						"y": -371.18,
+						"curve": [ 0.586, 215.79, 0.665, 461.79, 0.58, -122.1, 0.657, 25.86 ]
+					},
+					{ "time": 0.75, "x": 510.25, "y": 142.88 }
+				],
+				"scale": [
+					{
+						"time": 0.5,
+						"curve": [ 0.583, 1.23, 0.667, 1.345, 0.583, 1.23, 0.667, 1.345 ]
+					},
+					{ "time": 0.75, "x": 1.345, "y": 1.345 }
+				],
+				"shear": [
+					{
+						"time": 0.5,
+						"curve": [ 0.583, 0, 0.667, 0, 0.583, 9.38, 0.667, 14.07 ]
+					},
+					{ "time": 0.75, "y": 14.07 }
+				]
+			},
+			"meteor_small_piece_1": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"curve": [ 0.639, -16.59, 0.778, -24.88 ]
+					},
+					{ "time": 0.9167, "value": -24.88 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": -11.58,
+						"y": -26.75,
+						"curve": [ 0.64, 593.32, 0.778, 1329.56, 0.639, 215.77, 0.778, 337.03 ]
+					},
+					{ "time": 0.9167, "x": 1741.66, "y": 337.03 }
+				]
+			},
+			"meteor_small_piece_2": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"curve": [ 0.583, 5.02, 0.667, 7.52 ]
+					},
+					{ "time": 0.75, "value": 7.52 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": 230.23,
+						"y": -132.21,
+						"curve": [ 0.584, -273.16, 0.668, -617.26, 0.583, 704.66, 0.667, 1123.1 ]
+					},
+					{ "time": 0.75, "x": -920.91, "y": 1123.1 }
+				]
+			},
+			"meteor_small_piece_3": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"curve": [ 0.611, -15.29, 0.722, -22.94 ]
+					},
+					{ "time": 0.8333, "value": -22.94 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": 76.04,
+						"y": -220.04,
+						"curve": [ 0.611, 741.95, 0.721, 1226.72, 0.611, 379.92, 0.722, 679.91 ]
+					},
+					{ "time": 0.8333, "x": 1530.38, "y": 679.91 }
+				]
+			},
+			"meteor_small_piece_4": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"curve": [ 0.583, 77.1, 0.667, 115.66 ]
+					},
+					{ "time": 0.75, "value": 115.66 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": 163.7,
+						"y": 162.2,
+						"curve": [ 0.583, 163.7, 0.667, -1462.37, 0.582, 195.03, 0.666, 210.08 ]
+					},
+					{ "time": 0.75, "x": -1462.37, "y": 225.53 }
+				]
+			},
+			"Lava_Droplets_12": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"value": -63.12,
+						"curve": [ 0.625, -63.12, 0.792, -87.95 ]
+					},
+					{ "time": 0.9167, "value": -108.79 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": 69.52,
+						"y": -34.4,
+						"curve": [ 0.623, 342.93, 0.791, 912.06, 0.632, 132.02, 0.791, 382.02 ]
+					},
+					{ "time": 0.9167, "x": 1184.75, "y": 156.16 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_11": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"value": 110.11,
+						"curve": [ 0.674, 125.71, 0.834, 101.87 ]
+					},
+					{ "time": 1, "value": 92.82 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": 165.62,
+						"y": 93.59,
+						"curve": [ 0.667, 584.85, 0.833, 794.46, 0.667, 959.21, 0.833, 1392.02 ]
+					},
+					{ "time": 1, "x": 794.46, "y": 1392.02 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": -2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_10": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"value": 16.88,
+						"curve": [ 0.685, 62.69, 0.836, 70.01 ]
+					},
+					{ "time": 1, "value": 58.39 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": -26.92,
+						"y": 221.64,
+						"curve": [ 0.671, -547.24, 0.834, -737.28, 0.667, 874.66, 0.833, 1306.35 ]
+					},
+					{ "time": 1, "x": -1122.94, "y": 1201.17 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_9": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"value": -42.48,
+						"curve": [ 0.667, -55.48, 0.833, -61.98 ]
+					},
+					{ "time": 1, "value": -61.98 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": -83.91,
+						"y": -80.87,
+						"curve": [ 0.691, 263.37, 0.821, 572.22, 0.667, 602.26, 0.833, 943.82 ]
+					},
+					{ "time": 1, "x": 1025.79, "y": 943.82 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": -2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_8": {
+				"translate": [
+					{
+						"time": 0.5,
+						"x": -156.95,
+						"y": -93.55,
+						"curve": [ 0.643, 40.83, 0.779, 209.66, 0.639, 1023.5, 0.778, 1582.03 ]
+					},
+					{
+						"time": 0.9167,
+						"x": 390.95,
+						"y": 1582.03,
+						"curve": [ 1.023, 530.98, 1.139, 764.76, 1.028, 1582.03, 1.149, 1294.69 ]
+					},
+					{ "time": 1.25, "x": 764.76, "y": 989.92 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_7": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"value": 65.71,
+						"curve": [ 0.694, 65.71, 0.891, 79.75 ]
+					},
+					{ "time": 1.0833, "value": 114.96 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": -147.25,
+						"y": -41.48,
+						"curve": [ 0.705, -633.23, 0.89, -1153.85, 0.698, 731.06, 0.891, 236.74 ]
+					},
+					{ "time": 1.0833, "x": -1419.41, "y": -4.68 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_6": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"value": 46.09,
+						"curve": [ 0.607, 74.97, 0.799, 99.19 ]
+					},
+					{ "time": 0.9167, "value": 103.94 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": -217.29,
+						"y": 121.76,
+						"curve": [ 0.611, -730.82, 0.803, -1135.26, 0.615, 642.77, 0.806, 681.25 ]
+					},
+					{ "time": 0.9167, "x": -1339.78, "y": 553.43 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_5": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"value": 49.01,
+						"curve": [ 0.612, 5.16, 0.805, 72.39 ]
+					},
+					{ "time": 0.9167, "value": 72.39 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": -67.44,
+						"y": -128.24,
+						"curve": [ 0.612, -380.91, 0.806, -763.52, 0.611, -80.58, 0.806, 2.69 ]
+					},
+					{ "time": 0.9167, "x": -965.61, "y": -128.07 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_4": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"value": -54.01,
+						"curve": [ 0.737, -58.71, 0.994, -80.26 ]
+					},
+					{ "time": 1.0833, "value": -96.38 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": 198,
+						"y": 51.6,
+						"curve": [ 0.694, 760.12, 0.89, 1495.47, 0.694, 455.31, 0.905, 894.62 ]
+					},
+					{ "time": 1.0833, "x": 1629.68, "y": 657.16 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": -2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_3": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"value": 22.31,
+						"curve": [ 0.667, 47.16, 0.833, 59.58 ]
+					},
+					{ "time": 1, "value": 59.58 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": -190.47,
+						"y": -7.95,
+						"curve": [ 0.651, -432.02, 0.835, -805.74, 0.667, 589.64, 0.833, 993.11 ]
+					},
+					{ "time": 1, "x": -1076.15, "y": 888.44 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_2": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"curve": [ 0.639, -40.26, 0.778, -60.4 ]
+					},
+					{ "time": 0.9167, "value": -60.4 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": 33.44,
+						"y": 2.61,
+						"curve": [ 0.635, 279.86, 0.778, 557.93, 0.639, 600.56, 0.778, 899.53 ]
+					},
+					{ "time": 0.9167, "x": 743.78, "y": 899.53 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": 2, "y": 2 }
+				]
+			},
+			"Lava_Droplets_1": {
+				"rotate": [
+					{
+						"time": 0.5,
+						"value": -3.73,
+						"curve": [ 0.639, 2.83, 0.917, 6.11 ]
+					},
+					{
+						"time": 0.9167,
+						"value": 6.11,
+						"curve": [ 1, 6.11, 1.083, 2.4 ]
+					},
+					{ "time": 1.1667, "value": -5.03 }
+				],
+				"translate": [
+					{
+						"time": 0.5,
+						"x": 6.87,
+						"y": 137.54,
+						"curve": [ 0.639, -112.82, 0.917, -172.67, 0.639, 1041.06, 0.778, 1492.82 ]
+					},
+					{
+						"time": 0.9167,
+						"x": -172.67,
+						"y": 1492.82,
+						"curve": [ 1.007, -203.64, 1.083, -250.28, 1, 1492.82, 1.083, 1316.54 ]
+					},
+					{ "time": 1.1667, "x": -271.27, "y": 963.99 }
+				],
+				"scale": [
+					{ "time": 0.5, "x": 2, "y": 2 }
+				]
+			},
+			"lava": {
+				"translate": [
+					{ "time": 0.5, "x": 46.55, "y": 354.19 }
+				]
+			},
+			"shockwave_blast": {
+				"scale": [
+					{
+						"time": 0.5833,
+						"curve": [ 0.694, 1.826, 0.806, 2.239, 0.694, 1.826, 0.806, 2.239 ]
+					},
+					{ "time": 0.9167, "x": 2.239, "y": 2.239 }
+				]
+			}
+		},
+		"drawOrder": [
+			{
+				"time": 0.5,
+				"offsets": [
+					{ "slot": "explosion", "offset": 12 },
+					{ "slot": "meteor_big_piece_3", "offset": 17 },
+					{ "slot": "shockwave_front", "offset": 12 }
+				]
+			}
+		],
+		"events": [
+			{ "time": 0.75, "name": "lava_puddle_appear" }
+		]
+	}
+}
+}

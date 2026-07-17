@@ -1,0 +1,140 @@
+draw_settings :: proc(player: Player) {
+    UIK.begin(UIK.modal(UIK.rect_window_small(), 20));
+
+    shell := UIK.panel_modal(.BLUE);
+    UIK.panel_begin(shell);
+    exit_result := UIK.title_area(UIK.title_area_desc("Settings"));
+    if exit_result.clicked { player.show_settings = false; }
+
+    content := UIK.layout_column();
+    content.width = UIK.flex(1);
+    content.height = UIK.flex(1);
+    content.padding = v4{14, 18, 14, 18};
+    content.gap = 8;
+    UIK.panel_begin(content);
+
+    UIK.text(UIK.text_title(), "Gameplay");
+    if player.has_vip {
+        crown_result := UIK.toggle("settings/vip_crown", "Show VIP crown", (&player.show_vip_crown).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW));
+        if crown_result.clicked {
+            Save.set_int(player, VIP_CROWN_VISIBLE_SAVE_KEY, player.show_vip_crown ? 1 : 0);
+            if !player.show_vip_crown && #alive(player.vip_crown_entity) {
+                player.vip_crown_entity.set_local_enabled(false);
+            }
+        }
+    } else {
+        UIK.text(UIK.text_body(), "VIP crown settings unlock with VIP.");
+    }
+
+    UIK.divider();
+    UIK.text(UIK.text_title(), "Interface");
+    UIK.toggle("settings/reward_popups", "Show reward popups", (&player.show_reward_popups).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY));
+    Save.set_int(player, "show_reward_popups", player.show_reward_popups ? 1 : 0);
+    UIK.toggle("settings/tutorial_button", "Show tutorial button", (&player.show_tutorial_button).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY));
+    Save.set_int(player, "show_tutorial_button", player.show_tutorial_button ? 1 : 0);
+    UIK.text(UIK.text_body(), "Your settings are saved automatically.");
+
+    UIK.panel_end();
+    UIK.panel_end();
+    UIK.end();
+}
+
+draw_hud :: proc(player: Player) {
+    UIK.begin(UIK.window(UIK.rect_topbar()));
+
+    bar := UIK.layout_row();
+    bar.width = UIK.flex(1);
+    bar.height = UIK.flex(1);
+    bar.padding = v4{8, 16, 8, 16};
+    bar.gap = 12;
+    bar.cross_align = .CENTER;
+    UIK.panel_begin(bar);
+
+    // Coin balance
+    coin_tex := get_asset(Texture_Asset, "Gold_Coin_Icon_d3f0f3.png");
+    balance := Economy.get_balance(player, "Coins");
+    UIK.currency(coin_tex, balance, UIK.text_title());
+
+    if player.show_reward_popups && player.reward_feedback_duration > 0 {
+        elapsed := get_time() - player.reward_feedback_start;
+        if elapsed < player.reward_feedback_duration {
+            pct := clamp(elapsed / player.reward_feedback_duration, 0, 1);
+            ts := UIK.text_body();
+            ts.color = {0.35, 1.0, 0.5, 1.0 - pct};
+            UIK.text(player.reward_feedback_text, ts);
+        }
+    }
+
+    UIK.spacer(UIK.flex(1), UIK.pixels(1));
+
+    tutorial_btn: Interact_Result;
+    if player.show_tutorial_button {
+        tutorial_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+        tutorial_desc.panel.width = UIK.pixels(120);
+        tutorial_desc.panel.height = UIK.pixels(52);
+        tutorial_btn = UIK.button("hud/tutorial_button", "Tutorial", tutorial_desc);
+    }
+
+    shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    shop_desc.panel.width = UIK.pixels(120);
+    shop_desc.panel.height = UIK.pixels(52);
+    shop_btn := UIK.button("hud/shop_button", "Shop", shop_desc);
+
+    settings_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    settings_desc.panel.width = UIK.pixels(120);
+    settings_desc.panel.height = UIK.pixels(52);
+    settings_btn := UIK.button("hud/settings_button", "Settings", settings_desc);
+
+    monetization_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    monetization_desc.panel.width = UIK.pixels(104);
+    monetization_desc.panel.height = UIK.pixels(52);
+    monetization_btn := UIK.button("hud/monetization_button", "Sparks Shop", monetization_desc);
+
+    has_admin_button := can_access_admin_panel(player);
+    admin_btn: Interact_Result;
+    admin_shop_btn: Interact_Result;
+    if has_admin_button {
+        admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+        admin_desc.panel.width = UIK.pixels(120);
+        admin_desc.panel.height = UIK.pixels(52);
+        admin_btn = UIK.button("hud/admin_button", "EPIK PANEL", admin_desc);
+
+        admin_shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+        admin_shop_desc.panel.width = UIK.pixels(120);
+        admin_shop_desc.panel.height = UIK.pixels(52);
+        admin_shop_btn = UIK.button("hud/admin_shop_button", "EPIK SHOP", admin_shop_desc);
+    }
+
+    UIK.panel_end();
+    UIK.end();
+
+    if UIK.clicked(tutorial_btn) {
+        player.show_tutorial = true;
+        Save.set_int(player, "ui_test_show_tutorial", 1);
+    }
+    if UIK.clicked(shop_btn) {
+        player.shop_tab_index = 0;
+        player.show_shop = true;
+        Save.set_int(player, "ui_test_show_shop", 1);
+    }
+    if UIK.clicked(settings_btn) {
+        player.show_settings = true;
+    }
+    if UIK.clicked(monetization_btn) {
+        player.shop_tab_index = 1;
+        player.show_shop = true;
+        Save.set_int(player, "ui_test_show_shop", 1);
+    }
+    if has_admin_button && UIK.clicked(admin_btn) {
+        player.show_admin_panel = true;
+        Save.set_int(player, "ui_test_show_admin", 1);
+    }
+    if has_admin_button && UIK.clicked(admin_shop_btn) {
+        player.show_admin_shop = true;
+        Save.set_int(player, "ui_test_show_admin_shop", 1);
+    }
+
+    if player.show_settings {
+        draw_settings(player);
+    }
+}

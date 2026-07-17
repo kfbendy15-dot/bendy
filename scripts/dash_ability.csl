@@ -1,0 +1,59 @@
+Dash_Effect :: class : Effect_Base {
+    direction: v2;
+    original_friction: float;
+
+    effect_start :: method() {
+        player_specific.disable_movement_inputs = true;
+        original_friction = player.agent.friction;
+        player.agent.friction = 0;
+        player.animator.state_machine.set_trigger("dodge_roll");
+        if direction.x != 0 {
+            player.set_facing_right(direction.x > 0);
+        }
+        set_duration(0.3);
+    }
+
+    effect_update :: method(dt: float) {
+        player.agent.velocity = direction * 22;
+    }
+
+    effect_end :: method(interrupt: bool) {
+        player.agent.friction = original_friction;
+    }
+}
+
+Dash_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Dash";
+        icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
+        is_aimed_ability = true;
+    }
+
+    can_use :: method() -> bool {
+        return player.(Player).has_dash;
+    }
+
+    on_update :: method(params: ref Ability_Update_Params) {
+        activation := Ability_Utilities.full_update_aimed_ability(player, ref params);
+        if activation.activate {
+            current_cooldown = 3.0;
+            effect := new(Dash_Effect);
+            dir := activation.direction;
+            if length(dir) < 0.1 {
+                dir = v2{1, 0};
+                if player.entity.world_position.x > 0 { dir = v2{-1, 0}; }
+            }
+            effect.direction = normalize(dir);
+            player.entity.set_active_effect(effect);
+
+            if player.is_local() {
+                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+                desc := SFX.default_sfx_desc();
+                desc.entity_to_follow = player.entity.id;
+                desc.volume = 0.6;
+                desc.speed_perturb = 0.1;
+                SFX.play(sfx, desc);
+            }
+        }
+    }
+}

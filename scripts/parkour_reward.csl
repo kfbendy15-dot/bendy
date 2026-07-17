@@ -1,0 +1,32 @@
+Parkour_Reward :: class : Component {
+    reward_amount: s64 @ao_serialize;
+    reward_radius: float @ao_serialize;
+
+    ao_start :: method() {
+        if reward_amount <= 0 {
+            reward_amount = 25;
+        }
+        if reward_radius <= 0 {
+            reward_radius = 2.25;
+        }
+    }
+
+    ao_update :: method(dt: float) {
+        _ := dt;
+        for player: component_iterator(Player) {
+            if player == null {
+                continue;
+            }
+            if player.is_dead || player.out_of_bounds_respawn_active || player.has_claimed_parkour_reward {
+                continue;
+            }
+
+            delta := player.entity.world_position - entity.world_position;
+            if length_squared(delta) <= reward_radius * reward_radius {
+                player.has_claimed_parkour_reward = true;
+                Save.set_int(player, PARKOUR_REWARD_KEY, 1);
+                award_coins(player, reward_amount);
+            }
+        }
+    }
+}

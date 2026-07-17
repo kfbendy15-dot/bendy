@@ -1,0 +1,270 @@
+VERITY_CHAT_RANGE :: 12.0;
+VERITY_SPAWN_DISTANCE :: 2.0;
+
+Verity_Item_Definition :: class : Item_Definition {
+}
+
+Verity :: class : Component {
+    owner_user_id: string;
+    sprite: Sprite_Renderer;
+    interactable: Interactable;
+    chat_cooldown_until: float;
+    is_picked_up: bool;
+
+    ao_start :: method() {
+        sprite = entity.add_component(Sprite_Renderer);
+        sprite.set_texture(get_asset(Texture_Asset, "$AO/ui/kit/Icons/face/face_icon.png"));
+        sprite.color = {1.0, 0.9, 0.2, 1.0};
+        sprite.layer = 0;
+        entity.set_local_scale({1.15, 1.15});
+
+        interactable = entity.add_component(Interactable);
+        interactable.set_listener(this);
+        interactable.set_text("Pick up Verity");
+        interactable.set_hold_text("Pick up");
+        interactable.radius = 1.2;
+        interactable.required_hold_time = 0.2;
+        interactable.prompt_offset = {0, 22};
+    }
+
+    can_use :: method(player: Player) -> bool {
+        if player == null || g_verity_item_def == null || is_picked_up {
+            return false;
+        }
+
+        if !can_access_admin_panel(player) {
+            return false;
+        }
+
+        return Items.calculate_room_in_inventory_for_item(g_verity_item_def, player.default_inventory) > 0;
+    }
+
+    on_interact :: method(player: Player) {
+        if player == null || is_picked_up {
+            return;
+        }
+
+        is_picked_up = true;
+        if grant_verity_item(player) {
+            player.play_reward_feedback("+Verity");
+            if player.is_local() {
+                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+                desc := SFX.default_sfx_desc();
+                desc.entity_to_follow = player.entity.id;
+                desc.volume = 0.5;
+                SFX.play(sfx, desc);
+            }
+            entity.destroy();
+        } else {
+            is_picked_up = false;
+            player.play_reward_feedback("No room");
+        }
+    }
+}
+
+g_verity_item_def: Verity_Item_Definition;
+g_verity_initialized: bool;
+
+init_verity_admin_content :: proc() {
+    if g_verity_initialized {
+        return;
+    }
+    g_verity_initialized = true;
+
+    icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/face/face_icon.png");
+    desc: Item_Definition_Desc;
+    desc.id = "verity";
+    desc.name = "Verity";
+    desc.icon = icon;
+    desc.stack_size = 1;
+    g_verity_item_def = Items.register_item_definition(desc, Verity_Item_Definition);
+
+    core_globals.server_on_chat_message_received = handle_verity_chat_message;
+}
+
+message_contains :: proc(message: string, needle: string) -> bool {
+    if needle.count == 0 {
+        return true;
+    }
+    if message.count < needle.count {
+        return false;
+    }
+
+    limit := message.count - needle.count;
+    i: s64 = 0;
+    while i <= limit {
+        matched := true;
+        j: s64 = 0;
+        while j < needle.count {
+            if message[i + j] != needle[j] {
+                matched = false;
+                break;
+            }
+            j += 1;
+        }
+        if matched {
+            return true;
+        }
+        i += 1;
+    }
+
+    return false;
+}
+
+message_mentions_verity :: proc(message: string) -> bool {
+    return message_contains(message, "Verity") || message_contains(message, "verity") || message_contains(message, "VERITY");
+}
+
+verity_response_for_message :: proc(message: string) -> string {
+    if message_contains(message, "what are you") || message_contains(message, "who are you") || message_contains(message, "name") {
+        return "I am Verity.";
+    }
+    if message_contains(message, "place") || message_contains(message, "spawn") {
+        return "Drag me out of the hotbar to place me in front of you.";
+    }
+    if message_contains(message, "ammo") {
+        return "Ammo is in the admin shop.";
+    }
+    if message_contains(message, "gun") {
+        return "The admin shop has guns and ammo.";
+    }
+    if message_contains(message, "pvp") || message_contains(message, "vs") {
+        return "The VS button is gone.";
+    }
+    if message_contains(message, "where") {
+        return "Right here.";
+    }
+    return "I do not know.";
+}
+
+spawn_verity_entity :: proc(player: Player) -> Verity {
+    if player == null {
+        return null;
+    }
+
+    dir := player.last_aim_direction;
+    if dir.x * dir.x + dir.y * dir.y < 0.01 {
+        dir = v2{1, 0};
+    } else {
+        dir = normalize(dir);
+    }
+
+    e := Scene.create_entity();
+    e.set_name("Verity");
+    spawn_pos := v2{
+        player.entity.world_position.x + dir.x * VERITY_SPAWN_DISTANCE,
+        player.entity.world_position.y + dir.y * VERITY_SPAWN_DISTANCE,
+    };
+    e.set_local_position(spawn_pos);
+
+    comp := e.add_component(Verity);
+    comp.owner_user_id = player.get_user_id();
+    return comp;
+}
+
+place_verity_item :: proc(player: Player, item: Item_Instance) -> bool {
+    if player == null || item == null {
+        return false;
+    }
+    if !can_access_admin_panel(player) {
+        return false;
+    }
+
+    defn := item.get_definition();
+    if defn == null || defn.#type != Verity_Item_Definition {
+        return false;
+    }
+
+    spawn_verity_entity(player);
+    Items.destroy_item_instance(item, 1);
+    return true;
+}
+
+grant_verity_item :: proc(player: Player) -> bool {
+    if player == null || g_verity_item_def == null {
+        return false;
+    }
+
+    item := Items.create_item_instance(g_verity_item_def, 1);
+    will_destroy: bool;
+    if Items.can_move_item_to_inventory(item, player.default_inventory, ref will_destroy) {
+        Items.move_item_to_inventory(item, player.default_inventory);
+        return true;
+    }
+
+    Items.destroy_item_instance(item);
+    return false;
+}
+
+find_nearest_verity :: proc(player: Player, max_range: float) -> Verity {
+    if player == null {
+        return null;
+    }
+
+    nearby: [..]Verity;
+    Scene.get_all_components_in_range(player.entity.world_position, max_range, ref nearby);
+
+    closest_owned: Verity;
+    closest_owned_dist: float = max_range;
+    closest_any: Verity;
+    closest_any_dist: float = max_range;
+    user_id := player.get_user_id();
+    pos := player.entity.world_position;
+
+    for v: nearby {
+        if !#alive(v) {
+            continue;
+        }
+
+        dx := v.entity.world_position.x - pos.x;
+        dy := v.entity.world_position.y - pos.y;
+        dist := sqrt(dx * dx + dy * dy);
+
+        if dist <= closest_any_dist {
+            closest_any_dist = dist;
+            closest_any = v;
+        }
+
+        if v.owner_user_id == user_id && dist <= closest_owned_dist {
+            closest_owned_dist = dist;
+            closest_owned = v;
+        }
+    }
+
+    if #alive(closest_owned) {
+        return closest_owned;
+    }
+    if #alive(closest_any) {
+        return closest_any;
+    }
+    return null;
+}
+
+handle_verity_chat_message :: proc(player: Player, message: string) {
+    if player == null {
+        return;
+    }
+    if message.count == 0 || message[0] == '/' {
+        return;
+    }
+    admin_mode := can_access_admin_panel(player);
+    if !admin_mode {
+        return;
+    }
+
+    verity := find_nearest_verity(player, VERITY_CHAT_RANGE);
+    if verity == null {
+        return;
+    }
+    if verity.chat_cooldown_until > get_time() {
+        return;
+    }
+
+    verity.chat_cooldown_until = get_time() + 0.35;
+    answer := verity_response_for_message(message);
+    if admin_mode && answer == "I do not know." {
+        answer = format_string("I do not know about '%'.", {message});
+    }
+    Chat.server_send_message(format_string("Ball: %", {answer}));
+    Save.set_string(player, "ui_test_verity_answer", answer);
+}
