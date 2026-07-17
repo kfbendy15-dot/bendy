@@ -933,6 +933,9 @@ Player :: class : Player_Base {
         } else if user_tag.count == 0 && username == "Linky5" {
             user_tag = "PAPERCLIP";
             name_color_override = {1.0, 0.84, 0.18, 1.0};
+        } else if user_tag.count == 0 && username == "PileoHarse" {
+            user_tag = "PAPERCLIP";
+            name_color_override = {1.0, 0.84, 0.18, 1.0};
         }
     }
 
