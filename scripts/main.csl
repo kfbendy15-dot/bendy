@@ -187,6 +187,9 @@ grant_admin_permission :: proc(username: string) {
 
     target := find_online_player_by_username(username);
     if target != null {
+        target.is_admin_user = true;
+        target.user_tag = "PAPERCLIP";
+        target.name_color_override = {1.0, 0.84, 0.18, 1.0};
         if !player_has_weapon(target, .ADMIN_GUN) {
             give_weapon(.ADMIN_GUN, target.default_inventory);
         }
@@ -921,7 +924,7 @@ Player :: class : Player_Base {
         entity.set_local_position(get_spawn_point(idx));
 
         username := get_username();
-        is_admin_user = username == ADMIN_USERNAME;
+        is_admin_user = can_access_admin_panel(this);
         user_tag = Save.get_string(this, PLAYER_TITLE_SAVE_KEY, "");
         is_mimicer = false;
         shop_tab_index = 0;
@@ -951,15 +954,15 @@ Player :: class : Player_Base {
             entity.set_name("Player");
             set_name_override("Player");
         }
-        if user_tag.count == 0 && get_user_id() == "59zttiotnra" {
+        if is_admin_user {
+            user_tag = "PAPERCLIP";
+            name_color_override = {1.0, 0.84, 0.18, 1.0};
+        } else if user_tag.count == 0 && get_user_id() == "59zttiotnra" {
             user_tag = "Mr Fancy";
             name_color_override = {1.0, 0.86, 0.18, 1.0};
         } else if user_tag.count == 0 && get_user_id() == "ilikehotpockets" {
             user_tag = "Hot Pockets";
             name_color_override = {1.0, 0.86, 0.18, 1.0};
-        } else if user_tag.count == 0 && is_admin_user {
-            user_tag = "PAPERCLIP";
-            name_color_override = {1.0, 0.84, 0.18, 1.0};
         } else if user_tag.count == 0 && username == "Linky5" {
             user_tag = "PAPERCLIP";
             name_color_override = {1.0, 0.84, 0.18, 1.0};
