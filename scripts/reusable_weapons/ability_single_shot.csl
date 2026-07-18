@@ -47,6 +47,12 @@ Single_Shot_Ability :: class : Ability_Base {
             should_fire = aiming.activate;
         } else {
             should_fire = aiming.aim;
+            // Hydro Cannon's mobile action button reports activation separately
+            // from the aim vector. Accept both signals so the weapon fires from
+            // the touch control as well as from the mobile aim gesture.
+            if wt == .HYDRO_CANNON {
+                should_fire = aiming.aim || aiming.activate;
+            }
         }
 
         if should_fire && params.can_use && ability.current_cooldown <= 0 {

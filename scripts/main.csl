@@ -25,6 +25,7 @@ PARKOUR_REWARD_KEY :: "parkour_reward_claimed";
 PLAYER_TITLE_SAVE_KEY :: "player_title";
 ADMIN_USERNAME    :: "ilikepaperclips";
 ADMIN_PERMISSION_PREFIX :: "admin_permission/";
+ADMIN_BAN_PREFIX :: "admin_ban_until/";
 WORLD_BOUNDS_MIN_X :: -31.0;
 WORLD_BOUNDS_MAX_X :: 31.0;
 WORLD_BOUNDS_MIN_Y :: -20.0;
@@ -86,6 +87,29 @@ can_access_admin_panel :: proc(player: Player) -> bool {
     }
 
     return Save.get_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, username}), "") == "1";
+}
+
+admin_ban_expiry_for_user :: proc(user_id: string) -> s64 {
+    if user_id == "" return 0;
+    return Save.get_game_int(format_string("%0%", {ADMIN_BAN_PREFIX, user_id}), 0);
+}
+
+admin_ban_remaining_seconds :: proc(user_id: string) -> s64 {
+    expiry := admin_ban_expiry_for_user(user_id);
+    now := get_nanoseconds_since_epoch() / 1000000000;
+    remaining := expiry - now;
+    if remaining < 0 return 0;
+    return remaining;
+}
+
+admin_ban_player :: proc(target: Player, duration_seconds: s64) -> bool {
+    if target == null || duration_seconds <= 0 return false;
+    expiry := get_nanoseconds_since_epoch() / 1000000000 + duration_seconds;
+    key := format_string("%0%", {ADMIN_BAN_PREFIX, target.get_user_id()});
+    current_expiry := Save.get_game_int(key, 0);
+    Save.increment_game_int(key, expiry - current_expiry);
+    Server.kick_player(target, format_string("You have been banned for % seconds", {duration_seconds}));
+    return true;
 }
 
 destroy_weapon_item :: proc(player: Player, wt: Weapon_Type) -> bool {
@@ -807,6 +831,12 @@ Player :: class : Player_Base {
     backrooms_return_position: v2;
 
     ao_start :: method() {
+        banned_seconds := admin_ban_remaining_seconds(get_user_id());
+        if banned_seconds > 0 {
+            Server.kick_player(this, format_string("You have been banned for % seconds", {banned_seconds}));
+            return;
+        }
+
         // Weapon target (health component)
         wt := entity.add_component(Weapon_Target);
         wt.health = PLAYER_MAX_HEALTH;

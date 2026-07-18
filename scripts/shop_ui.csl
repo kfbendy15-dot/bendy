@@ -906,6 +906,7 @@ draw_admin_panel :: proc(player: Player) {
     UIK.text("Manage players", UIK.text_title());
     UIK.text(format_string("Target: %", {player.admin_target_username}), UIK.text_body());
     UIK.text(format_string("Coins: %", {player.admin_grant_amount}), UIK.text_body());
+    UIK.text(format_string("Ban duration: % seconds", {player.admin_grant_amount}), UIK.text_body());
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(2));
     target_scroll := UIK.layout_column();
@@ -1030,6 +1031,11 @@ draw_admin_panel :: proc(player: Player) {
     kick_desc.panel.width = UIK.flex(1);
     kick_desc.panel.height = UIK.pixels(52);
     kick_btn := UIK.button("admin/kick", "Kick", kick_desc);
+
+    ban_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    ban_desc.panel.width = UIK.flex(1);
+    ban_desc.panel.height = UIK.pixels(52);
+    ban_btn := UIK.button("admin/ban", "Ban", ban_desc);
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
@@ -1277,6 +1283,12 @@ draw_admin_panel :: proc(player: Player) {
     if UIK.clicked(kick_btn) {
         Server.kick_player(admin_target, STRANGER_MODE_KICK_REASON);
         player.play_reward_feedback(format_string("Kicked %", {admin_target.get_username()}));
+    }
+
+    if UIK.clicked(ban_btn) {
+        if admin_ban_player(admin_target, player.admin_grant_amount) {
+            player.play_reward_feedback(format_string("Banned % for % seconds", {admin_target.get_username(), player.admin_grant_amount}));
+        }
     }
 
     if UIK.clicked(summon_btn) {
