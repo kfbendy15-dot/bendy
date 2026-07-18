@@ -5,8 +5,8 @@
   "name": "tv_809c1a.png",
   "local_enabled": true,
   "local_position": {
-    "X": -0.5336775779724121,
-    "Y": 49.6870040893554688
+    "X": 6.3794836997985840,
+    "Y": 41.4977874755859375
   },
   "local_rotation": 0,
   "local_scale": {
