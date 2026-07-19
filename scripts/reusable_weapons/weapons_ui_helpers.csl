@@ -1,9 +1,32 @@
-draw_health_bar :: proc(player: Player) {
-    if player.admin_invisible_active || player.admin_gun_invisible_effect_count > 0 || player.powerup_invisible_active || player.powerup_invisible_effect_count > 0 {
-        Save.set_int(player, "ui_test_health_bar_hidden", 1);
+update_health_bar_visibility_test_state :: proc(player: Player) {
+    if !#alive(player) {
         return;
     }
-    Save.set_int(player, "ui_test_health_bar_hidden", 0);
+
+    hidden := player.admin_invisible_active || player.admin_gun_invisible_effect_count > 0 || player.powerup_invisible_active || player.powerup_invisible_effect_count > 0;
+    if !player.health_bar_visibility_initialized || hidden != player.health_bar_hidden_last {
+        Save.set_int(player, "ui_test_health_bar_hidden", hidden ? 1 : 0);
+        player.health_bar_hidden_last = hidden;
+        player.health_bar_visibility_initialized = true;
+    }
+}
+
+draw_health_bar :: proc(player: Player) {
+    if !#alive(player) || !#alive(player.entity) {
+        return;
+    }
+
+    target := player.weapon_target;
+    if !#alive(target) || target.max_health <= 0 {
+        return;
+    }
+
+    if player.admin_invisible_active || player.admin_gun_invisible_effect_count > 0 || player.powerup_invisible_active || player.powerup_invisible_effect_count > 0 {
+        return;
+    }
+
+    max_health := target.max_health;
+    health := clamp(target.health, 0.0, max_health);
 
     UI.push_world_draw_context();
     defer UI.pop_draw_context();
@@ -27,13 +50,13 @@ draw_health_bar :: proc(player: Player) {
     UI.quad(border_rect, back, {1, 1, 1, 1});
 
     // Health fill
-    health_pct := player.weapon_target.health / player.weapon_target.max_health;
+    health_pct := health / max_health;
     fill_rect := health_rect.subrect(0, 0, health_pct, 1);
     UI.quad(fill_rect, fill, {1, 1, 1, 1});
 
     // Pip markers
     total_pips :: 6;
-    health_per_pip := player.weapon_target.max_health / total_pips.(float);
+    health_per_pip := max_health / total_pips.(float);
     left_offset :: 0.05;
     right_offset :: 0.05;
     available_width := 1.0 - left_offset - right_offset;
@@ -43,7 +66,7 @@ draw_health_bar :: proc(player: Player) {
     i := 0;
     while i < total_pips {
         pip_threshold := (i + 1).(float) * health_per_pip;
-        if player.weapon_target.health >= pip_threshold {
+        if health >= pip_threshold {
             x_min := left_offset + i.(float) * pip_width;
             new_width := pip_width * shrink;
             new_x_min := x_min + (pip_width - new_width) / 2.0;
