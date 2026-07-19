@@ -52,6 +52,9 @@ Single_Shot_Ability :: class : Ability_Base {
             // the touch control as well as from the mobile aim gesture.
             if wt == .HYDRO_CANNON {
                 should_fire = aiming.aim || aiming.activate;
+                if should_fire && !aiming.aim {
+                    aiming.aim_direction = p.last_aim_direction;
+                }
             }
         }
 
