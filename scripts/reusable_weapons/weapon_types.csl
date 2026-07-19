@@ -45,6 +45,7 @@ Weapon_Type :: enum {
     ADMIN_GUN;
     ADMIN_NUKE_GUN;
     BUILDING_TOOLS;
+    LASER_GUN;
 }
 
 Fire_Mode :: enum {

@@ -136,12 +136,18 @@ Beam_Ability :: class : Ability_Base {
                     p.weapon_target.health += heal;
                     if p.weapon_target.health > p.weapon_target.max_health { p.weapon_target.health = p.weapon_target.max_health; }
                 }
-            } else if wt == .VOID_SPLITTER {
+            } else if wt == .VOID_SPLITTER || wt == .LASER_GUN {
                 // Line beam damage + single directional beam entity
                 beam_line_damage(p, origin, aiming.aim_direction, config.beam_range, config.beam_width, config.base_damage);
 
                 if !self.beams_spawned {
-                    spawn_beam_entity(p.entity.id, 0, "blue", "lightning_beam_loop_AL_mIK", config.beam_range);
+                    beam_color := "blue";
+                    beam_animation := "lightning_beam_loop_AL_mIK";
+                    if wt == .LASER_GUN {
+                        beam_color = "cyan";
+                        beam_animation = "lightning_beam_loop_AL_mIK";
+                    }
+                    spawn_beam_entity(p.entity.id, 0, beam_color, beam_animation, config.beam_range);
                     self.beams_spawned = true;
                 }
             } else {

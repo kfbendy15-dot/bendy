@@ -323,6 +323,7 @@ draw_shop :: proc(player: Player) {
     shop_ray_handle: Interact_Result;
     shop_shotgun_handle: Interact_Result;
     shop_beam_handle: Interact_Result;
+    shop_laser_handle: Interact_Result;
     shop_hydro_handle: Interact_Result;
     shop_blunder_handle: Interact_Result;
     shop_revolver_handle: Interact_Result;
@@ -398,6 +399,8 @@ draw_shop :: proc(player: Player) {
     shop_beam_handle = draw_shop_card("shop/beam_machine", "Beam Machine", 100, shop_beam_icon, {0.55, 0.7, 0.85, 1}, player_has_weapon(player, .BEAM_MACHINE));
     shop_hydro_handle = draw_shop_card("shop/hydro_cannon", "Hydro Cannon", 110, shop_hydro_icon, {0.35, 0.75, 0.9, 1}, player_has_weapon(player, .HYDRO_CANNON));
     shop_blunder_handle = draw_shop_card("shop/blunderbuss", "Blunderbuss", 75, shop_blunder_icon, {0.8, 0.55, 0.35, 1}, player_has_weapon(player, .BLUNDERBUSS));
+    laser_icon := get_asset(Texture_Asset, get_weapon_config(.LASER_GUN).weapon_icon_path);
+    shop_laser_handle = draw_shop_card("shop/laser_gun", "Laser Gun", 140, laser_icon, {0.25, 0.9, 1.0, 1}, player_has_weapon(player, .LASER_GUN));
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
@@ -521,6 +524,9 @@ draw_shop :: proc(player: Player) {
     }
     if UIK.clicked(shop_beam_handle) {
         buy_weapon_offer(player, .BEAM_MACHINE, 100, "+Beam Machine");
+    }
+    if UIK.clicked(shop_laser_handle) {
+        buy_weapon_offer(player, .LASER_GUN, 140, "+Laser Gun");
     }
     if UIK.clicked(shop_hydro_handle) {
         buy_weapon_offer(player, .HYDRO_CANNON, 110, "+Hydro Cannon");

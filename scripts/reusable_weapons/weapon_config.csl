@@ -804,6 +804,23 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.shoot_end_trigger = "";
             config.use_ik_var = "";
         }
+        case .LASER_GUN: {
+            config.fire_mode = .BEAM;
+            config.hand_type = .ONE_HAND;
+            config.fire_rate = 0.18;
+            config.base_damage = 14.0;
+            config.beam_range = 10.0;
+            config.beam_width = 0.28;
+            config.weapon_skin = "weapons/fire_ray";
+            config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/fireray.png";
+            config.item_id = "laser_gun";
+            config.item_name = "Laser Gun";
+            config.ammo_type_index = 5;
+            config.ammo_first_pickup = 180;
+            config.shoot_start_trigger = "fire_ray_start";
+            config.shoot_end_trigger = "fire_ray_end";
+            config.use_ik_var = "use_1h_ik";
+        }
     }
 
     return config;
