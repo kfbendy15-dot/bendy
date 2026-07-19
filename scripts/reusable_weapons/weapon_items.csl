@@ -1,4 +1,4 @@
-WEAPON_COUNT :: 45;
+WEAPON_COUNT :: 46;
 AMMO_TYPE_COUNT :: 10;
 
 g_weapon_item_defs: [WEAPON_COUNT]Item_Definition;
@@ -58,6 +58,7 @@ weapon_type_to_index :: proc(wt: Weapon_Type) -> s64 {
         case .ADMIN_GUN:              return 42;
         case .ADMIN_NUKE_GUN:         return 43;
         case .BUILDING_TOOLS:         return 44;
+        case .LASER_GUN:              return 45;
     }
     return -1;
 }
@@ -203,6 +204,7 @@ init_weapon_items :: proc() {
     register_weapon(.ADMIN_GUN);
     register_weapon(.ADMIN_NUKE_GUN);
     register_weapon(.BUILDING_TOOLS);
+    register_weapon(.LASER_GUN);
 
     // Load fire sounds for each weapon
     load_fire_sounds();
@@ -290,6 +292,7 @@ load_fire_sounds :: proc() {
 
     // Fire Ray - uses loop sounds handled in ability
     load_single_sound(.FIRE_RAY, "reusable_weapons/sounds/reusable-weapons/shoot_flamethrower_start.wav");
+    load_single_sound(.LASER_GUN, "reusable_weapons/sounds/reusable-weapons/ray_gun_shoot.wav");
 
     // Ice Launcher - uses loop sounds handled in ability
     load_single_sound(.ICE_LAUNCHER, "reusable_weapons/sounds/reusable-weapons/fire_ice_launcher_intro.wav");
@@ -426,6 +429,7 @@ get_weapon_type_for_item :: proc(item_def: Item_Definition) -> Weapon_Type {
                 case 42: return .ADMIN_GUN;
                 case 43: return .ADMIN_NUKE_GUN;
                 case 44: return .BUILDING_TOOLS;
+                case 45: return .LASER_GUN;
             }
         }
         i += 1;
