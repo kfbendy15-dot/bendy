@@ -27,6 +27,16 @@ reset_test_shop_state :: proc(player: Player) {
     save_coin_balance(player);
 } @chat_command @owner_or_editor
 
+hb_test_drop_target :: proc(player: Player) {
+    if !#alive(player) {
+        return;
+    }
+
+    player.weapon_target = null;
+    player.ui_test_restore_weapon_target_at = get_time() + 2.0;
+    Save.set_int(player, "ui_test_health_bar_target_restored", 0);
+} @chat_command @owner_or_editor
+
 vip_test_grant :: proc(player: Player) {
     player.has_vip = true;
     Save.set_int(player, VIP_SAVE_KEY, 1);

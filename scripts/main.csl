@@ -812,6 +812,13 @@ Player :: class : Player_Base {
     admin_gun_invisible_effect_count: s64;
     powerup_invisible_active: bool;
     powerup_invisible_effect_count: s64;
+    health_bar_visibility_initialized: bool;
+    health_bar_hidden_last: bool;
+    ui_test_health_initialized: bool;
+    ui_test_health_last: s64;
+    ui_test_invincible_health_initialized: bool;
+    ui_test_invincible_health_last: s64;
+    ui_test_restore_weapon_target_at: float;
     battlepass_music_effect_count: s64;
     is_admin_noclip: bool;
     mimicer_form_target_user_id: string;
@@ -976,6 +983,14 @@ Player :: class : Player_Base {
     }
 
     ao_update :: method(dt: float) {
+        update_health_bar_visibility_test_state(this);
+
+        if ui_test_restore_weapon_target_at > 0 && get_time() >= ui_test_restore_weapon_target_at {
+            weapon_target = entity.get_component(Weapon_Target);
+            ui_test_restore_weapon_target_at = 0;
+            Save.set_int(this, "ui_test_health_bar_target_restored", #alive(weapon_target) ? 1 : 0);
+        }
+
         ensure_vip_crown_visual(this);
 
         if has_vip && show_vip_crown && !#alive(vip_crown_entity) {
@@ -1015,10 +1030,17 @@ Player :: class : Player_Base {
             }
         }
 
-        if weapon_target != null {
-            Save.set_int(this, "ui_test_current_health", weapon_target.health.(s64));
-            if is_admin_invincible {
-                Save.set_int(this, "ui_test_invincible_health", weapon_target.health.(s64));
+        if #alive(weapon_target) {
+            current_health := weapon_target.health.(s64);
+            if !ui_test_health_initialized || current_health != ui_test_health_last {
+                Save.set_int(this, "ui_test_current_health", current_health);
+                ui_test_health_last = current_health;
+                ui_test_health_initialized = true;
+            }
+            if is_admin_invincible && (!ui_test_invincible_health_initialized || current_health != ui_test_invincible_health_last) {
+                Save.set_int(this, "ui_test_invincible_health", current_health);
+                ui_test_invincible_health_last = current_health;
+                ui_test_invincible_health_initialized = true;
             }
         }
 

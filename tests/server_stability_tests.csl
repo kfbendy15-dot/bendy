@@ -1,0 +1,37 @@
+test_health_bar_missing_target_lifecycle :: proc() {
+    Test.run_admin_command("hb_test_drop_target");
+    Test.wait_frames(120);
+
+    Test.assert_save_int("health target automatically restores after missing-reference window", "ui_test_health_bar_target_restored", 1);
+}
+
+test_health_bar_multiplayer_profile :: proc() {
+    Test.spawn_dummy_players(1);
+    Test.wait_seconds(10.0);
+    Test.assert_entity_count("dummy player joined the stability server", "Player", 2);
+
+    Test.profile_start("health_bar_multiplayer_profile");
+    Test.wait_frames(1200);
+    Test.profile_stop();
+
+    Test.assert_save_int("local player remains healthy under multiplayer load", "ui_test_current_health", 100);
+}
+
+test_health_bar_steady_state_profile :: proc() {
+    Test.profile_start("health_bar_steady_state_profile");
+    Test.wait_frames(1200);
+    Test.profile_stop();
+
+    Test.assert_save_int("health remains stable during profiled rendering", "ui_test_current_health", 100);
+}
+
+test_health_bar_initial_visibility :: proc() {
+    Test.wait_frames(30);
+    Test.assert_save_int("health bar starts visible", "ui_test_health_bar_hidden", 0);
+}
+
+test_health_bar_hidden_transition :: proc() {
+    Test.run_admin_command("tripmine_test_enable_admin_invisible");
+    Test.wait_frames(30);
+    Test.assert_save_int("health bar hides when the player becomes invisible", "ui_test_health_bar_hidden", 1);
+}
