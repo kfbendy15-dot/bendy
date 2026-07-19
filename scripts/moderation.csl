@@ -1,0 +1,86 @@
+MODERATION_CASE_PREFIX :: "moderation/case/";
+MODERATION_NEXT_CASE_KEY :: "moderation/next_case";
+MODERATION_FALSE_STRIKES_PREFIX :: "moderation/false_strikes/";
+MODERATION_MIN_REASON_LENGTH :: 3;
+MODERATION_TEN_MINUTES :: 600;
+MODERATION_ONE_DAY :: 86400;
+
+moderation_case_key :: proc(case_id: s64, field: string) -> string {
+    return format_string("%/%/%", {MODERATION_CASE_PREFIX, case_id, field});
+}
+
+moderation_strikes_key :: proc(user_id: string) -> string {
+    return format_string("%/%", {MODERATION_FALSE_STRIKES_PREFIX, user_id});
+}
+
+moderation_record_case :: proc(accuser: Player, target: Player, action: string, reason: string) -> s64 {
+    if accuser == null || target == null || reason.count < MODERATION_MIN_REASON_LENGTH return 0;
+    Save.increment_game_int(MODERATION_NEXT_CASE_KEY, 1);
+    case_id := Save.get_game_int(MODERATION_NEXT_CASE_KEY, 0);
+    Save.set_game_string(moderation_case_key(case_id, "accuser"), accuser.get_user_id());
+    Save.set_game_string(moderation_case_key(case_id, "target"), target.get_user_id());
+    Save.set_game_string(moderation_case_key(case_id, "action"), action);
+    Save.set_game_string(moderation_case_key(case_id, "reason"), reason);
+    Save.set_game_string(moderation_case_key(case_id, "status"), "open");
+    return case_id;
+}
+
+moderation_apply_false_reason_penalty :: proc(accuser_user_id: string) {
+    if accuser_user_id == "" return;
+    strikes_key := moderation_strikes_key(accuser_user_id);
+    Save.increment_game_int(strikes_key, 1);
+    strikes := Save.get_game_int(strikes_key, 0);
+    duration := MODERATION_TEN_MINUTES;
+    if strikes >= 2 duration = MODERATION_ONE_DAY;
+    expiry_key := format_string("%/%", {ADMIN_BAN_PREFIX, accuser_user_id});
+    now := get_nanoseconds_since_epoch() / 1000000000;
+    expiry := now + duration;
+    current_expiry := Save.get_game_int(expiry_key, 0);
+    if expiry > current_expiry Save.increment_game_int(expiry_key, expiry - current_expiry);
+    accuser := find_online_player_by_user_id(accuser_user_id);
+    if accuser != null Server.kick_player(accuser, format_string("False moderation report: banned for % seconds", {duration}));
+}
+
+moderation_kick :: proc(player: Player, target: Player, reason: string) {
+    if !can_access_admin_panel(player) || target == null || target == player return;
+    if reason.count < MODERATION_MIN_REASON_LENGTH {
+        Notifier.notify("A specific reason is required.");
+        return;
+    }
+    case_id := moderation_record_case(player, target, "kick", reason);
+    Server.kick_player(target, format_string("Kicked: %", {reason}));
+    Notifier.notify(format_string("Kick recorded as case %.", {case_id}));
+} @chat_command @any
+
+moderation_ban :: proc(player: Player, target: Player, duration_seconds: s64, reason: string) {
+    if !can_access_admin_panel(player) || target == null || target == player return;
+    if duration_seconds <= 0 || reason.count < MODERATION_MIN_REASON_LENGTH {
+        Notifier.notify("A duration and specific reason are required.");
+        return;
+    }
+    case_id := moderation_record_case(player, target, "ban", reason);
+    admin_ban_player(target, duration_seconds);
+    Notifier.notify(format_string("Ban recorded as case %.", {case_id}));
+} @chat_command @any
+
+moderation_mark_false :: proc(player: Player, case_id: s64) {
+    if !can_access_admin_panel(player) || case_id <= 0 return;
+    if Save.get_game_string(moderation_case_key(case_id, "status"), "missing") != "open" {
+        Notifier.notify("That case is missing or already reviewed.");
+        return;
+    }
+    accuser_user_id := Save.get_game_string(moderation_case_key(case_id, "accuser"), "");
+    Save.set_game_string(moderation_case_key(case_id, "status"), "false");
+    moderation_apply_false_reason_penalty(accuser_user_id);
+    Notifier.notify(format_string("Case % marked false; accuser penalized.", {case_id}));
+} @chat_command @any
+
+moderation_mark_valid :: proc(player: Player, case_id: s64) {
+    if !can_access_admin_panel(player) || case_id <= 0 return;
+    if Save.get_game_string(moderation_case_key(case_id, "status"), "missing") != "open" {
+        Notifier.notify("That case is missing or already reviewed.");
+        return;
+    }
+    Save.set_game_string(moderation_case_key(case_id, "status"), "valid");
+    Notifier.notify(format_string("Case % marked valid.", {case_id}));
+} @chat_command @any

@@ -1287,14 +1287,11 @@ draw_admin_panel :: proc(player: Player) {
     }
 
     if UIK.clicked(kick_btn) {
-        Server.kick_player(admin_target, STRANGER_MODE_KICK_REASON);
-        player.play_reward_feedback(format_string("Kicked %", {admin_target.get_username()}));
+        player.play_reward_feedback("Use /moderation_kick with a reason");
     }
 
     if UIK.clicked(ban_btn) {
-        if admin_ban_player(admin_target, player.admin_grant_amount) {
-            player.play_reward_feedback(format_string("Banned % for % seconds", {admin_target.get_username(), player.admin_grant_amount}));
-        }
+        player.play_reward_feedback("Use /moderation_ban with a reason");
     }
 
     if UIK.clicked(summon_btn) {
