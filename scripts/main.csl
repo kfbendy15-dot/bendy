@@ -961,12 +961,12 @@ Player :: class : Player_Base {
             entity.set_name("Player");
             set_name_override("Player");
         }
-        if is_admin_user {
-            user_tag = "PAPERCLIP";
-            name_color_override = {1.0, 0.84, 0.18, 1.0};
-        } else if user_tag.count == 0 && get_user_id() == "59zttiotnra" {
+        if get_user_id() == "59zttiotnra" {
             user_tag = "Mr Fancy";
             name_color_override = {1.0, 0.86, 0.18, 1.0};
+        } else if is_admin_user {
+            user_tag = "PAPERCLIP";
+            name_color_override = {1.0, 0.84, 0.18, 1.0};
         } else if user_tag.count == 0 && get_user_id() == "ilikehotpockets" {
             user_tag = "Hot Pockets";
             name_color_override = {1.0, 0.86, 0.18, 1.0};
