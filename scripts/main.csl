@@ -78,7 +78,15 @@ ao_purchase_handler :: proc(player: Player, id: string) -> bool {
 }
 
 can_access_admin_panel :: proc(player: Player) -> bool {
+    if player == null {
+        return false;
+    }
+
     if Game.is_editor() {
+        return true;
+    }
+
+    if player.is_admin() {
         return true;
     }
 
@@ -736,12 +744,14 @@ ao_before_scene_load :: proc() {
     coin_tex := get_asset(Texture_Asset, "$AO/ui/kit/Icons/weapon_tier/weapon_tier_icon_gold.png");
     Economy.register_currency("Coins", coin_tex);
     init_verity_admin_content();
+    init_admin_chat();
 }
 
 ao_start :: proc() {
 }
 
 ao_update :: proc(dt: float) {
+    admin_chat_poll();
 }
 
 ao_late_update :: proc(dt: float) {
@@ -841,6 +851,8 @@ Player :: class : Player_Base {
     vip_crown_entity: Entity;
     is_in_backrooms: bool;
     backrooms_return_position: v2;
+    admin_chat_last_send_at: float;
+    admin_chat_last_activity_at: float;
 
     ao_start :: method() {
         banned_seconds := admin_ban_remaining_seconds(get_user_id());
@@ -960,6 +972,8 @@ Player :: class : Player_Base {
         vs_target_user_id = "";
         is_in_backrooms = false;
         backrooms_return_position = entity.world_position;
+        admin_chat_last_send_at = 0;
+        admin_chat_last_activity_at = 0;
         if Game.is_editor() {
             entity.set_name("Player");
             set_name_override("Player");
