@@ -43,6 +43,7 @@ COIN_PASS_1000_PRODUCT_ID :: "6a4efb9d6c6f712a86c24190";
 VIP_PRODUCT_ID           :: "6a52eb28d855008fb0d0c4e8";
 VIP_SAVE_KEY             :: "vip_owned";
 VIP_CROWN_VISIBLE_SAVE_KEY :: "vip_crown_visible";
+ADMIN_TAG_VISIBLE_SAVE_KEY :: "admin_tag_visible";
 
 coin_pass_amount_for_product :: proc(product_id: string) -> s64 {
     if product_id == COIN_PASS_25_PRODUCT_ID { return 25; }
@@ -779,6 +780,7 @@ Player :: class : Player_Base {
     show_shop: bool;
     show_settings: bool;
     show_vip_crown: bool;
+    show_admin_tag: bool;
     show_reward_popups: bool;
     show_tutorial_button: bool;
     shop_tab_index: s64;
@@ -902,6 +904,7 @@ Player :: class : Player_Base {
         has_claimed_parkour_reward = Save.get_int(this, PARKOUR_REWARD_KEY, 0) != 0;
         has_vip = Save.get_int(this, VIP_SAVE_KEY, 0) != 0;
         show_vip_crown = Save.get_int(this, VIP_CROWN_VISIBLE_SAVE_KEY, 1) != 0;
+        show_admin_tag = Save.get_int(this, ADMIN_TAG_VISIBLE_SAVE_KEY, 1) != 0;
         show_reward_popups = Save.get_int(this, "show_reward_popups", 1) != 0;
         show_tutorial_button = Save.get_int(this, "show_tutorial_button", 1) != 0;
         Save.set_int(this, "ui_test_sword_base_damage", get_weapon_config(.SWORD).base_damage.(s64));

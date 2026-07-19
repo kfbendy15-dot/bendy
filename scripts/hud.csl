@@ -26,6 +26,15 @@ draw_settings :: proc(player: Player) {
         UIK.text(UIK.text_body(), "VIP crown settings unlock with VIP.");
     }
 
+    if can_access_admin_panel(player) {
+        UIK.divider();
+        UIK.text(UIK.text_title(), "Admin Settings");
+        admin_tag_result := UIK.toggle("settings/admin_tag", "Show admin tag", (&player.show_admin_tag).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW));
+        if admin_tag_result.clicked {
+            Save.set_int(player, ADMIN_TAG_VISIBLE_SAVE_KEY, player.show_admin_tag ? 1 : 0);
+        }
+    }
+
     UIK.divider();
     UIK.text(UIK.text_title(), "Interface");
     UIK.toggle("settings/reward_popups", "Show reward popups", (&player.show_reward_popups).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY));
