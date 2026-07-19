@@ -79,7 +79,6 @@ init_verity_admin_content :: proc() {
     desc.stack_size = 1;
     g_verity_item_def = Items.register_item_definition(desc, Verity_Item_Definition);
 
-    core_globals.server_on_chat_message_received = handle_verity_chat_message;
 }
 
 message_contains :: proc(message: string, needle: string) -> bool {

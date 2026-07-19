@@ -1,0 +1,184 @@
+// Cross-server admin chat. The shared ordered game-save stream is the central
+// relay; every live server polls it and only delivers entries to its local admins.
+
+ADMIN_CHAT_RELAY_PREFIX :: "admin_chat/relay/";
+ADMIN_CHAT_RELAY_DOCUMENT :: "admin_chat/relay/v1";
+ADMIN_CHAT_RELAY_BATCH_SIZE :: 100;
+ADMIN_CHAT_POLL_INTERVAL :: 0.75;
+ADMIN_CHAT_SEND_COOLDOWN :: 0.35;
+ADMIN_CHAT_ACTIVITY_COOLDOWN :: 0.2;
+
+g_admin_chat_initialized: bool;
+g_admin_chat_next_poll_at: float;
+g_admin_chat_poll_in_flight: bool;
+g_admin_chat_started_at_ms: s64;
+g_admin_chat_seen_event_ids: [..]string;
+
+admin_chat_event_key :: proc(event_id: string, field: string) -> string {
+    return format_string("%/%/%", {ADMIN_CHAT_RELAY_PREFIX, event_id, field});
+}
+
+admin_chat_has_seen_event :: proc(event_id: string) -> bool {
+    for seen_event_id: g_admin_chat_seen_event_ids {
+        if seen_event_id == event_id {
+            return true;
+        }
+    }
+    return false;
+}
+
+admin_chat_mark_event_seen :: proc(event_id: string) {
+    if event_id == "" || admin_chat_has_seen_event(event_id) {
+        return;
+    }
+
+    if g_admin_chat_seen_event_ids.count >= 512 {
+        g_admin_chat_seen_event_ids.ordered_remove_by_index(0);
+    }
+    g_admin_chat_seen_event_ids.append(event_id);
+}
+
+admin_chat_event_id :: proc(player: Player) -> string {
+    return format_string("%/%/%/%", {Server.get_id(), player.get_user_id(), get_nanoseconds_since_epoch(), get_frame_number()});
+}
+
+admin_chat_format_entry :: proc(kind: string, source_name: string, source_server: string, body: string) -> string {
+    if kind == "activity" {
+        return format_string("[Admin activity | %] % said: %", {source_server, source_name, body});
+    }
+    return format_string("[Admin chat | %] %: %", {source_server, source_name, body});
+}
+
+admin_chat_deliver :: proc(kind: string, source_name: string, source_server: string, body: string) {
+    entry := admin_chat_format_entry(kind, source_name, source_server, body);
+
+    // Chat.server_send_message with an explicit player target keeps this feed
+    // out of normal player chat entirely.
+    for recipient: component_iterator(Player) {
+        if !can_access_admin_panel(recipient) {
+            continue;
+        }
+
+        Chat.server_send_message(entry, recipient);
+    }
+}
+
+admin_chat_publish :: proc(source: Player, kind: string, body: string) {
+    if source == null || body.count == 0 {
+        return;
+    }
+
+    event_id := admin_chat_event_id(source);
+    server_id := Server.get_id();
+
+    // Each message has an immutable ID. Publish it to the ordered stream only
+    // after its payload is written, so two servers can never overwrite each
+    // other's messages or combine fields from separate messages.
+    Save.set_game_string(admin_chat_event_key(event_id, "kind"), kind);
+    Save.set_game_string(admin_chat_event_key(event_id, "sender"), source.get_username());
+    Save.set_game_string(admin_chat_event_key(event_id, "server"), server_id);
+    Save.set_game_string(admin_chat_event_key(event_id, "body"), body);
+    created_at_ms := get_nanoseconds_since_epoch() / 1000000;
+    Save.ordered_set(ADMIN_CHAT_RELAY_DOCUMENT, event_id, created_at_ms.(f64));
+    admin_chat_mark_event_seen(event_id);
+
+    // Deliver instantly to the sending server; other servers receive it on
+    // their next short poll of the central relay.
+    admin_chat_deliver(kind, source.get_username(), server_id, body);
+}
+
+admin_chat_receive_entries :: proc(entries: []Ordered_Save_Entry, userdata: Object) {
+    g_admin_chat_poll_in_flight = false;
+
+    for entry: entries {
+        event_id := entry.key;
+        if event_id == "" || admin_chat_has_seen_event(event_id) {
+            continue;
+        }
+
+        kind := Save.get_game_string(admin_chat_event_key(event_id, "kind"), "");
+        source_name := Save.get_game_string(admin_chat_event_key(event_id, "sender"), "");
+        source_server := Save.get_game_string(admin_chat_event_key(event_id, "server"), "");
+        body := Save.get_game_string(admin_chat_event_key(event_id, "body"), "");
+
+        // The ordered entry can arrive before its earlier payload writes have
+        // replicated. Leave it unseen so a later poll retries the same ID.
+        if kind == "" || source_name == "" || body == "" {
+            continue;
+        }
+
+        admin_chat_mark_event_seen(event_id);
+        // During startup, ignore historical entries but retain any message
+        // published after this server joined the central stream.
+        if entry.value >= g_admin_chat_started_at_ms.(f64) {
+            admin_chat_deliver(kind, source_name, source_server, body);
+        }
+    }
+}
+
+admin_chat_poll :: proc() {
+    // Shared-save reads are an external service operation. Skipping predicted
+    // simulation frames prevents a re-simulation from issuing the same relay
+    // poll repeatedly; authoritative frames still keep every server in sync.
+    if Game.is_predicted_frame() {
+        return;
+    }
+
+    now := get_time();
+    if g_admin_chat_poll_in_flight || now < g_admin_chat_next_poll_at {
+        return;
+    }
+    g_admin_chat_next_poll_at = now + ADMIN_CHAT_POLL_INTERVAL;
+    g_admin_chat_poll_in_flight = true;
+    Save.ordered_get_all(ADMIN_CHAT_RELAY_DOCUMENT, 0, ADMIN_CHAT_RELAY_BATCH_SIZE, null, admin_chat_receive_entries);
+}
+
+handle_admin_chat_message :: proc(player: Player, message: string) {
+    if player == null {
+        return;
+    }
+
+    if message.count > 0 && message[0] != '/' {
+        // The complete player message is available to administrators for
+        // moderation context, but is never delivered to non-admin players.
+        if get_time() >= player.admin_chat_last_activity_at + ADMIN_CHAT_ACTIVITY_COOLDOWN {
+            player.admin_chat_last_activity_at = get_time();
+            admin_chat_publish(player, "activity", message);
+        }
+    }
+}
+
+// All game chat callbacks are dispatched here. Add future chat listeners to
+// this router instead of replacing core_globals.server_on_chat_message_received.
+handle_game_chat_message :: proc(player: Player, message: string) {
+    handle_admin_chat_message(player, message);
+    handle_verity_chat_message(player, message);
+}
+
+admin_chat :: proc(player: Player, message: string = "") {
+    if player == null || !can_access_admin_panel(player) {
+        return;
+    }
+    if message.count == 0 {
+        Chat.server_send_message("Admin chat needs a message.", player);
+        return;
+    }
+    if get_time() < player.admin_chat_last_send_at + ADMIN_CHAT_SEND_COOLDOWN {
+        Chat.server_send_message("Admin chat is sending too quickly.", player);
+        return;
+    }
+
+    player.admin_chat_last_send_at = get_time();
+    admin_chat_publish(player, "chat", message);
+} @chat_command @any
+
+init_admin_chat :: proc() {
+    if g_admin_chat_initialized {
+        return;
+    }
+
+    g_admin_chat_initialized = true;
+    g_admin_chat_next_poll_at = 0;
+    g_admin_chat_started_at_ms = get_nanoseconds_since_epoch() / 1000000;
+    core_globals.server_on_chat_message_received = handle_game_chat_message;
+}
