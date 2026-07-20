@@ -155,24 +155,17 @@ handle_game_chat_message :: proc(player: Player, message: string) {
     handle_verity_chat_message(player, message);
 }
 
-admin_chat :: proc(player: Player, message: string = "") {
-    if player == null || !can_access_admin_panel(player) || !player.admin_chat_enabled {
-        if player != null && can_access_admin_panel(player) && !player.admin_chat_enabled {
-            Chat.server_send_message("Turn on Admin Chat in the admin panel first.", player);
-        }
+admin :: proc(player: Player, mode: string = "") {
+    if player == null || !can_access_admin_panel(player) {
         return;
     }
-    if message.count == 0 {
-        Chat.server_send_message("Admin chat needs a message.", player);
-        return;
-    }
-    if get_time() < player.admin_chat_last_send_at + ADMIN_CHAT_SEND_COOLDOWN {
-        Chat.server_send_message("Admin chat is sending too quickly.", player);
+    if mode != "chat" {
+        Chat.server_send_message("Use /admin chat to switch to Admin Chat.", player);
         return;
     }
 
-    player.admin_chat_last_send_at = get_time();
-    admin_chat_publish(player, "chat", message);
+    player.admin_chat_enabled = true;
+    player.play_reward_feedback("Admin Chat on");
 } @chat_command @any
 
 init_admin_chat :: proc() {
