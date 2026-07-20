@@ -1,0 +1,80 @@
+set_capture_the_flag_team :: proc(target: Player, team: s64) {
+    if target == null || team < 0 || team >= CAPTURE_THE_FLAG_TEAM_COUNT { return; }
+    target.capture_the_flag_team = team;
+    target.play_reward_feedback(format_string("Team: {0}", {capture_the_flag_team_name(team)}));
+}
+
+draw_minigames :: proc(player: Player) {
+    UIK.begin(UIK.modal(UIK.rect_window_large(), 25));
+    shell := UIK.panel_modal(.BLACK);
+    UIK.panel_begin(shell);
+
+    title_desc := UIK.title_area_desc("Minigames");
+    exit_handle := UIK.title_area(title_desc);
+
+    content := UIK.layout_column();
+    content.width = UIK.flex(1);
+    content.height = UIK.flex(1);
+    content.padding = v4{12, 16, 12, 16};
+    content.gap = 8;
+    UIK.list_begin("minigames_scroll", content);
+
+    UIK.text("Choose a minigame", UIK.text_title());
+    UIK.text("Pick a team, then start Capture the Flag.", UIK.text_body());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+
+    ctf_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    ctf_desc.panel.width = UIK.flex(1);
+    ctf_desc.panel.height = UIK.pixels(86);
+    ctf_handle := UIK.button("minigames/capture_the_flag", "Capture the Flag", ctf_desc);
+    UIK.text("Seven teams: Red, Blue, Yellow, Green, Orange, Purple, Pink", UIK.text_body());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+
+    UIK.text("Your team", UIK.text_title());
+    own_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 5);
+    UIK.panel_begin(own_row);
+    for team: 0..CAPTURE_THE_FLAG_TEAM_COUNT - 1 {
+        team_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+        team_desc.panel.width = UIK.flex(1);
+        team_desc.panel.height = UIK.pixels(58);
+        team_handle := UIK.button(format_string("minigames/self_team/%", {team}), capture_the_flag_team_name(team), team_desc);
+        if UIK.clicked(team_handle) { set_capture_the_flag_team(player, team); }
+    }
+    UIK.panel_end();
+
+    if can_access_admin_panel(player) {
+        UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+        UIK.text("Assign players to teams", UIK.text_title());
+        UIK.text("Click a colored team button beside any player.", UIK.text_body());
+        for target: component_iterator(Player) {
+            row := UIK.layout_row(UIK.flex(1), UIK.fit(), 4);
+            UIK.panel_begin(row);
+            UIK.text(format_string("%: {1}", {target.get_username(), capture_the_flag_team_name(target.capture_the_flag_team)}), UIK.text_body());
+            for team: 0..CAPTURE_THE_FLAG_TEAM_COUNT - 1 {
+                team_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+                team_desc.panel.width = UIK.pixels(68);
+                team_desc.panel.height = UIK.pixels(44);
+                team_handle := UIK.button(format_string("minigames/player/%/%", {target.get_user_id(), team}), capture_the_flag_team_name(team), team_desc);
+                if UIK.clicked(team_handle) { set_capture_the_flag_team(target, team); }
+            }
+            UIK.panel_end();
+        }
+    }
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(12));
+    close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    close_desc.panel.width = UIK.flex(1);
+    close_desc.panel.height = UIK.pixels(60);
+    close_handle := UIK.button("minigames/close", "Close", close_desc);
+    UIK.list_end();
+    UIK.panel_end();
+    UIK.end();
+
+    if UIK.clicked(ctf_handle) {
+        start(player, "Capture the flag");
+        player.show_minigames = false;
+    }
+    if UIK.clicked(exit_handle) || UIK.clicked(close_handle) {
+        player.show_minigames = false;
+    }
+}

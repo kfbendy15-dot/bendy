@@ -809,6 +809,7 @@ Player :: class : Player_Base {
     show_admin_panel: bool;
     show_admin_shop: bool;
     show_mimicer_selector: bool;
+    show_minigames: bool;
     user_tag: string;
 
     reward_feedback_text: string;
@@ -978,6 +979,7 @@ Player :: class : Player_Base {
         is_mimicer = false;
         shop_tab_index = 0;
         show_mimicer_selector = false;
+        show_minigames = false;
         armor_bonus_health = 0;
         admin_target_username = "";
         admin_grant_amount = 25;
@@ -1153,6 +1155,9 @@ Player :: class : Player_Base {
             }
             if show_mimicer_selector {
                 draw_mimicer_selector(this);
+            }
+            if show_minigames {
+                draw_minigames(this);
             }
         }
 
