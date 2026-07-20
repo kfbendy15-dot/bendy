@@ -1,0 +1,147 @@
+ADMIN_UNBAN_REFRESH_INTERVAL :: 1.0;
+
+admin_unban_key_has_prefix :: proc(key: string, prefix: string) -> bool {
+    if key.count <= prefix.count {
+        return false;
+    }
+
+    i: int = 0;
+    while i < prefix.count {
+        if key[i] != prefix[i] {
+            return false;
+        }
+        i += 1;
+    }
+    return true;
+}
+
+admin_unban_user_id_from_key :: proc(key: string) -> string {
+    if !admin_unban_key_has_prefix(key, ADMIN_BAN_PREFIX) {
+        return "";
+    }
+    return string_substring(key, ADMIN_BAN_PREFIX.count, key.count - ADMIN_BAN_PREFIX.count);
+}
+
+admin_unban_remaining_text :: proc(expiry: s64) -> string {
+    now := get_nanoseconds_since_epoch() / 1000000000;
+    remaining := max(0, expiry - now);
+    if remaining >= 86400 {
+        return format_string("% days left", {remaining / 86400});
+    }
+    if remaining >= 3600 {
+        return format_string("% hours left", {remaining / 3600});
+    }
+    if remaining >= 60 {
+        return format_string("% minutes left", {remaining / 60});
+    }
+    return format_string("% seconds left", {remaining});
+}
+
+refresh_admin_banned_users :: proc(player: Player) {
+    if player == null || !can_access_admin_panel(player) {
+        return;
+    }
+
+    player.admin_banned_user_ids.clear();
+    player.admin_banned_usernames.clear();
+    player.admin_banned_expiries.clear();
+
+    now := get_nanoseconds_since_epoch() / 1000000000;
+    for entry: Save.get_all_game_ints() {
+        user_id := admin_unban_user_id_from_key(entry.key);
+        if user_id == "" || entry.value <= now {
+            continue;
+        }
+
+        player.admin_banned_user_ids.append(user_id);
+        player.admin_banned_usernames.append(admin_ban_username_for_user(user_id));
+        player.admin_banned_expiries.append(entry.value);
+    }
+
+    player.admin_unban_next_refresh_at = get_time() + ADMIN_UNBAN_REFRESH_INTERVAL;
+    player.admin_unban_visible_ban_count = player.admin_banned_user_ids.count;
+}
+
+admin_unban_user :: proc(admin: Player, user_id: string) -> bool {
+    if admin == null || !can_access_admin_panel(admin) || user_id == "" {
+        return false;
+    }
+
+    expiry_key := format_string("%0%", {ADMIN_BAN_PREFIX, user_id});
+    current_expiry := Save.get_game_int(expiry_key, 0);
+    now := get_nanoseconds_since_epoch() / 1000000000;
+    if current_expiry <= now {
+        refresh_admin_banned_users(admin);
+        admin.play_reward_feedback("Ban already expired");
+        return false;
+    }
+
+    username := admin_ban_username_for_user(user_id);
+    Save.increment_game_int(expiry_key, -current_expiry);
+    admin.admin_unban_action_count += 1;
+    admin.admin_unban_last_user_id = user_id;
+    admin.admin_unban_last_expiry_after = Save.get_game_int(expiry_key, -1);
+
+    message := format_string("% unbanned %.", {admin.get_username(), username});
+    admin.admin_unban_announcement_count += 1;
+    admin.admin_unban_last_announcement = message;
+    Notifier.notify(message);
+
+    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/unequip_gun.wav");
+    desc := SFX.default_sfx_desc();
+    desc.entity_to_follow = admin.entity.id;
+    desc.specific_to_player = admin;
+    desc.volume = 0.45;
+    SFX.play(sfx, desc);
+
+    admin.play_reward_feedback(format_string("Unbanned %", {username}));
+    refresh_admin_banned_users(admin);
+    return true;
+}
+
+on_admin_unban_ui :: proc(event: UIDoc_Event, userdata: Object) {
+    player := userdata.(Player);
+    if !#alive(player) || !can_access_admin_panel(player) {
+        return;
+    }
+
+    if event.handler == "event:admin_unban_close" {
+        player.show_admin_unban = false;
+        return;
+    }
+
+    if event.handler == "event:admin_unban_user" {
+        admin_unban_user(player, event.key);
+    }
+}
+
+draw_admin_unban :: proc(player: Player) {
+    if player == null || !can_access_admin_panel(player) {
+        return;
+    }
+
+    if get_time() >= player.admin_unban_next_refresh_at {
+        refresh_admin_banned_users(player);
+    }
+
+    UI.uidoc_clear_bindings();
+    has_users := player.admin_banned_user_ids.count > 0;
+    UI.uidoc_bind_bool("hasUsers", has_users);
+    UI.uidoc_bind_bool("empty", !has_users);
+    UI.uidoc_bind_text("banCount", format_string("% banned", {player.admin_banned_user_ids.count}));
+
+    UI.uidoc_begin_list("users");
+    if player.admin_banned_user_ids.count > 0 {
+        for i: 0..player.admin_banned_user_ids.count - 1 {
+            user_id := player.admin_banned_user_ids[i];
+            UI.uidoc_list_item(user_id);
+            UI.uidoc_list_bind_text("username", player.admin_banned_usernames[i]);
+            UI.uidoc_list_bind_text("userId", user_id);
+            UI.uidoc_list_bind_text("remaining", admin_unban_remaining_text(player.admin_banned_expiries[i]));
+        }
+    }
+    UI.uidoc_end_list();
+
+    document := get_asset(UIDoc_Asset, "admin_unban.uidoc");
+    UI.uidoc(document, true, player, on_admin_unban_ui);
+}

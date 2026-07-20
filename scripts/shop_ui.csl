@@ -914,6 +914,12 @@ draw_admin_panel :: proc(player: Player) {
     UIK.text(format_string("Coins: %", {player.admin_grant_amount}), UIK.text_body());
     UIK.text(format_string("Ban duration: % seconds", {player.admin_grant_amount}), UIK.text_body());
 
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    unban_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+    unban_desc.panel.width = UIK.flex(1);
+    unban_desc.panel.height = UIK.pixels(52);
+    unban_btn := UIK.button("admin/unban", "Unban User", unban_desc);
+
     UIK.spacer(UIK.pixels(1), UIK.pixels(2));
     target_scroll := UIK.layout_column();
     target_scroll.width = UIK.flex(1);
@@ -1304,6 +1310,12 @@ draw_admin_panel :: proc(player: Player) {
             moderation_ban(player, admin_target, player.admin_grant_amount, "Admin panel action");
             player.play_reward_feedback(format_string("Banned %", {admin_target.get_username()}));
         }
+    }
+
+    if UIK.clicked(unban_btn) {
+        player.show_admin_panel = false;
+        player.show_admin_unban = true;
+        refresh_admin_banned_users(player);
     }
 
     if UIK.clicked(summon_btn) {

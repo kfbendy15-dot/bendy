@@ -32,13 +32,16 @@ moderation_apply_false_reason_penalty :: proc(accuser_user_id: string) {
     strikes := Save.get_game_int(strikes_key, 0);
     duration := MODERATION_TEN_MINUTES;
     if strikes >= 2 duration = MODERATION_ONE_DAY;
-    expiry_key := format_string("%/%", {ADMIN_BAN_PREFIX, accuser_user_id});
+    expiry_key := format_string("%0%", {ADMIN_BAN_PREFIX, accuser_user_id});
     now := get_nanoseconds_since_epoch() / 1000000000;
     expiry := now + duration;
     current_expiry := Save.get_game_int(expiry_key, 0);
     if expiry > current_expiry Save.increment_game_int(expiry_key, expiry - current_expiry);
     accuser := find_online_player_by_user_id(accuser_user_id);
-    if accuser != null Server.kick_player(accuser, format_string("False moderation report: banned for % seconds", {duration}));
+    if accuser != null {
+        Save.set_game_string(admin_ban_username_key(accuser_user_id), accuser.get_username());
+        Server.kick_player(accuser, format_string("False moderation report: banned for % seconds", {duration}));
+    }
 }
 
 moderation_kick :: proc(player: Player, target: Player, reason: string) {

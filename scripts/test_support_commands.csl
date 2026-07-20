@@ -98,6 +98,74 @@ prepare_admin_shop_test :: proc(player: Player) {
     Save.set_string(player, "ui_test_verity_answer", "");
 } @chat_command @owner_or_editor
 
+g_admin_unban_test_player: Player;
+
+prepare_admin_unban_test_state :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    g_admin_unban_test_player = player;
+    expiry := get_nanoseconds_since_epoch() / 1000000000 + 600;
+    test_user_ids: [2]string = {"ui-test-banned-user-a", "ui-test-banned-user-b"};
+    test_usernames: [2]string = {"Banned Test User A", "Banned Test User B"};
+    for i: 0..1 {
+        expiry_key := format_string("%0%", {ADMIN_BAN_PREFIX, test_user_ids[i]});
+        current_expiry := Save.get_game_int(expiry_key, 0);
+        wanted_expiry: s64;
+        if player.admin_unban_test_fixture_count >= 2 || (player.admin_unban_test_fixture_count == 1 && i == 1) {
+            wanted_expiry = expiry;
+        }
+        Save.increment_game_int(expiry_key, wanted_expiry - current_expiry);
+        if wanted_expiry > 0 {
+            Save.set_game_string(admin_ban_username_key(test_user_ids[i]), test_usernames[i]);
+        }
+    }
+
+    legacy_test_key := format_string("%0%", {ADMIN_BAN_PREFIX, "ui-test-banned-user"});
+    legacy_test_expiry := Save.get_game_int(legacy_test_key, 0);
+    if legacy_test_expiry != 0 {
+        Save.increment_game_int(legacy_test_key, -legacy_test_expiry);
+    }
+
+    player.show_admin_panel = false;
+    player.show_admin_shop = false;
+    player.show_admin_unban = false;
+    player.admin_unban_action_count = 0;
+    player.admin_unban_announcement_count = 0;
+    player.admin_unban_visible_ban_count = 0;
+    player.admin_unban_last_expiry_after = -1;
+    player.admin_unban_last_user_id = "";
+    player.admin_unban_last_announcement = "";
+    player.admin_unban_next_refresh_at = 0;
+}
+
+prepare_admin_list_test :: proc(player: Player) {
+    if player == null || !can_access_admin_panel(player) {
+        return;
+    }
+
+    player.admin_unban_test_fixture_count = 2;
+    player.admin_unban_test_prepare_at = get_time() + 2.0;
+} @chat_command @any
+
+prepare_admin_single_list_test :: proc(player: Player) {
+    if player == null || !can_access_admin_panel(player) {
+        return;
+    }
+
+    player.admin_unban_test_fixture_count = 1;
+    player.admin_unban_test_prepare_at = get_time() + 2.0;
+} @chat_command @any
+
+admin_list_test_replay_last :: proc(player: Player) {
+    if player == null || !can_access_admin_panel(player) || player.admin_unban_last_user_id == "" {
+        return;
+    }
+
+    admin_unban_user(player, player.admin_unban_last_user_id);
+} @chat_command @any
+
 admin_backrooms_test_send :: proc(player: Player) {
     send_player_to_backrooms(player);
 } @chat_command @owner_or_editor
