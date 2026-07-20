@@ -71,7 +71,9 @@ Capture_The_Flag_Manager :: class : Component {
 
         index: s64 = 0;
         for player: component_iterator(Player) {
-            player.capture_the_flag_team = index % CAPTURE_THE_FLAG_TEAM_COUNT;
+            if player.capture_the_flag_team < 0 {
+                player.capture_the_flag_team = index % CAPTURE_THE_FLAG_TEAM_COUNT;
+            }
             player.capture_the_flag_carrying = false;
             spawn := capture_the_flag_base_position(player.capture_the_flag_team);
             player.entity.set_local_position(spawn);
@@ -154,7 +156,7 @@ is_capture_the_flag_active :: proc() -> bool {
 }
 
 start :: proc(player: Player, minigame: string = "") {
-    if player == null || !can_access_admin_panel(player) { return; }
+    if player == null { return; }
     if minigame != "Minigame:Capture the flag" && minigame != "Capture the flag" {
         Chat.server_send_message("Use /start Minigame:Capture the flag", player);
         return;
