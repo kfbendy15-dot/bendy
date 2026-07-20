@@ -914,6 +914,13 @@ draw_admin_panel :: proc(player: Player) {
     UIK.text(format_string("Coins: %", {player.admin_grant_amount}), UIK.text_body());
     UIK.text(format_string("Ban duration: % seconds", {player.admin_grant_amount}), UIK.text_body());
 
+    if player.show_admin_shop {
+        admin_chat_toggle := UIK.toggle("admin/admin_chat", "Admin Chat", (&player.admin_chat_enabled).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE));
+        if admin_chat_toggle.clicked {
+            player.play_reward_feedback(player.admin_chat_enabled ? "Admin Chat on" : "Admin Chat off");
+        }
+    }
+
     UIK.spacer(UIK.pixels(1), UIK.pixels(2));
     target_scroll := UIK.layout_column();
     target_scroll.width = UIK.flex(1);
@@ -1287,11 +1294,23 @@ draw_admin_panel :: proc(player: Player) {
     }
 
     if UIK.clicked(kick_btn) {
-        player.play_reward_feedback("Use /moderation_kick with a reason");
+        if admin_target == null || admin_target == player {
+            player.play_reward_feedback("Choose another player");
+        } else {
+            moderation_kick(player, admin_target, "Admin panel action");
+            player.play_reward_feedback(format_string("Kicked %", {admin_target.get_username()}));
+        }
     }
 
     if UIK.clicked(ban_btn) {
-        player.play_reward_feedback("Use /moderation_ban with a reason");
+        if admin_target == null || admin_target == player {
+            player.play_reward_feedback("Choose another player");
+        } else if player.admin_grant_amount <= 0 {
+            player.play_reward_feedback("Choose a ban duration");
+        } else {
+            moderation_ban(player, admin_target, player.admin_grant_amount, "Admin panel action");
+            player.play_reward_feedback(format_string("Banned %", {admin_target.get_username()}));
+        }
     }
 
     if UIK.clicked(summon_btn) {
