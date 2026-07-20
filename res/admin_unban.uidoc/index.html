@@ -1,0 +1,29 @@
+<div class="admin-unban-root">
+  <div class="admin-unban-safe">
+    <div class="admin-unban-modal">
+    <div class="modal-header">
+      <div class="heading-copy">
+        <span class="title">Banned Users</span>
+        <span class="count">{{banCount}}</span>
+      </div>
+      <button class="close-button" data-on-click="event:admin_unban_close" data-key="controls/admin_unban_close">Close</button>
+    </div>
+
+    <div class="user-list" data-if="hasUsers">
+      <div class="user-row" data-for="user in users" data-for-key="user.userId">
+        <div class="user-copy">
+          <span class="username">{{user.username}}</span>
+          <span class="user-id">{{user.userId}}</span>
+          <span class="remaining">{{user.remaining}}</span>
+        </div>
+        <button class="unban-button" data-on-click="event:admin_unban_user" data-key="users/admin_unban_user/{{user.userId}}">Unban</button>
+      </div>
+    </div>
+
+    <div class="empty-state" data-if="empty">
+      <span class="empty-title">No active bans</span>
+      <span class="empty-copy">Everyone can join.</span>
+    </div>
+    </div>
+  </div>
+</div>

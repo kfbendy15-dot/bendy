@@ -26,6 +26,7 @@ PLAYER_TITLE_SAVE_KEY :: "player_title";
 ADMIN_USERNAME    :: "ilikepaperclips";
 ADMIN_PERMISSION_PREFIX :: "admin_permission/";
 ADMIN_BAN_PREFIX :: "admin_ban_until/";
+ADMIN_BAN_USERNAME_PREFIX :: "admin_ban_username/";
 WORLD_BOUNDS_MIN_X :: -31.0;
 WORLD_BOUNDS_MAX_X :: 31.0;
 WORLD_BOUNDS_MIN_Y :: -20.0;
@@ -111,12 +112,22 @@ admin_ban_remaining_seconds :: proc(user_id: string) -> s64 {
     return remaining;
 }
 
+admin_ban_username_key :: proc(user_id: string) -> string {
+    return format_string("%0%", {ADMIN_BAN_USERNAME_PREFIX, user_id});
+}
+
+admin_ban_username_for_user :: proc(user_id: string) -> string {
+    if user_id == "" return "";
+    return Save.get_game_string(admin_ban_username_key(user_id), user_id);
+}
+
 admin_ban_player :: proc(target: Player, duration_seconds: s64) -> bool {
     if target == null || duration_seconds <= 0 return false;
     expiry := get_nanoseconds_since_epoch() / 1000000000 + duration_seconds;
     key := format_string("%0%", {ADMIN_BAN_PREFIX, target.get_user_id()});
     current_expiry := Save.get_game_int(key, 0);
     Save.increment_game_int(key, expiry - current_expiry);
+    Save.set_game_string(admin_ban_username_key(target.get_user_id()), target.get_username());
     Server.kick_player(target, format_string("You have been banned for % seconds", {duration_seconds}));
     return true;
 }
@@ -819,6 +830,19 @@ Player :: class : Player_Base {
     out_of_bounds_respawn_start: float;
     admin_target_username: string;
     admin_grant_amount: s64;
+    show_admin_unban: bool;
+    admin_banned_user_ids: [..]string;
+    admin_banned_usernames: [..]string;
+    admin_banned_expiries: [..]s64;
+    admin_unban_next_refresh_at: float;
+    admin_unban_action_count: s64;
+    admin_unban_announcement_count: s64;
+    admin_unban_visible_ban_count: s64;
+    admin_unban_last_expiry_after: s64;
+    admin_unban_last_user_id: string;
+    admin_unban_last_announcement: string;
+    admin_unban_test_prepare_at: float;
+    admin_unban_test_fixture_count: s64;
     is_admin_invincible: bool;
     admin_invisible_active: bool;
     admin_gun_invisible_effect_count: s64;
@@ -957,6 +981,16 @@ Player :: class : Player_Base {
         armor_bonus_health = 0;
         admin_target_username = "";
         admin_grant_amount = 25;
+        show_admin_unban = false;
+        admin_unban_next_refresh_at = 0;
+        admin_unban_action_count = 0;
+        admin_unban_announcement_count = 0;
+        admin_unban_visible_ban_count = 0;
+        admin_unban_last_expiry_after = 0;
+        admin_unban_last_user_id = "";
+        admin_unban_last_announcement = "";
+        admin_unban_test_prepare_at = 0;
+        admin_unban_test_fixture_count = 0;
         is_admin_invincible = false;
         admin_invisible_active = false;
         admin_gun_invisible_effect_count = 0;
@@ -1006,6 +1040,11 @@ Player :: class : Player_Base {
     }
 
     ao_update :: method(dt: float) {
+        if admin_unban_test_prepare_at > 0 && get_time() >= admin_unban_test_prepare_at {
+            admin_unban_test_prepare_at = 0;
+            prepare_admin_unban_test_state(this);
+        }
+
         update_health_bar_visibility_test_state(this);
 
         if ui_test_restore_weapon_target_at > 0 && get_time() >= ui_test_restore_weapon_target_at {
@@ -1089,6 +1128,9 @@ Player :: class : Player_Base {
         if show_admin_shop && !can_access_admin_panel(this) {
             show_admin_shop = false;
         }
+        if show_admin_unban && !can_access_admin_panel(this) {
+            show_admin_unban = false;
+        }
 
         if is_local_or_server() {
             draw_hud(this);
@@ -1105,6 +1147,9 @@ Player :: class : Player_Base {
             }
             if show_admin_shop && can_access_admin_panel(this) {
                 draw_admin_shop(this);
+            }
+            if show_admin_unban && can_access_admin_panel(this) {
+                draw_admin_unban(this);
             }
             if show_mimicer_selector {
                 draw_mimicer_selector(this);
