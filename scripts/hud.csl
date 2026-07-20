@@ -101,18 +101,12 @@ draw_hud :: proc(player: Player) {
 
     has_admin_button := can_access_admin_panel(player);
     admin_btn: Interact_Result;
-    admin_chat_btn: Interact_Result;
     admin_shop_btn: Interact_Result;
     if has_admin_button {
         admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
         admin_desc.panel.width = UIK.pixels(120);
         admin_desc.panel.height = UIK.pixels(52);
         admin_btn = UIK.button("hud/admin_button", "EPIK PANEL", admin_desc);
-
-        admin_chat_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
-        admin_chat_desc.panel.width = UIK.pixels(120);
-        admin_chat_desc.panel.height = UIK.pixels(52);
-        admin_chat_btn = UIK.button("hud/admin_chat_button", "ADMIN CHAT", admin_chat_desc);
 
         admin_shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
         admin_shop_desc.panel.width = UIK.pixels(120);
@@ -142,12 +136,6 @@ draw_hud :: proc(player: Player) {
     }
     if has_admin_button && UIK.clicked(admin_btn) {
         player.show_admin_panel = true;
-        Save.set_int(player, "ui_test_show_admin", 1);
-    }
-    if has_admin_button && UIK.clicked(admin_chat_btn) {
-        player.admin_chat_enabled = true;
-        player.show_admin_panel = true;
-        player.play_reward_feedback("Admin Chat on");
         Save.set_int(player, "ui_test_show_admin", 1);
     }
     if has_admin_button && UIK.clicked(admin_shop_btn) {
