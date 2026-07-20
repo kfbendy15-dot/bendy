@@ -854,6 +854,8 @@ Player :: class : Player_Base {
     admin_chat_last_send_at: float;
     admin_chat_last_activity_at: float;
     admin_chat_enabled: bool;
+    capture_the_flag_team: s64;
+    capture_the_flag_carrying: bool;
 
     ao_start :: method() {
         banned_seconds := admin_ban_remaining_seconds(get_user_id());
@@ -976,6 +978,8 @@ Player :: class : Player_Base {
         admin_chat_last_send_at = 0;
         admin_chat_last_activity_at = 0;
         admin_chat_enabled = false;
+        capture_the_flag_team = -1;
+        capture_the_flag_carrying = false;
         if Game.is_editor() {
             entity.set_name("Player");
             set_name_override("Player");
