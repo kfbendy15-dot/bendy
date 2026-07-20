@@ -55,7 +55,7 @@ admin_chat_deliver :: proc(kind: string, source_name: string, source_server: str
     // Chat.server_send_message with an explicit player target keeps this feed
     // out of normal player chat entirely.
     for recipient: component_iterator(Player) {
-        if !can_access_admin_panel(recipient) {
+        if !can_access_admin_panel(recipient) || !recipient.admin_chat_enabled {
             continue;
         }
 
@@ -141,7 +141,7 @@ handle_admin_chat_message :: proc(player: Player, message: string) {
     if message.count > 0 && message[0] != '/' {
         // The complete player message is available to administrators for
         // moderation context, but is never delivered to non-admin players.
-        if get_time() >= player.admin_chat_last_activity_at + ADMIN_CHAT_ACTIVITY_COOLDOWN {
+        if player.admin_chat_enabled && get_time() >= player.admin_chat_last_activity_at + ADMIN_CHAT_ACTIVITY_COOLDOWN {
             player.admin_chat_last_activity_at = get_time();
             admin_chat_publish(player, "activity", message);
         }
@@ -156,7 +156,10 @@ handle_game_chat_message :: proc(player: Player, message: string) {
 }
 
 admin_chat :: proc(player: Player, message: string = "") {
-    if player == null || !can_access_admin_panel(player) {
+    if player == null || !can_access_admin_panel(player) || !player.admin_chat_enabled {
+        if player != null && can_access_admin_panel(player) && !player.admin_chat_enabled {
+            Chat.server_send_message("Turn on Admin Chat in the admin panel first.", player);
+        }
         return;
     }
     if message.count == 0 {
