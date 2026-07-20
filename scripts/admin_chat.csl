@@ -151,6 +151,7 @@ handle_admin_chat_message :: proc(player: Player, message: string) {
 // All game chat callbacks are dispatched here. Add future chat listeners to
 // this router instead of replacing core_globals.server_on_chat_message_received.
 handle_game_chat_message :: proc(player: Player, message: string) {
+    start_capture_the_flag_from_chat(player, message);
     handle_admin_chat_message(player, message);
     handle_verity_chat_message(player, message);
 }
