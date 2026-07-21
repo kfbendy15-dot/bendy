@@ -6,6 +6,7 @@ PLAYER_MAX_HEALTH :: 100.0;
 ARMOR_BONUS_HP    :: 50.0;
 STARTING_BULLETS  :: 100;
 KILL_COINS        :: 10;
+DOUBLE_COIN_KILL_COINS :: 20;
 VS_KILL_COINS     :: 25;
 BULLET_COST       :: 10;
 BULLETS_PER_BUY   :: 10;
@@ -45,6 +46,15 @@ VIP_PRODUCT_ID           :: "6a52eb28d855008fb0d0c4e8";
 VIP_SAVE_KEY             :: "vip_owned";
 VIP_CROWN_VISIBLE_SAVE_KEY :: "vip_crown_visible";
 ADMIN_TAG_VISIBLE_SAVE_KEY :: "admin_tag_visible";
+SPARKS_STARTER_COST :: 199;
+STARTER_PACK_CLAIMED_KEY :: "starter_pack_claimed";
+ARMOR_PURCHASES_KEY :: "armor_purchases";
+ARMOR_TIER_KEY :: "armor_tier";
+EVENT_DOUBLE_COINS_KEY :: "event_double_coins";
+EVENT_ELEMENTAL_KEY :: "event_elemental";
+
+g_event_double_coins: bool;
+g_event_elemental: bool;
 
 coin_pass_amount_for_product :: proc(product_id: string) -> s64 {
     if product_id == COIN_PASS_25_PRODUCT_ID { return 25; }
@@ -754,8 +764,80 @@ set_weapon_ammo_count :: proc(player: Player, wt: Weapon_Type, desired: s64) {
 ao_before_scene_load :: proc() {
     coin_tex := get_asset(Texture_Asset, "$AO/ui/kit/Icons/weapon_tier/weapon_tier_icon_gold.png");
     Economy.register_currency("Coins", coin_tex);
+    Economy.register_currency("Sparks", get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png"));
     init_verity_admin_content();
     init_admin_chat();
+}
+
+armor_tier_for_purchases :: proc(purchases: s64) -> s64 {
+    if purchases >= 7210 return 8; // Netherite
+    if purchases >= 3210 return 7; // Obsidian
+    if purchases >= 1210 return 6; // Emerald
+    if purchases >= 210 return 5; // Diamond
+    if purchases >= 140 return 4; // Iron
+    if purchases >= 40 return 3; // Gold
+    if purchases >= 3 return 2; // Stone
+    if purchases >= 1 return 1; // Wood
+    return 0;
+}
+
+armor_tier_name :: proc(tier: s64) -> string {
+    switch tier { case 1: return "Wooden"; case 2: return "Stone"; case 3: return "Gold"; case 4: return "Iron"; case 5: return "Diamond"; case 6: return "Emerald"; case 7: return "Obsidian"; case 8: return "Netherite"; }
+    return "None";
+}
+
+refresh_armor_visual :: proc(player: Player) {
+    if player == null || player.armor_tier <= 0 return;
+    if player.armor_visual_entity == null {
+        visual := Scene.create_entity();
+        visual.set_parent(player.entity, false);
+        visual.set_local_position({0, 0.25});
+        sprite := visual.add_component(Sprite_Renderer);
+        sprite.set_texture(get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png"));
+        sprite.layer = 2;
+        player.armor_visual_entity = visual;
+    }
+    armor_sprite := player.armor_visual_entity.get_component(Sprite_Renderer);
+    armor_sprite.color = armor_tier_color(player.armor_tier);
+}
+
+armor_tier_color :: proc(tier: s64) -> v4 {
+    switch tier { case 1: return {0.55, 0.32, 0.15, 0.9}; case 2: return {0.55, 0.55, 0.58, 0.9}; case 3: return {1.0, 0.72, 0.15, 0.95}; case 4: return {0.75, 0.82, 0.9, 0.95}; case 5: return {0.3, 0.85, 1.0, 0.95}; case 6: return {0.2, 1.0, 0.45, 0.95}; case 7: return {0.18, 0.12, 0.25, 0.98}; case 8: return {0.35, 0.4, 0.48, 1.0}; }
+    return {1, 1, 1, 1};
+}
+
+buy_armor_progression :: proc(player: Player) {
+    if player == null return;
+    purchases := Save.get_int(player, ARMOR_PURCHASES_KEY, 0) + 1;
+    Save.set_int(player, ARMOR_PURCHASES_KEY, purchases);
+    tier := armor_tier_for_purchases(purchases);
+    Save.set_int(player, ARMOR_TIER_KEY, tier);
+    player.armor_tier = tier;
+    refresh_armor_visual(player);
+    apply_armor_bonus(player, ARMOR_BONUS_HP);
+    player.play_reward_feedback(format_string("% armor", {armor_tier_name(tier)}));
+}
+
+give_armor_to_player :: proc(target: Player) {
+    if target == null return;
+    Save.set_int(target, ARMOR_PURCHASES_KEY, 7210);
+    Save.set_int(target, ARMOR_TIER_KEY, 8);
+    target.armor_tier = 8;
+    refresh_armor_visual(target);
+    if target.armor_bonus_health < ARMOR_BONUS_HP { apply_armor_bonus(target, ARMOR_BONUS_HP); }
+    target.play_reward_feedback("Netherite armor");
+}
+
+buy_starter_pack :: proc(player: Player) {
+    if player == null || Save.get_int(player, STARTER_PACK_CLAIMED_KEY, 0) != 0 return;
+    if Economy.get_balance(player, "Sparks") < SPARKS_STARTER_COST { player.play_reward_feedback("Need 199 Sparks"); return; }
+    Economy.withdraw_currency(player, "Sparks", SPARKS_STARTER_COST);
+    grant_weapon_with_ammo(player, .HYDRO_CANNON, 100);
+    grant_weapon_with_ammo(player, .MEGA_BLADE, 100);
+    award_coins(player, 10000);
+    give_armor_to_player(player);
+    Save.set_int(player, STARTER_PACK_CLAIMED_KEY, 1);
+    player.play_reward_feedback("Starter pack claimed");
 }
 
 ao_start :: proc() {
@@ -820,6 +902,8 @@ Player :: class : Player_Base {
     has_dash: bool;
     has_invisible: bool;
     armor_bonus_health: float;
+    armor_tier: s64;
+    armor_visual_entity: Entity;
     purchased_finger_gun: bool;
     purchased_paper_gun: bool;
     is_admin_user: bool;
@@ -912,6 +996,7 @@ Player :: class : Player_Base {
                 for attacker: component_iterator(Player) {
                     if attacker.entity.id == attacker_id {
                         reward := KILL_COINS;
+                        if g_event_double_coins { reward = DOUBLE_COIN_KILL_COINS; }
                         if is_vs_battle(attacker, victim) {
                             reward = VS_KILL_COINS;
                             clear_vs_match(attacker, victim);
@@ -981,6 +1066,8 @@ Player :: class : Player_Base {
         show_mimicer_selector = false;
         show_minigames = false;
         armor_bonus_health = 0;
+        armor_tier = Save.get_int(this, ARMOR_TIER_KEY, 0);
+        refresh_armor_visual(this);
         admin_target_username = "";
         admin_grant_amount = 25;
         show_admin_unban = false;
