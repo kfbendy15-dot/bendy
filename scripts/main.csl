@@ -1211,6 +1211,9 @@ Player :: class : Player_Base {
     ao_can_use_ability :: method(ability: Ability_Base) -> bool {
         if is_dead return false;
         if out_of_bounds_respawn_active return false;
+        if capture_the_flag_carrying {
+            return false;
+        }
         return true;
     }
 
