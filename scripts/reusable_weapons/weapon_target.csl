@@ -7,6 +7,20 @@ Weapon_Target :: class : Component {
     on_damaged: proc(target: Weapon_Target, damage: float, attacker_id: u64, userdata: Object);
 }
 
+weapon_element :: proc(wt: Weapon_Type) -> s64 {
+    if wt == .FIRE_RAY || wt == .FIREBALL || wt == .METEORITE || wt == .SOLAR_SIPHONER return 1; // fire
+    if wt == .WATER_GUN || wt == .WATER_BALLOON_RPG || wt == .HYDRO_CANNON || wt == .BUBBLE_GUN return 2; // water
+    if wt == .POISON_GRENADE || wt == .KILLER_FISH || wt == .SHURIKEN return 3; // leaf
+    return 0; // normal
+}
+
+elemental_damage_multiplier :: proc(attacker: s64, defender: s64) -> float {
+    if attacker == 0 || defender == 0 return 1.0;
+    if attacker == defender return 1.0;
+    if (attacker == 2 && defender == 1) || (attacker == 1 && defender == 3) || (attacker == 3 && defender == 2) return 2.0;
+    return 0.5;
+}
+
 weapon_target_apply_damage :: proc(target: Weapon_Target, damage: float, attacker_id: u64) {
     if target == null {
         return;
@@ -20,7 +34,13 @@ weapon_target_apply_damage :: proc(target: Weapon_Target, damage: float, attacke
         return;
     }
 
-    target.health -= damage;
+    attacker_element: s64 = 0;
+    defender_element: s64 = 0;
+    for attacker: component_iterator(Player) {
+        if attacker.entity.id == attacker_id { attacker_element = weapon_element(attacker.equipped_weapon_type); break; }
+    }
+    if player != null { defender_element = weapon_element(player.equipped_weapon_type); }
+    target.health -= damage * elemental_damage_multiplier(attacker_element, defender_element);
     if target.health < 0 {
         target.health = 0;
     }

@@ -154,7 +154,7 @@ grant_admin_ammo_offer :: proc(player: Player, ammo_index: s64, amount: s64, fee
 
 buy_armor_offer :: proc(player: Player) {
     if spend_coins(player, 750) {
-        apply_armor_bonus(player, ARMOR_BONUS_HP);
+        buy_armor_progression(player);
     }
 }
 
@@ -345,6 +345,7 @@ draw_shop :: proc(player: Player) {
     normal_handle: Interact_Result;
     finger_handle: Interact_Result;
     paper_handle: Interact_Result;
+    starter_handle: Interact_Result;
     if player.shop_tab_index == 0 {
     content := UIK.layout_column();
     content.width = UIK.flex(1);
@@ -354,6 +355,8 @@ draw_shop :: proc(player: Player) {
     UIK.list_begin("shop_scroll", content);
 
     UIK.text("Support", UIK.text_title());
+    starter_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
+    starter_handle = draw_shop_card("shop/starter_pack", "Starter Pack (199 Sparks)", SPARKS_STARTER_COST, starter_icon, {0.25, 0.75, 1.0, 1}, Save.get_int(player, STARTER_PACK_CLAIMED_KEY, 0) != 0);
     if player.has_vip {
         UIK.text(UIK.text_body(), "VIP: 50% off shop prices");
     }
@@ -502,6 +505,10 @@ draw_shop :: proc(player: Player) {
 
     if UIK.clicked(exit_handle) || UIK.clicked(shop_close_btn) {
         player.show_shop = false;
+    }
+
+    if UIK.clicked(starter_handle) {
+        buy_starter_pack(player);
     }
 
     if UIK.clicked(shop_gun_cutter_handle) && !player_has_weapon(player, .MEGA_BLADE) {
@@ -1046,6 +1053,11 @@ draw_admin_panel :: proc(player: Player) {
     grant_coins_desc.panel.height = UIK.pixels(52);
     grant_coins_btn := UIK.button("admin/grant_coins", "Give Coins", grant_coins_desc);
 
+    armor_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+    armor_desc.panel.width = UIK.flex(1);
+    armor_desc.panel.height = UIK.pixels(52);
+    armor_btn := UIK.button("admin/give_armor", "Give Netherite", armor_desc);
+
     kick_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     kick_desc.panel.width = UIK.flex(1);
     kick_desc.panel.height = UIK.pixels(52);
@@ -1170,6 +1182,15 @@ draw_admin_panel :: proc(player: Player) {
     summon_desc.panel.width = UIK.flex(1);
     summon_desc.panel.height = UIK.pixels(52);
     summon_btn := UIK.button("admin/summon_paperclips", "Summon Paperclips", summon_desc);
+
+    double_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    double_desc.panel.width = UIK.flex(1);
+    double_desc.panel.height = UIK.pixels(52);
+    double_btn := UIK.button("admin/event_double", "2x Coins", double_desc);
+    elemental_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+    elemental_desc.panel.width = UIK.flex(1);
+    elemental_desc.panel.height = UIK.pixels(52);
+    elemental_btn := UIK.button("admin/event_elements", "Elements", elemental_desc);
 
     meteor_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
     meteor_desc.panel.width = UIK.flex(1);
@@ -1333,6 +1354,19 @@ draw_admin_panel :: proc(player: Player) {
     if UIK.clicked(summon_btn) {
         spawn_paperclips_boss();
         player.play_reward_feedback("Paperclips approaches!");
+    }
+
+    if UIK.clicked(armor_btn) {
+        give_armor_to_player(admin_target);
+    }
+
+    if UIK.clicked(double_btn) {
+        g_event_double_coins = !g_event_double_coins;
+        player.play_reward_feedback(g_event_double_coins ? "2x coins on" : "2x coins off");
+    }
+    if UIK.clicked(elemental_btn) {
+        g_event_elemental = !g_event_elemental;
+        player.play_reward_feedback(g_event_elemental ? "Elements on" : "Elements off");
     }
 
     if UIK.clicked(meteor_btn) {
