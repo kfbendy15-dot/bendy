@@ -751,7 +751,7 @@ draw_admin_shop :: proc(player: Player) {
     fish_icon := get_asset(Texture_Asset, get_weapon_config(.KILLER_FISH).weapon_icon_path);
     giant_icon := get_asset(Texture_Asset, get_weapon_config(.GIANT_GUN).weapon_icon_path);
     spoon_btn := draw_shop_card("admin_shop/spoon", "Spoon", 1000, spoon_icon, {0.8, 0.8, 0.82, 1}, player_has_weapon(player, .SPOON));
-    fish_btn := draw_shop_card("admin_shop/killer_fish", "Killer Fish", 2000, fish_icon, {0.35, 0.8, 0.7, 1}, player_has_weapon(player, .KILLER_FISH));
+    fish_btn := draw_shop_card("admin_shop/killer_fish", "CTF Minion Gun", 2000, fish_icon, {0.35, 0.8, 0.7, 1}, player_has_weapon(player, .KILLER_FISH));
     giant_btn := draw_shop_card("admin_shop/giant_gun", "Giant Gun", giant_gun_admin_cost(player), giant_icon, {0.55, 0.55, 0.7, 1}, player_has_weapon(player, .GIANT_GUN));
     UIK.panel_end();
 
@@ -833,7 +833,7 @@ draw_admin_shop :: proc(player: Player) {
         buy_weapon_offer(player, .SPOON, 1000, "+Spoon");
     }
     if UIK.clicked(fish_btn) {
-        buy_weapon_offer(player, .KILLER_FISH, 2000, "+Killer Fish");
+        buy_weapon_offer(player, .KILLER_FISH, 2000, "+CTF Minion Gun");
     }
     if UIK.clicked(giant_btn) {
         buy_weapon_offer(player, .GIANT_GUN, giant_gun_admin_cost(player), "+Giant Gun");
@@ -913,6 +913,13 @@ draw_admin_panel :: proc(player: Player) {
     UIK.text(format_string("Target: %", {player.admin_target_username}), UIK.text_body());
     UIK.text(format_string("Coins: %", {player.admin_grant_amount}), UIK.text_body());
     UIK.text(format_string("Ban duration: % seconds", {player.admin_grant_amount}), UIK.text_body());
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    minigames_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    minigames_desc.panel.width = UIK.flex(1);
+    minigames_desc.panel.height = UIK.pixels(58);
+    minigames_btn := UIK.button("admin/start_minigames", "Start MiniGames", minigames_desc);
+    UIK.text("Choose Capture the Flag, assign players to teams, and start.", UIK.text_body());
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     unban_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
@@ -1316,6 +1323,11 @@ draw_admin_panel :: proc(player: Player) {
         player.show_admin_panel = false;
         player.show_admin_unban = true;
         refresh_admin_banned_users(player);
+    }
+
+    if UIK.clicked(minigames_btn) {
+        player.show_admin_panel = false;
+        player.show_minigames = true;
     }
 
     if UIK.clicked(summon_btn) {

@@ -242,10 +242,10 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.fire_rate = 2.0;
             config.base_damage = 999.0;
             config.ammo_per_shot = 0;
-            config.weapon_skin = "";
+            config.weapon_skin = "weapons/octo_siphoner";
             config.weapon_icon_path = "fish_6100a0/fish.spine.pages/p39.png";
             config.item_id = "killer_fish";
-            config.item_name = "Killer Fish";
+            config.item_name = "CTF Minion Gun";
             config.ammo_type_index = -1;
             config.ammo_first_pickup = 0;
             config.shoot_trigger = "shoot_1h_weapon";

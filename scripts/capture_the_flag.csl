@@ -21,10 +21,10 @@ Capture_The_Flag_Flag :: class : Component {
 capture_the_flag_team_color :: proc(team: s64) -> v4 {
     switch team {
         case 0: return {0.95, 0.08, 0.08, 1};
-        case 1: return {0.08, 0.30, 1.00, 1};
+        case 1: return {1.00, 0.42, 0.05, 1};
         case 2: return {1.00, 0.85, 0.05, 1};
         case 3: return {0.12, 0.85, 0.20, 1};
-        case 4: return {1.00, 0.42, 0.05, 1};
+        case 4: return {0.08, 0.30, 1.00, 1};
         case 5: return {0.60, 0.18, 0.90, 1};
         default: return {1.00, 0.25, 0.70, 1};
     }
@@ -33,10 +33,10 @@ capture_the_flag_team_color :: proc(team: s64) -> v4 {
 capture_the_flag_team_name :: proc(team: s64) -> string {
     switch team {
         case 0: return "Red";
-        case 1: return "Blue";
+        case 1: return "Orange";
         case 2: return "Yellow";
         case 3: return "Green";
-        case 4: return "Orange";
+        case 4: return "Blue";
         case 5: return "Purple";
         default: return "Pink";
     }
@@ -131,8 +131,12 @@ Capture_The_Flag_Manager :: class : Component {
         }
 
         for flag: component_iterator(Capture_The_Flag_Flag) {
-            if flag.carried_by != null && #alive(flag.carried_by.entity) {
+            if flag.carried_by != null && #alive(flag.carried_by.entity) && !flag.carried_by.is_dead {
                 flag.entity.set_local_position(flag.carried_by.entity.world_position);
+            } else if flag.carried_by != null {
+                flag.carried_by.capture_the_flag_carrying = false;
+                flag.carried_by = null;
+                flag.entity.set_local_position(flag.home_position);
             }
         }
     }
