@@ -160,7 +160,12 @@ is_capture_the_flag_active :: proc() -> bool {
 }
 
 start :: proc(player: Player, minigame: string = "") {
-    if player == null { return; }
+    if player == null || !can_access_admin_panel(player) {
+        if player != null {
+            player.play_reward_feedback("Epik Panel admin access required");
+        }
+        return;
+    }
     if minigame != "Minigame:Capture the flag" && minigame != "Capture the flag" {
         Chat.server_send_message("Use /start Minigame:Capture the flag", player);
         return;

@@ -5,6 +5,13 @@ set_capture_the_flag_team :: proc(target: Player, team: s64) {
 }
 
 draw_minigames :: proc(player: Player) {
+    if player == null || !can_access_admin_panel(player) {
+        if player != null {
+            player.show_minigames = false;
+        }
+        return;
+    }
+
     UIK.begin(UIK.modal(UIK.rect_window_large(), 25));
     shell := UIK.panel_modal(.BLACK);
     UIK.panel_begin(shell);
