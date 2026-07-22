@@ -94,11 +94,6 @@ draw_hud :: proc(player: Player) {
     settings_desc.panel.height = UIK.pixels(52);
     settings_btn := UIK.button("hud/settings_button", "Settings", settings_desc);
 
-    minigames_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
-    minigames_desc.panel.width = UIK.pixels(132);
-    minigames_desc.panel.height = UIK.pixels(52);
-    minigames_btn := UIK.button("hud/minigames_button", "Minigames", minigames_desc);
-
     monetization_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     monetization_desc.panel.width = UIK.pixels(104);
     monetization_desc.panel.height = UIK.pixels(52);
@@ -107,7 +102,13 @@ draw_hud :: proc(player: Player) {
     has_admin_button := can_access_admin_panel(player);
     admin_btn: Interact_Result;
     admin_shop_btn: Interact_Result;
+    minigames_btn: Interact_Result;
     if has_admin_button {
+        minigames_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+        minigames_desc.panel.width = UIK.pixels(132);
+        minigames_desc.panel.height = UIK.pixels(52);
+        minigames_btn = UIK.button("hud/minigames_button", "Minigames", minigames_desc);
+
         admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
         admin_desc.panel.width = UIK.pixels(120);
         admin_desc.panel.height = UIK.pixels(52);
@@ -134,7 +135,7 @@ draw_hud :: proc(player: Player) {
     if UIK.clicked(settings_btn) {
         player.show_settings = true;
     }
-    if UIK.clicked(minigames_btn) {
+    if has_admin_button && UIK.clicked(minigames_btn) {
         player.show_minigames = true;
     }
     if UIK.clicked(monetization_btn) {
