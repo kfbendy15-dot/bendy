@@ -33,7 +33,7 @@ draw_minigames :: proc(player: Player) {
     ctf_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     ctf_desc.panel.width = UIK.flex(1);
     ctf_desc.panel.height = UIK.pixels(86);
-    ctf_handle := UIK.button("minigames/capture_the_flag", "Capture the Flag", ctf_desc);
+    ctf_handle := UIK.button("minigames/capture_the_flag", "Start Capture the Flag", ctf_desc);
     UIK.text("Seven teams: Red, Orange, Yellow, Green, Blue, Purple, Pink", UIK.text_body());
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
 
