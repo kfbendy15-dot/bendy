@@ -965,6 +965,10 @@ Player :: class : Player_Base {
     admin_chat_enabled: bool;
     capture_the_flag_team: s64;
     capture_the_flag_carrying: bool;
+    role_mode_role: Role_Mode_Role;
+    role_mode_buff: Role_Mode_Buff;
+    role_mode_buff_until: float;
+    role_mode_vote_target: string;
 
     ao_start :: method() {
         banned_seconds := admin_ban_remaining_seconds(get_user_id());
@@ -1103,6 +1107,10 @@ Player :: class : Player_Base {
         admin_chat_enabled = false;
         capture_the_flag_team = -1;
         capture_the_flag_carrying = false;
+        role_mode_role = .NONE;
+        role_mode_buff = .NONE;
+        role_mode_buff_until = 0;
+        role_mode_vote_target = "";
         if Game.is_editor() {
             entity.set_name("Player");
             set_name_override("Player");
@@ -1202,6 +1210,8 @@ Player :: class : Player_Base {
         if is_mimicer && mimicer_form_target_user_id != "" && mimicer_form_expires_at > 0 && get_time() >= mimicer_form_expires_at {
             restore_mimicer_form(this);
         }
+
+        update_role_mode_player(this, dt);
     }
 
     play_reward_feedback :: method(text: string) {
@@ -1246,6 +1256,7 @@ Player :: class : Player_Base {
             if show_minigames {
                 draw_minigames(this);
             }
+            draw_role_mode_hud(this);
         }
 
         if is_local_or_server() && !is_dead {
@@ -1254,8 +1265,10 @@ Player :: class : Player_Base {
                 draw_ability_button(this, Mimicer_Dash_Ability, 1);
                 draw_ability_button(this, Mimicer_Shapeshift_Ability, 2);
             } else {
+                if role_mode_role == .MEDIC { draw_ability_button(this, Medic_Revive_Ability, 1); }
+                if role_mode_role == .FLAGGER { draw_ability_button(this, Flagger_Buff_Ability, 1); }
                 // Draw fire ability based on equipped weapon
-                if equipped_weapon_type != .NONE {
+                if equipped_weapon_type != .NONE && (role_mode_role == .NONE || role_mode_role == .SHERIFF || role_mode_role == .TRAITOR) {
                     config := get_weapon_config(equipped_weapon_type);
                     switch config.fire_mode {
                         case .CONTINUOUS:  { draw_ability_button(this, Continuous_Fire_Ability, 0); }

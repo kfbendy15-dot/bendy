@@ -27,8 +27,15 @@ draw_minigames :: proc(player: Player) {
     UIK.list_begin("minigames_scroll", content);
 
     UIK.text("Choose a minigame", UIK.text_title());
-    UIK.text("Pick a team, then start Capture the Flag.", UIK.text_body());
+    UIK.text("Choose a mode to start for the server.", UIK.text_body());
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+
+    roles_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+    roles_desc.panel.width = UIK.flex(1);
+    roles_desc.panel.height = UIK.pixels(86);
+    roles_handle := UIK.button("minigames/roles", "Start Random Roles", roles_desc);
+    UIK.text("Medic, Sheriff, Flagger, Traitor, Jester, and Survivors", UIK.text_body());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
 
     ctf_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     ctf_desc.panel.width = UIK.flex(1);
@@ -79,6 +86,10 @@ draw_minigames :: proc(player: Player) {
 
     if UIK.clicked(ctf_handle) {
         start(player, "Capture the flag");
+        player.show_minigames = false;
+    }
+    if UIK.clicked(roles_handle) {
+        start_roles(player);
         player.show_minigames = false;
     }
     if UIK.clicked(exit_handle) || UIK.clicked(close_handle) {
