@@ -1,0 +1,204 @@
+ROLE_MODE_ROUND_TIME :: 240.0;
+ROLE_MODE_REVIVE_RANGE :: 3.0;
+ROLE_MODE_BUFF_RANGE :: 2.5;
+
+Role_Mode_Role :: enum { NONE; SURVIVOR; MEDIC; SHERIFF; FLAGGER; JESTER; TRAITOR; }
+Role_Mode_Buff :: enum { NONE; SPEED; SHAPESHIFT; INVISIBILITY; MIND_VISION; }
+
+Role_Mode_Manager :: class : Component {
+    round_started_at: float;
+    vote_ends_at: float;
+    active: bool;
+    votes: [..]string;
+
+    ao_start :: method() {
+        active = true;
+        round_started_at = get_time();
+        vote_ends_at = get_time() + ROLE_MODE_ROUND_TIME;
+        assign_role_mode_roles();
+        Chat.server_send_message("Roles round started. Find the Traitor, protect Survivors, and vote with /vote username.");
+    }
+
+    ao_update :: method(dt: float) {
+        if !active return;
+        living: s64 = 0;
+        traitors: s64 = 0;
+        for p: component_iterator(Player) {
+            if !p.is_dead { living += 1; }
+            if p.role_mode_role == .TRAITOR { traitors += 1; }
+        }
+        if living == 0 || get_time() >= vote_ends_at {
+            end_role_mode_round("Time is up. Survivors win the round.");
+            return;
+        }
+        if traitors == 0 {
+            end_role_mode_round("The Traitor team has been eliminated. Survivors win!");
+        }
+    }
+
+    ao_end :: method() {
+        for p: component_iterator(Player) {
+            reset_role_mode_player(p);
+        }
+    }
+}
+
+role_mode_name :: proc(role: Role_Mode_Role) -> string {
+    switch role {
+        case .MEDIC: return "Medic";
+        case .SHERIFF: return "Sheriff";
+        case .FLAGGER: return "Flagger";
+        case .JESTER: return "Jester";
+        case .TRAITOR: return "Traitor";
+        case .SURVIVOR: return "Survivor";
+    }
+    return "Waiting";
+}
+
+role_mode_buff_name :: proc(buff: Role_Mode_Buff) -> string {
+    switch buff {
+        case .SPEED: return "Speed";
+        case .SHAPESHIFT: return "Shapeshift";
+        case .INVISIBILITY: return "Invisibility";
+        case .MIND_VISION: return "Mind Vision";
+    }
+    return "None";
+}
+
+assign_role_mode_roles :: proc() {
+    players: [..]Player;
+    for p: component_iterator(Player) {
+        players.append(p);
+        p.role_mode_role = .SURVIVOR;
+        p.role_mode_buff = .NONE;
+        p.role_mode_vote_target = "";
+    }
+    if players.count == 0 return;
+    players[0].role_mode_role = .MEDIC;
+    if players.count > 1 { players[1].role_mode_role = .SHERIFF; }
+    if players.count > 2 { players[2].role_mode_role = .FLAGGER; }
+    if players.count > 3 { players[3].role_mode_role = .TRAITOR; }
+    if players.count > 5 { players[4].role_mode_role = .JESTER; }
+    for p: players {
+        p.play_reward_feedback(format_string("Role: %", {role_mode_name(p.role_mode_role)}));
+    }
+}
+
+reset_role_mode_player :: proc(player: Player) {
+    if player == null return;
+    player.role_mode_role = .NONE;
+    player.role_mode_buff = .NONE;
+    player.role_mode_buff_until = 0;
+    player.role_mode_vote_target = "";
+}
+
+update_role_mode_player :: proc(player: Player, dt: float) {
+    if player.role_mode_role == .NONE return;
+    if player.role_mode_buff_until > 0 && get_time() >= player.role_mode_buff_until {
+        if player.role_mode_buff == .INVISIBILITY {
+            player.remove_name_invisibility_reason("role_mode_buff");
+        }
+        player.role_mode_buff = .NONE;
+        player.role_mode_buff_until = 0;
+        player.agent.movement_speed = 300;
+    }
+}
+
+Medic_Revive_Ability :: class : Ability_Base {
+    on_init :: method() { name = "Revive"; icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png"); }
+    can_use :: method() -> bool { return player.(Player).role_mode_role == .MEDIC; }
+    on_update :: method(params: ref Ability_Update_Params) {
+        if !params.clicked || !params.can_use return;
+        p := player.(Player);
+        closest: Player = null;
+        best: float = ROLE_MODE_REVIVE_RANGE * ROLE_MODE_REVIVE_RANGE;
+        for other: component_iterator(Player) {
+            if !other.is_dead || other.entity.id == p.entity.id continue;
+            delta := other.entity.world_position - p.entity.world_position;
+            d := length_squared(delta);
+            if d < best { best = d; closest = other; }
+        }
+        if closest == null { p.play_reward_feedback("Stand near a fallen Survivor"); return; }
+        remove_effect(closest.entity, Death_Effect, true);
+        respawn_player(closest);
+        p.play_reward_feedback("Revived teammate");
+        current_cooldown = 12.0;
+    }
+}
+
+Flagger_Buff_Ability :: class : Ability_Base {
+    on_init :: method() { name = "Flag Buff"; icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png"); }
+    can_use :: method() -> bool { return player.(Player).role_mode_role == .FLAGGER; }
+    on_update :: method(params: ref Ability_Update_Params) {
+        if !params.clicked || !params.can_use return;
+        p := player.(Player);
+        rng := rng_root_seed();
+        buff := rng_range_int(ref rng, 0, 3);
+        for other: component_iterator(Player) {
+            if other.is_dead continue;
+            delta := other.entity.world_position - p.entity.world_position;
+            if length_squared(delta) > ROLE_MODE_BUFF_RANGE * ROLE_MODE_BUFF_RANGE continue;
+            other.role_mode_buff = buff == 0 ? .SPEED : buff == 1 ? .SHAPESHIFT : buff == 2 ? .INVISIBILITY : .MIND_VISION;
+            other.role_mode_buff_until = get_time() + 8.0;
+            if other.role_mode_buff == .SPEED { other.agent.movement_speed = 480; }
+            if other.role_mode_buff == .INVISIBILITY { other.add_name_invisibility_reason("role_mode_buff"); }
+        }
+        p.play_reward_feedback(format_string("Flag buff: %", {role_mode_buff_name(p.role_mode_buff)}));
+        current_cooldown = 18.0;
+    }
+}
+
+draw_role_mode_hud :: proc(player: Player) {
+    if !is_role_mode_active() return;
+    UI.push_screen_draw_context();
+    defer UI.pop_draw_context();
+    ts := UI.default_text_settings();
+    ts.size = 24;
+    ts.color = {1, 0.9, 0.45, 1};
+    ts.do_outline = true;
+    ts.outline_thickness = 2;
+    ts.outline_color = {0, 0, 0, 1};
+    UI.text(UI.get_screen_rect().inset(18), ts, format_string("ROLE: %  |  %", {role_mode_name(player.role_mode_role), role_mode_buff_name(player.role_mode_buff)}));
+}
+
+is_role_mode_active :: proc() -> bool {
+    for mgr: component_iterator(Role_Mode_Manager) { return mgr.active; }
+    return false;
+}
+
+start_roles :: proc(player: Player) {
+    if player == null || !can_access_admin_panel(player) return;
+    if is_role_mode_active() { return; }
+    e := Scene.create_entity();
+    e.set_name("Role_Mode");
+    e.add_component(Role_Mode_Manager);
+} @chat_command @any
+
+vote_role_mode :: proc(player: Player, username: string) {
+    if player == null || !is_role_mode_active() return;
+    player.role_mode_vote_target = username;
+    Chat.server_send_message(format_string("% voted for %.", {player.get_username(), username}));
+    target: Player = null;
+    count: s64 = 0;
+    for p: component_iterator(Player) {
+        if p.role_mode_vote_target == username { count += 1; }
+        if p.get_username() == username { target = p; }
+    }
+    if target != null && count >= 2 {
+        if target.role_mode_role == .JESTER {
+            end_role_mode_round("The Jester was voted out and wins!");
+        } else {
+            target.survive_mode_killed_by_creature = true;
+            target.entity.set_active_effect(new(Death_Effect));
+            Chat.server_send_message(format_string("% was voted out.", {username}));
+        }
+    }
+} @chat_command @any
+
+end_role_mode_round :: proc(message: string) {
+    for mgr: component_iterator(Role_Mode_Manager) {
+        Chat.server_send_message(message);
+        mgr.entity.destroy();
+        return;
+    }
+}
