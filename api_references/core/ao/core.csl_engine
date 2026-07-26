@@ -3446,6 +3446,8 @@ World_Progress_Bar :: struct {
     }
 
     draw :: proc(position: v2, progress: float, options: World_Progress_Bar_Options) {
+        if Game.is_server() return;
+
         UI.push_world_draw_context();
         defer UI.pop_draw_context();
 

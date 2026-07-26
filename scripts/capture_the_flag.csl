@@ -17,6 +17,7 @@ Capture_The_Flag_Flag :: class : Interactable {
         sprite.set_texture(core_globals.white_sprite);
         sprite.layer = 2;
         entity.set_local_scale({1.1, 1.8});
+        entity.set_local_enabled(false);
         initialized_team = -1;
     }
 
@@ -91,6 +92,7 @@ Capture_The_Flag_Manager :: class : Component {
             flag := e.add_component(Capture_The_Flag_Flag);
             flag.team = i;
             flag.home_position = base;
+            e.set_local_enabled(true);
         }
 
         index: s64 = 0;
@@ -114,6 +116,9 @@ Capture_The_Flag_Manager :: class : Component {
             if scores[i] > scores[winner] { winner = i; }
         }
         Chat.server_send_message(format_string("Capture the flag ended. {0} wins with {1} captures.", {capture_the_flag_team_name(winner), scores[winner]}));
+        for flag: component_iterator(Capture_The_Flag_Flag) {
+            flag.entity.set_local_enabled(false);
+        }
         entity.destroy();
     }
 
@@ -160,7 +165,12 @@ Capture_The_Flag_Manager :: class : Component {
     ao_end :: method() {
         flags: [..]Capture_The_Flag_Flag;
         for flag: component_iterator(Capture_The_Flag_Flag) { flags.append(flag); }
-        for flag: flags { if #alive(flag.entity) { flag.entity.destroy(); } }
+        for flag: flags {
+            if #alive(flag.entity) {
+                flag.entity.set_local_enabled(false);
+                flag.entity.destroy();
+            }
+        }
         for player: component_iterator(Player) {
             player.capture_the_flag_team = -1;
             player.capture_the_flag_carrying = false;
