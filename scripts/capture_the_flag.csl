@@ -22,6 +22,11 @@ Capture_The_Flag_Flag :: class : Interactable {
     }
 
     ao_update :: method(dt: float) {
+        // Flags only exist visually while the capture-the-flag manager is active.
+        // Keep this synchronized with the minigame state so they cannot remain
+        // visible between rounds or after the manager has finished.
+        entity.set_local_enabled(is_capture_the_flag_active());
+
         if initialized_team == team return;
         initialized_team = team;
         this.set_text(format_string("Capture {0} flag", {capture_the_flag_team_name(team)}));
