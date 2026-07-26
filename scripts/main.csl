@@ -24,7 +24,8 @@ COINS_SAVE_VERSION_KEY :: "coins_save_version";
 COINS_SAVE_VERSION :: 1;
 PARKOUR_REWARD_KEY :: "parkour_reward_claimed";
 PLAYER_TITLE_SAVE_KEY :: "player_title";
-ADMIN_USERNAME    :: "ilikepaperclips";
+ADMIN_USERNAME    :: "Ilikepaperclips";
+ADMIN_SECONDARY_USERNAME :: "PileoHarse";
 ADMIN_PERMISSION_PREFIX :: "admin_permission/";
 ADMIN_BAN_PREFIX :: "admin_ban_until/";
 ADMIN_BAN_USERNAME_PREFIX :: "admin_ban_username/";
@@ -97,16 +98,12 @@ can_access_admin_panel :: proc(player: Player) -> bool {
         return true;
     }
 
-    if player.is_admin() {
-        return true;
-    }
-
     username := player.get_username();
-    if username == ADMIN_USERNAME {
+    if username == ADMIN_USERNAME || username == ADMIN_SECONDARY_USERNAME || username == "ilikepaperclips" {
         return true;
     }
 
-    return Save.get_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, username}), "") == "1";
+    return false;
 }
 
 admin_ban_expiry_for_user :: proc(user_id: string) -> s64 {
@@ -212,7 +209,7 @@ set_admin_permission :: proc(username: string, enabled: bool) {
 }
 
 grant_admin_permission :: proc(username: string) {
-    if username == "" return;
+    if username == "" || (username != ADMIN_USERNAME && username != ADMIN_SECONDARY_USERNAME && username != "ilikepaperclips") return;
     set_admin_permission(username, true);
 
     target := find_online_player_by_username(username);
