@@ -1254,14 +1254,9 @@ Player :: class : Player_Base {
 
         if is_local_or_server() {
             if is_murder_mystery_active() && (murder_role == .KILLER || murder_role == .DETECTIVE) {
-                draw_ability_button(this, Murder_Taser_Ability, 0);
+                draw_ability_button(this, Murder_Fingerprint_Ability, 0);
             }
             if is_murder_mystery_active() && murder_role == .KILLER {
-                if murder_kills >= 1 { draw_ability_button(this, Murder_Teleport_Ability, 1); }
-                if murder_kills >= 2 { draw_ability_button(this, Murder_Zoom_Ability, 2); }
-                if murder_kills >= 3 { draw_ability_button(this, Mimicer_Shapeshift_Ability, 3); }
-                if murder_kills >= 4 { draw_ability_button(this, Murder_Invisibility_Ability, 4); }
-                if murder_kills >= 7 { draw_ability_button(this, Murder_Nuke_Ability, 5); }
             }
             draw_hud(this);
             draw_player_statuses();
@@ -1384,3 +1379,4 @@ Player :: class : Player_Base {
         }
     }
 }
+

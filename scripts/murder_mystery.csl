@@ -1,99 +1,48 @@
 MURDER_MYSTERY_ROUND_TIME :: 420.0;
-Murder_Role :: enum { NONE; KILLER; DETECTIVE; INNOCENT; }
+Murder_Role :: enum { NONE; KILLER; DETECTIVE; INNOCENT; SUSPECT; }
 
 Murder_Mystery_Manager :: class : Component {
     ends_at: float;
     active: bool;
-    ao_start :: method() { active = true; ends_at = get_time() + MURDER_MYSTERY_ROUND_TIME; assign_murder_roles(); Chat.server_send_message("Murder Mystery started. Killers see each other in red."); }
-    ao_update :: method(dt: float) { if get_time() >= ends_at { end_murder_mystery("Murder Mystery ended."); return; } killers: s64 = 0; for p: component_iterator(Player) { if p.murder_role == .KILLER && !p.is_dead { killers += 1; } } if killers == 0 { end_murder_mystery("The Innocents win!"); } }
+    ao_start :: method() { active = true; ends_at = get_time() + MURDER_MYSTERY_ROUND_TIME; assign_murder_roles(); Chat.server_send_message("Murder Mystery started. The Detective has a fingerprint kit."); }
+    ao_update :: method(dt: float) {
+        if get_time() >= ends_at { end_murder_mystery("Time is up. Innocents win!"); return; }
+        living: s64 = 0; killers: s64 = 0;
+        for p: component_iterator(Player) { if !p.is_dead { living += 1; } if p.murder_role == .KILLER && !p.is_dead { killers += 1; } }
+        if living == 0 || killers == 0 { end_murder_mystery("The Innocents win!"); }
+    }
     ao_end :: method() { for p: component_iterator(Player) { reset_murder_player(p); } }
 }
 
 assign_murder_roles :: proc() {
     players: [..]Player;
-    for p: component_iterator(Player) { players.append(p); p.murder_role = .INNOCENT; p.murder_kills = 0; }
+    for p: component_iterator(Player) { players.append(p); p.murder_role = .INNOCENT; p.murder_kills = 0; p.murder_round_active = true; }
     if players.count < 3 return;
     killers: s64 = players.count >= 15 ? 3 : players.count >= 9 ? 2 : 1;
     for i: 0..<killers { players[i].murder_role = .KILLER; }
     players[killers].murder_role = .DETECTIVE;
-    for p: players { p.murder_round_active = true; p.play_reward_feedback(format_string("Role: %", {murder_role_name(p.murder_role)})); }
+    for p: players { murder_give_loadout(p); p.play_reward_feedback(format_string("Role: %", {murder_role_name(p.murder_role)})); }
 }
-murder_role_name :: proc(role: Murder_Role) -> string { switch role { case .KILLER: return "Killer"; case .DETECTIVE: return "Detective"; default: return "Innocent"; } }
+
+murder_role_name :: proc(role: Murder_Role) -> string { switch role { case .KILLER: return "Murderer"; case .DETECTIVE: return "Detective"; case .SUSPECT: return "Suspect"; default: return "Innocent"; } }
 reset_murder_player :: proc(p: Player) { if p == null return; p.murder_role = .NONE; p.murder_kills = 0; p.murder_round_active = false; }
-update_murder_mystery_player :: proc(p: Player, dt: float) { if !is_murder_mystery_active() || p.murder_role != .KILLER return; for other: component_iterator(Player) { if other.murder_role == .KILLER { other.name_color_override = {1, 0, 0, 1}; } } }
-murder_kill_reward :: proc(killer: Player) {
-    if killer == null || killer.murder_role != .KILLER return;
-    killer.murder_kills += 1;
-    switch killer.murder_kills {
-        case 1: killer.play_reward_feedback("Teleport unlocked");
-        case 2: killer.play_reward_feedback("Zoom out unlocked");
-        case 3: killer.play_reward_feedback("Shapeshift unlocked");
-        case 4: killer.play_reward_feedback("Invisibility unlocked");
-        case 5: killer.play_reward_feedback("Sniper unlocked");
-        case 6: killer.play_reward_feedback("RPG unlocked");
-        case 7: killer.play_reward_feedback("Nuke unlocked");
-    }
-    if killer.murder_kills == 5 { grant_weapon_with_ammo(killer, .ASSAULT_RIFLE, 10); }
-    if killer.murder_kills == 6 { grant_weapon_with_ammo(killer, .MISSILE_BARRAGE, 5); }
-}
 is_murder_mystery_active :: proc() -> bool { for m: component_iterator(Murder_Mystery_Manager) { return m.active; } return false; }
 start_murder_mystery :: proc(player: Player) { if player == null || !can_access_admin_panel(player) || is_murder_mystery_active() return; e := Scene.create_entity(); e.set_name("Murder_Mystery"); e.add_component(Murder_Mystery_Manager); }
 end_murder_mystery :: proc(message: string) { for m: component_iterator(Murder_Mystery_Manager) { Chat.server_send_message(message); m.entity.destroy(); return; } }
 
-murder_role :: proc(player: Player, username: string, role_name: string) {
-    if player == null || !can_access_admin_panel(player) || !is_murder_mystery_active() return;
-    target := find_online_player_by_username(username);
-    if target == null return;
-    if role_name == "killer" { target.murder_role = .KILLER; }
-    else if role_name == "detective" { target.murder_role = .DETECTIVE; }
-    else { target.murder_role = .INNOCENT; }
-    target.play_reward_feedback(format_string("Role: %", {murder_role_name(target.murder_role)}));
-} @chat_command @any
+murder_give_loadout :: proc(p: Player) {
+    if p.murder_role == .KILLER { murder_give_item(p, .SHURIKEN, 1); }
+    if p.murder_role == .DETECTIVE { murder_give_item(p, .RAY_GUN, 1); murder_give_ammo(p, .RAY_GUN, 1); }
+}
+murder_give_item :: proc(p: Player, wt: Weapon_Type, count: s64) { def := get_weapon_item_def(wt); if def == null return; item := Items.create_item_instance(def, count); destroyed: bool; if Items.can_move_item_to_inventory(item, p.default_inventory, ref destroyed) { Items.move_item_to_inventory(item, p.default_inventory); } else { Items.destroy_item_instance(item); } }
+murder_give_ammo :: proc(p: Player, wt: Weapon_Type, count: s64) { def := get_ammo_def_for_weapon(wt); if def == null return; item := Items.create_item_instance(def, count); destroyed: bool; if Items.can_move_item_to_inventory(item, p.default_inventory, ref destroyed) { Items.move_item_to_inventory(item, p.default_inventory); } else { Items.destroy_item_instance(item); } }
 
-set_murder_role :: proc(target: Player, role: Murder_Role) {
-    if target == null || !is_murder_mystery_active() return;
-    target.murder_role = role;
-    target.play_reward_feedback(format_string("Role: %", {murder_role_name(role)}));
+Murder_Fingerprint_Ability :: class : Ability_Base {
+    on_init :: method() { name = "Fingerprint"; icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png"); }
+    can_use :: method() -> bool { p := player.(Player); return is_murder_mystery_active() && !p.is_dead && p.murder_role == .DETECTIVE; }
+    on_update :: method(params: ref Ability_Update_Params) { if !params.clicked || !params.can_use return; p := player.(Player); closest: Player = null; best := 4.0; for other: component_iterator(Player) { if other == p || other.is_dead continue; d := length_squared(other.entity.world_position - p.entity.world_position); if d < best { best = d; closest = other; } } if closest == null { p.play_reward_feedback("Get closer to a player"); return; } if closest.murder_role == .INNOCENT { p.play_reward_feedback(format_string("{0}: Innocent", {closest.get_username()})); } else { closest.murder_role = .SUSPECT; p.play_reward_feedback(format_string("{0}: Suspect", {closest.get_username()})); } current_cooldown = 2.0; }
 }
 
-Murder_Taser_Ability :: class : Ability_Base {
-    on_init :: method() { name = "Taser"; icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png"); }
-    can_use :: method() -> bool { p := player.(Player); return is_murder_mystery_active() && !p.is_dead && (p.murder_role == .KILLER || p.murder_role == .DETECTIVE); }
-    on_update :: method(params: ref Ability_Update_Params) { if !params.clicked || !params.can_use return; p := player.(Player); for other: component_iterator(Player) { if other == p || other.is_dead continue; if length(other.entity.world_position - p.entity.world_position) < 2.0 { other.entity.set_active_effect(new(Death_Effect)); murder_kill_reward(p); p.play_reward_feedback("Taser hit"); current_cooldown = 3.0; return; } } }
-}
-
-Murder_Teleport_Ability :: class : Ability_Base {
-    on_init :: method() { name = "Teleport"; icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png"); }
-    can_use :: method() -> bool { return player.(Player).murder_kills >= 1; }
-    on_update :: method(params: ref Ability_Update_Params) { if params.clicked && params.can_use { p := player.(Player); p.entity.set_local_position(p.entity.local_position + v2{4, 0}); p.entity.mark_teleported(); current_cooldown = 8.0; } }
-}
-
-Murder_Zoom_Ability :: class : Ability_Base {
-    on_init :: method() { name = "Zoom Out"; icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png"); }
-    can_use :: method() -> bool { return player.(Player).murder_kills >= 2; }
-    on_update :: method(params: ref Ability_Update_Params) { if params.clicked && params.can_use { p := player.(Player); p.camera.size = p.camera.size * 1.35; current_cooldown = 0.25; } }
-}
-
-Murder_Invisibility_Ability :: class : Ability_Base {
-    on_init :: method() { name = "Invisibility"; icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png"); }
-    can_use :: method() -> bool { return player.(Player).murder_kills >= 4; }
-    on_update :: method(params: ref Ability_Update_Params) { if params.clicked && params.can_use { p := player.(Player); set_player_invisible(p, true); current_cooldown = 10.0; } }
-}
-
-Murder_Sniper_Ability :: class : Ability_Base {
-    on_init :: method() { name = "Sniper"; icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png"); }
-    can_use :: method() -> bool { return player.(Player).murder_kills >= 5; }
-    on_update :: method(params: ref Ability_Update_Params) { if params.clicked && params.can_use { grant_weapon_with_ammo(player.(Player), .ASSAULT_RIFLE, 1); current_cooldown = 3.0; } }
-}
-
-Murder_RPG_Ability :: class : Ability_Base {
-    on_init :: method() { name = "RPG"; icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png"); }
-    can_use :: method() -> bool { return player.(Player).murder_kills >= 6; }
-    on_update :: method(params: ref Ability_Update_Params) { if params.clicked && params.can_use { grant_weapon_with_ammo(player.(Player), .MISSILE_BARRAGE, 1); current_cooldown = 4.0; } }
-}
-
-Murder_Nuke_Ability :: class : Ability_Base {
-    on_init :: method() { name = "Nuke"; icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/trophies_rewards/crown_gold.png"); }
-    can_use :: method() -> bool { return player.(Player).murder_kills >= 7; }
-    on_update :: method(params: ref Ability_Update_Params) { if params.clicked && params.can_use { for other: component_iterator(Player) { if other != player.(Player) && !other.is_dead { other.entity.set_active_effect(new(Death_Effect)); } } current_cooldown = 30.0; } }
-}
+update_murder_mystery_player :: proc(p: Player, dt: float) { }
+murder_kill_reward :: proc(killer: Player) { if killer != null { killer.murder_kills += 1; } }
+set_murder_role :: proc(target: Player, role: Murder_Role) { if target == null || !is_murder_mystery_active() return; target.murder_role = role; target.play_reward_feedback(format_string("Role: %", {murder_role_name(role)})); }
