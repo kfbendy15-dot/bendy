@@ -89,6 +89,11 @@ draw_hud :: proc(player: Player) {
     shop_desc.panel.height = UIK.pixels(52);
     shop_btn := UIK.button("hud/shop_button", "Shop", shop_desc);
 
+    vs_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    vs_desc.panel.width = UIK.pixels(104);
+    vs_desc.panel.height = UIK.pixels(52);
+    vs_btn := UIK.button("hud/vs_button", "VS", vs_desc);
+
     settings_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
     settings_desc.panel.width = UIK.pixels(120);
     settings_desc.panel.height = UIK.pixels(52);
@@ -131,6 +136,9 @@ draw_hud :: proc(player: Player) {
         player.shop_tab_index = 0;
         player.show_shop = true;
         Save.set_int(player, "ui_test_show_shop", 1);
+    }
+    if UIK.clicked(vs_btn) {
+        start_vs_battle(player);
     }
     if UIK.clicked(settings_btn) {
         player.show_settings = true;

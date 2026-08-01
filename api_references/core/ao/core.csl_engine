@@ -3082,15 +3082,14 @@ draw_ability_button :: proc(player: Player, $T: typeid, index: int) {
                     keybind = ability.keybind_override;
                 }
                 should_draw_keybind = true;
-
-                if !ability.draw_but_dont_use_keybind {
-                    should_draw_keybind = true;
-                }
             }
         }
 
         #static bs := UI.default_button_settings();
         bs.keybind = keybind;
+        if ability.draw_but_dont_use_keybind {
+            bs.keybind = 0;
+        }
         bs.sprite = button_sprite;
         bs.sprite_pressed = button_pressed_sprite;
         bs.press_scaling = 1;
@@ -3446,6 +3445,8 @@ World_Progress_Bar :: struct {
     }
 
     draw :: proc(position: v2, progress: float, options: World_Progress_Bar_Options) {
+        if Game.is_server() return;
+
         UI.push_world_draw_context();
         defer UI.pop_draw_context();
 
