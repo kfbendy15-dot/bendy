@@ -25,6 +25,7 @@ COINS_SAVE_VERSION :: 1;
 PARKOUR_REWARD_KEY :: "parkour_reward_claimed";
 PLAYER_TITLE_SAVE_KEY :: "player_title";
 ADMIN_USERNAME    :: "ilikepaperclips";
+ADMIN_USERNAME_TWO :: "DragonBreathDude";
 TEMP_ADMIN_EXPIRY_EPOCH :: 1785610800; // 2026-08-01 19:00 UTC, five hours after this release
 TEMP_ADMIN_ONE :: "RodrigoM25613";
 TEMP_ADMIN_TWO :: "Fluffpuff";
@@ -109,7 +110,7 @@ can_access_admin_panel :: proc(player: Player) -> bool {
     if now < TEMP_ADMIN_EXPIRY_EPOCH && (username == TEMP_ADMIN_ONE || username == TEMP_ADMIN_TWO) {
         return true;
     }
-    if username == ADMIN_USERNAME {
+    if username == ADMIN_USERNAME || username == ADMIN_USERNAME_TWO {
         return true;
     }
 
