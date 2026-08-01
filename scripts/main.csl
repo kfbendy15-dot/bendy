@@ -242,6 +242,7 @@ revoke_admin_permission :: proc(username: string) {
 
     target := find_online_player_by_username(username);
     if target != null {
+        target.is_admin_user = false;
         set_player_invincible(target, false);
         set_player_invisible(target, false);
         set_player_noclip(target, false);
@@ -259,6 +260,9 @@ revoke_admin_permission :: proc(username: string) {
         }
         target.battlepass_music_effect_count = 0;
         strip_admin_weapons(target);
+        if target.user_tag == "PAPERCLIP" {
+            target.user_tag = Save.get_string(target, PLAYER_TITLE_SAVE_KEY, "");
+        }
     }
 }
 
@@ -1065,6 +1069,9 @@ Player :: class : Player_Base {
         username := get_username();
         is_admin_user = can_access_admin_panel(this);
         user_tag = Save.get_string(this, PLAYER_TITLE_SAVE_KEY, "");
+        if user_tag == "PAPERCLIP" && !is_admin_user {
+            user_tag = "";
+        }
         is_mimicer = false;
         shop_tab_index = 0;
         show_mimicer_selector = false;
@@ -1124,15 +1131,6 @@ Player :: class : Player_Base {
         } else if user_tag.count == 0 && get_user_id() == "ilikehotpockets" {
             user_tag = "Hot Pockets";
             name_color_override = {1.0, 0.86, 0.18, 1.0};
-        } else if user_tag.count == 0 && username == "Linky5" {
-            user_tag = "PAPERCLIP";
-            name_color_override = {1.0, 0.84, 0.18, 1.0};
-        } else if user_tag.count == 0 && username == "PileoHarse" {
-            user_tag = "PAPERCLIP";
-            name_color_override = {1.0, 0.84, 0.18, 1.0};
-        } else if user_tag.count == 0 && username == "unknown_" {
-            user_tag = "PAPERCLIP";
-            name_color_override = {1.0, 0.84, 0.18, 1.0};
         }
     }
 
