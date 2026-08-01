@@ -80,17 +80,24 @@ capture_the_flag_distance :: proc(a: v2, b: v2) -> float {
 Capture_The_Flag_Manager :: class : Component {
     time_left: float;
     scores: [7]s64;
+    flag_spawn_positions: [7]v2 @ao_serialize;
+    player_spawn_positions: [7]v2 @ao_serialize;
+    respawn_position: v2 @ao_serialize;
+    flag_colors: [7]v4 @ao_serialize;
 
     ao_start :: method() {
         time_left = CAPTURE_THE_FLAG_DURATION;
         for i: 0..CAPTURE_THE_FLAG_TEAM_COUNT - 1 {
             scores[i] = 0;
-            base := capture_the_flag_base_position(i);
+            base := flag_spawn_positions[i];
+            if base.x == 0 && base.y == 0 { base = capture_the_flag_base_position(i); }
             e := Scene.create_entity();
             e.set_local_position(base);
             flag := e.add_component(Capture_The_Flag_Flag);
             flag.team = i;
             flag.home_position = base;
+            if flag_colors[i].w <= 0 { flag.sprite.color = capture_the_flag_team_color(i); }
+            else { flag.sprite.color = flag_colors[i]; }
         }
 
         index: s64 = 0;
@@ -99,7 +106,8 @@ Capture_The_Flag_Manager :: class : Component {
                 player.capture_the_flag_team = index % CAPTURE_THE_FLAG_TEAM_COUNT;
             }
             player.capture_the_flag_carrying = false;
-            spawn := capture_the_flag_base_position(player.capture_the_flag_team);
+            spawn := player_spawn_positions[player.capture_the_flag_team];
+            if spawn.x == 0 && spawn.y == 0 { spawn = capture_the_flag_base_position(player.capture_the_flag_team); }
             player.entity.set_local_position(spawn);
             player.entity.mark_teleported();
             player.play_reward_feedback(capture_the_flag_team_name(player.capture_the_flag_team));
@@ -164,6 +172,7 @@ Capture_The_Flag_Manager :: class : Component {
         for player: component_iterator(Player) {
             player.capture_the_flag_team = -1;
             player.capture_the_flag_carrying = false;
+            if respawn_position.x != 0 || respawn_position.y != 0 { player.entity.set_local_position(respawn_position); }
         }
     }
 }

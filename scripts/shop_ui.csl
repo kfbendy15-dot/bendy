@@ -1038,16 +1038,6 @@ draw_admin_panel :: proc(player: Player) {
     action_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
     UIK.panel_begin(action_row);
 
-    grant_admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
-    grant_admin_desc.panel.width = UIK.flex(1);
-    grant_admin_desc.panel.height = UIK.pixels(52);
-    grant_admin_btn := UIK.button("admin/grant_admin", "Grant Admin", grant_admin_desc);
-
-    revoke_admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
-    revoke_admin_desc.panel.width = UIK.flex(1);
-    revoke_admin_desc.panel.height = UIK.pixels(52);
-    revoke_admin_btn := UIK.button("admin/revoke_admin", "Remove Admin", revoke_admin_desc);
-
     grant_coins_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     grant_coins_desc.panel.width = UIK.flex(1);
     grant_coins_desc.panel.height = UIK.pixels(52);
@@ -1300,16 +1290,6 @@ draw_admin_panel :: proc(player: Player) {
     }
     if UIK.clicked(amt250_btn) {
         player.admin_grant_amount = 250;
-    }
-
-    if UIK.clicked(grant_admin_btn) {
-        grant_admin_permission(player.admin_target_username);
-        player.play_reward_feedback(format_string("Admin +%", {player.admin_target_username}));
-    }
-
-    if UIK.clicked(revoke_admin_btn) {
-        revoke_admin_permission(player.admin_target_username);
-        player.play_reward_feedback(format_string("Admin -%", {player.admin_target_username}));
     }
 
     if UIK.clicked(grant_coins_btn) {

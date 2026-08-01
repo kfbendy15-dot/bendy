@@ -122,7 +122,8 @@ Mimicer_Attack_Ability :: class : Ability_Base {
     }
 
     can_use :: method() -> bool {
-        return player.(Player).is_mimicer;
+        p := player.(Player);
+        return p.is_mimicer || (is_murder_mystery_active() && p.murder_role == .KILLER && p.murder_kills >= 3);
     }
 
     on_update :: method(params: ref Ability_Update_Params) {
@@ -285,7 +286,7 @@ Mimicer_Shapeshift_Ability :: class : Ability_Base {
 }
 
 draw_mimicer_selector :: proc(player: Player) {
-    if player == null || !player.is_mimicer {
+    if player == null || (!player.is_mimicer && !(is_murder_mystery_active() && player.murder_role == .KILLER && player.murder_kills >= 3)) {
         player.show_mimicer_selector = false;
         return;
     }
