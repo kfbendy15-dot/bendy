@@ -64,6 +64,12 @@ draw_hud :: proc(player: Player) {
     balance := Economy.get_balance(player, "Coins");
     UIK.currency(coin_tex, balance, UIK.text_title());
 
+    if is_murder_mystery_active() && player.murder_role != .NONE {
+        role_style := UIK.text_title();
+        role_style.color = player.murder_role == .KILLER ? {1, 0.2, 0.2, 1} : player.murder_role == .DETECTIVE ? {0.3, 0.7, 1, 1} : {0.5, 1, 0.5, 1};
+        UIK.text(format_string("Role: %", {murder_role_name(player.murder_role)}), role_style);
+    }
+
     if player.show_reward_popups && player.reward_feedback_duration > 0 {
         elapsed := get_time() - player.reward_feedback_start;
         if elapsed < player.reward_feedback_duration {
@@ -84,10 +90,13 @@ draw_hud :: proc(player: Player) {
         tutorial_btn = UIK.button("hud/tutorial_button", "Tutorial", tutorial_desc);
     }
 
-    shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    shop_desc.panel.width = UIK.pixels(120);
-    shop_desc.panel.height = UIK.pixels(52);
-    shop_btn := UIK.button("hud/shop_button", "Shop", shop_desc);
+    shop_btn: Interact_Result;
+    if !is_murder_mystery_active() || player.murder_role != .INNOCENT {
+        shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+        shop_desc.panel.width = UIK.pixels(120);
+        shop_desc.panel.height = UIK.pixels(52);
+        shop_btn = UIK.button("hud/shop_button", "Shop", shop_desc);
+    }
 
     vs_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     vs_desc.panel.width = UIK.pixels(104);

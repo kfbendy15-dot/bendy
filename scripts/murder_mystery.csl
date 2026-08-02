@@ -1,4 +1,7 @@
 MURDER_MYSTERY_ROUND_TIME :: 420.0;
+MURDER_LB_KILLER :: "murder_mystery_killer_wins";
+MURDER_LB_DETECTIVE :: "murder_mystery_detective_wins";
+MURDER_LB_INNOCENT :: "murder_mystery_innocent_wins";
 Murder_Role :: enum { NONE; KILLER; DETECTIVE; INNOCENT; SUSPECT; }
 
 Murder_Mystery_Manager :: class : Component {
@@ -25,14 +28,40 @@ assign_murder_roles :: proc() {
 }
 
 murder_role_name :: proc(role: Murder_Role) -> string { switch role { case .KILLER: return "Murderer"; case .DETECTIVE: return "Detective"; case .SUSPECT: return "Suspect"; default: return "Innocent"; } }
-reset_murder_player :: proc(p: Player) { if p == null return; p.murder_role = .NONE; p.murder_kills = 0; p.murder_round_active = false; }
+reset_murder_player :: proc(p: Player) { if p == null return; p.murder_role = .NONE; p.murder_kills = 0; p.murder_round_active = false; p.murder_permadead = false; }
 is_murder_mystery_active :: proc() -> bool { for m: component_iterator(Murder_Mystery_Manager) { return m.active; } return false; }
 start_murder_mystery :: proc(player: Player) { if player == null || !can_access_admin_panel(player) || is_murder_mystery_active() return; e := Scene.create_entity(); e.set_name("Murder_Mystery"); e.add_component(Murder_Mystery_Manager); }
-end_murder_mystery :: proc(message: string) { for m: component_iterator(Murder_Mystery_Manager) { Chat.server_send_message(message); m.entity.destroy(); return; } }
+end_murder_mystery :: proc(message: string) {
+    for m: component_iterator(Murder_Mystery_Manager) {
+        Chat.server_send_message(message);
+        killer_alive := false;
+        for p: component_iterator(Player) {
+            won := false;
+            if p.murder_role == .KILLER { won = !p.is_dead && message_contains(message, "Killer"); killer_alive = !p.is_dead; }
+            else if p.murder_role == .DETECTIVE { won = !p.is_dead && !killer_alive && message_contains(message, "Innocent"); }
+            else if p.murder_role == .INNOCENT { won = !p.is_dead && message_contains(message, "Innocent"); }
+            if won {
+                board := p.murder_role == .KILLER ? MURDER_LB_KILLER : p.murder_role == .DETECTIVE ? MURDER_LB_DETECTIVE : MURDER_LB_INNOCENT;
+                Global_Leaderboard.increment_score(p, board, 1);
+                Save.increment_game_int(format_string("%/total", {board}), 1);
+            }
+        }
+        m.entity.destroy(); return;
+    }
+}
 
 murder_give_loadout :: proc(p: Player) {
+    i: s64 = 0;
+    while i < p.default_inventory.capacity {
+        item := p.default_inventory.get_item(i);
+        if item != null && get_weapon_type_for_item(item.get_definition()) != .NONE { Items.destroy_item_instance(item); }
+        i += 1;
+    }
+    // The round uses only its own pistol loadout; normal weapons are not granted.
+    murder_give_item(p, .RAY_GUN, 1);
+    murder_give_ammo(p, .RAY_GUN, 1);
+    p.agent.movement_speed = 360.0;
     if p.murder_role == .KILLER { murder_give_item(p, .SHURIKEN, 1); }
-    if p.murder_role == .DETECTIVE { murder_give_item(p, .RAY_GUN, 1); murder_give_ammo(p, .RAY_GUN, 1); }
 }
 murder_give_item :: proc(p: Player, wt: Weapon_Type, count: s64) { def := get_weapon_item_def(wt); if def == null return; item := Items.create_item_instance(def, count); destroyed: bool; if Items.can_move_item_to_inventory(item, p.default_inventory, ref destroyed) { Items.move_item_to_inventory(item, p.default_inventory); } else { Items.destroy_item_instance(item); } }
 murder_give_ammo :: proc(p: Player, wt: Weapon_Type, count: s64) { def := get_ammo_def_for_weapon(wt); if def == null return; item := Items.create_item_instance(def, count); destroyed: bool; if Items.can_move_item_to_inventory(item, p.default_inventory, ref destroyed) { Items.move_item_to_inventory(item, p.default_inventory); } else { Items.destroy_item_instance(item); } }
