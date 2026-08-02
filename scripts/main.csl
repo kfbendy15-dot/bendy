@@ -41,6 +41,9 @@ BACKROOMS_POSITION :: v2{0, 30};
 OOB_FALL_DURATION :: 1.15;
 OOB_FALL_SPEED :: 14.0;
 
+// Shared spawn location. The in-world SPAWN button updates this for every player.
+g_shared_spawn_position: v2;
+
 COIN_PASS_25_PRODUCT_ID  :: "6a497945b13a6795f064b96e";
 COIN_PASS_50_PRODUCT_ID  :: "6a4ef49b4370914bce23fb47";
 COIN_PASS_100_PRODUCT_ID :: "6a4ef4c34370914bce23fb65";
@@ -745,12 +748,7 @@ spend_coins :: proc(player: Player, amount: s64) -> bool {
 }
 
 get_spawn_point :: proc(idx: s64) -> v2 {
-    switch idx {
-        case 0: return {-15, -8};
-        case 1: return {15, -8};
-        case 2: return {-15, 8};
-        default: return {15, 8};
-    }
+    return g_shared_spawn_position;
 }
 
 set_weapon_ammo_count :: proc(player: Player, wt: Weapon_Type, desired: s64) {
@@ -775,6 +773,7 @@ set_weapon_ammo_count :: proc(player: Player, wt: Weapon_Type, desired: s64) {
 }
 
 ao_before_scene_load :: proc() {
+    g_shared_spawn_position = {0, 0};
     coin_tex := get_asset(Texture_Asset, "$AO/ui/kit/Icons/weapon_tier/weapon_tier_icon_gold.png");
     Economy.register_currency("Coins", coin_tex);
     Economy.register_currency("Sparks", get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png"));

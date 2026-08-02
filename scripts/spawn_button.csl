@@ -1,0 +1,33 @@
+// Editable world marker that controls where every player spawns.
+Spawn_Button :: class : Component {
+    interactable: Interactable;
+
+    ao_start :: method() {
+        sprite := entity.get_component(Sprite_Renderer);
+        if sprite != null {
+            sprite.set_texture(get_asset(Texture_Asset, "$AO/ui/kit/Game UI/Buttons/shiny_buttons/button_large_skew_brown1.png"));
+            sprite.layer = 1;
+        }
+        interactable = entity.get_component(Interactable);
+        if interactable == null return;
+        interactable.set_listener(this);
+        interactable.set_text("SPAWN");
+        interactable.set_hold_text("SET SPAWN");
+        interactable.radius = 4.0;
+        interactable.required_hold_time = 0.0;
+        interactable.prompt_offset = {0, 32};
+    }
+
+    can_use :: method(player: Player) -> bool {
+        return true;
+    }
+
+    on_interact :: method(player: Player) {
+        g_shared_spawn_position = entity.world_position;
+        for other: component_iterator(Player) {
+            other.entity.set_local_position(g_shared_spawn_position);
+            other.entity.mark_teleported();
+        }
+        Chat.server_send_message("SPAWN LOCATION SET");
+    }
+}
