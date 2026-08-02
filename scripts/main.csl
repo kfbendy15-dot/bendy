@@ -1,6 +1,7 @@
 import "core:ao"
 import "reusable_weapons"
 import "core:dropped_items"
+import "core:global_leaderboard"
 
 PLAYER_MAX_HEALTH :: 100.0;
 ARMOR_BONUS_HP    :: 50.0;
@@ -840,6 +841,15 @@ give_armor_to_player :: proc(target: Player) {
     target.play_reward_feedback("Netherite armor");
 }
 
+set_armor_tier_for_admin :: proc(target: Player, tier: s64) {
+    if target == null || tier < 1 || tier > 8 return;
+    target.armor_tier = tier;
+    Save.set_int(target, ARMOR_TIER_KEY, tier);
+    refresh_armor_visual(target);
+    if target.armor_bonus_health < ARMOR_BONUS_HP { apply_armor_bonus(target, ARMOR_BONUS_HP); }
+    target.play_reward_feedback(format_string("% armor", {armor_tier_name(tier)}));
+}
+
 buy_starter_pack :: proc(player: Player) {
     if player == null || Save.get_int(player, STARTER_PACK_CLAIMED_KEY, 0) != 0 return;
     if Economy.get_balance(player, "Sparks") < SPARKS_STARTER_COST { player.play_reward_feedback("Need 199 Sparks"); return; }
@@ -927,6 +937,7 @@ Player :: class : Player_Base {
     out_of_bounds_respawn_start: float;
     admin_target_username: string;
     admin_grant_amount: s64;
+    admin_armor_tier: s64;
     show_admin_unban: bool;
     admin_banned_user_ids: [..]string;
     admin_banned_usernames: [..]string;
@@ -984,6 +995,7 @@ Player :: class : Player_Base {
     murder_role: Murder_Role;
     murder_kills: s64;
     murder_round_active: bool;
+    murder_permadead: bool;
 
     ao_start :: method() {
         banned_seconds := admin_ban_remaining_seconds(get_user_id());
@@ -1001,6 +1013,11 @@ Player :: class : Player_Base {
         wt.on_damaged = proc(target: Weapon_Target, damage: float, attacker_id: u64, userdata: Object) {
             victim := userdata.(Player);
             if target.health <= 0 && !victim.is_dead {
+                if is_murder_mystery_active() {
+                    attacker: Player;
+                    for candidate: component_iterator(Player) { if candidate.entity.id == attacker_id { attacker = candidate; break; } }
+                    victim.murder_permadead = attacker != null && attacker.murder_role == .KILLER;
+                }
                 victim.survive_mode_killed_by_creature = false;
                 for creature: component_iterator(Survive_Mode_Creature_Marker) {
                     if creature.entity.id == attacker_id {
@@ -1096,6 +1113,7 @@ Player :: class : Player_Base {
         refresh_armor_visual(this);
         admin_target_username = "";
         admin_grant_amount = 25;
+        admin_armor_tier = 1;
         show_admin_unban = false;
         admin_unban_next_refresh_at = 0;
         admin_unban_action_count = 0;
@@ -1133,6 +1151,7 @@ Player :: class : Player_Base {
         role_mode_buff = .NONE;
         role_mode_buff_until = 0;
         role_mode_vote_target = "";
+        murder_permadead = false;
         if Game.is_editor() {
             entity.set_name("Player");
             set_name_override("Player");
@@ -1252,6 +1271,7 @@ Player :: class : Player_Base {
         }
 
         if is_local_or_server() {
+            if is_murder_mystery_active() && murder_role == .INNOCENT { show_shop = false; }
             if is_murder_mystery_active() && (murder_role == .KILLER || murder_role == .DETECTIVE) {
                 draw_ability_button(this, Murder_Fingerprint_Ability, 0);
             }

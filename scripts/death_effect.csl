@@ -24,7 +24,7 @@ Death_Effect :: class : Effect_Base {
         player.add_freeze_reason(death_reason);
         player.add_disable_movement_input_reason(death_reason);
         player.add_name_invisibility_reason(death_reason);
-        lock_respawn_until_survive_mode_ends = player.(Player).survive_mode_killed_by_creature;
+        lock_respawn_until_survive_mode_ends = player.(Player).survive_mode_killed_by_creature || player.(Player).murder_permadead;
         player.(Player).survive_mode_death_reason = death_reason;
         player.animator.state_machine.set_trigger("death");
         player.(Player).is_dead = true;

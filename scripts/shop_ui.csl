@@ -303,13 +303,20 @@ draw_monetization_tab :: proc(player: Player) {
 }
 
 draw_shop :: proc(player: Player) {
+    if is_murder_mystery_active() && player.murder_role == .INNOCENT {
+        player.show_shop = false;
+        return;
+    }
     UIK.begin(UIK.modal(UIK.rect_window_large(), 15));
 
     shell := UIK.panel_modal(.BLACK);
     shell.gap = 0;
     UIK.panel_begin(shell);
 
-    title_desc := UIK.title_area_desc("Shop");
+    shop_title := "Shop";
+    if is_murder_mystery_active() && player.murder_role == .DETECTIVE { shop_title = "Detective Shop"; }
+    if is_murder_mystery_active() && player.murder_role == .KILLER { shop_title = "Killer Shop"; }
+    title_desc := UIK.title_area_desc(shop_title);
     title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/shopping_cart/shopping_cart_icon.png");
     exit_handle := UIK.title_area(title_desc);
 
@@ -1043,11 +1050,6 @@ draw_admin_panel :: proc(player: Player) {
     grant_coins_desc.panel.height = UIK.pixels(52);
     grant_coins_btn := UIK.button("admin/grant_coins", "Give Coins", grant_coins_desc);
 
-    armor_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
-    armor_desc.panel.width = UIK.flex(1);
-    armor_desc.panel.height = UIK.pixels(52);
-    armor_btn := UIK.button("admin/give_armor", "Give Netherite", armor_desc);
-
     kick_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     kick_desc.panel.width = UIK.flex(1);
     kick_desc.panel.height = UIK.pixels(52);
@@ -1057,6 +1059,20 @@ draw_admin_panel :: proc(player: Player) {
     ban_desc.panel.width = UIK.flex(1);
     ban_desc.panel.height = UIK.pixels(52);
     ban_btn := UIK.button("admin/ban", "Ban", ban_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    UIK.text("Armor panel", UIK.text_title());
+    UIK.text(format_string("Selected: %", {armor_tier_name(player.admin_armor_tier)}), UIK.text_body());
+    armor_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 4);
+    UIK.panel_begin(armor_row);
+    armor_handles: [..]Interact_Result;
+    armor_names: [8]string = {"Wooden", "Stone", "Iron", "Gold", "Diamond", "Emerald", "Obsidian", "Netherite"};
+    for tier: 1..8 {
+        ad := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+        ad.panel.width = UIK.flex(1); ad.panel.height = UIK.pixels(42);
+        armor_handles.append(UIK.button(format_string("admin/armor/%", {tier}), armor_names[tier - 1], ad));
+    }
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
@@ -1336,9 +1352,7 @@ draw_admin_panel :: proc(player: Player) {
         player.play_reward_feedback("Paperclips approaches!");
     }
 
-    if UIK.clicked(armor_btn) {
-        give_armor_to_player(admin_target);
-    }
+    for tier: 1..8 { if UIK.clicked(armor_handles[tier - 1]) { player.admin_armor_tier = tier; set_armor_tier_for_admin(admin_target, tier); } }
 
     if UIK.clicked(double_btn) {
         g_event_double_coins = !g_event_double_coins;
