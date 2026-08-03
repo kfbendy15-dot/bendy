@@ -538,10 +538,12 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(starter_handle) {
         buy_starter_pack(player);
     }
-    if UIK.clicked(murderer_chance_handle) && spend_coins(player, 299) {
+    if UIK.clicked(murderer_chance_handle) && Economy.can_withdraw_currency(player, "Sparks", 299) {
+        Economy.withdraw_currency(player, "Sparks", 299);
         player.play_reward_feedback("Murderer chance increased");
     }
-    if UIK.clicked(detective_chance_handle) && spend_coins(player, 99) {
+    if UIK.clicked(detective_chance_handle) && Economy.can_withdraw_currency(player, "Sparks", 99) {
+        Economy.withdraw_currency(player, "Sparks", 99);
         player.play_reward_feedback("Detective chance increased");
     }
     if UIK.clicked(mystery_bundle_handle) {

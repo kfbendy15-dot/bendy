@@ -19,9 +19,15 @@ Murder_Mystery_Manager :: class : Component {
 
 assign_murder_roles :: proc() {
     players: [..]Player;
-    for p: component_iterator(Player) { players.append(p); p.murder_role = .INNOCENT; p.murder_kills = 0; p.murder_round_active = true; }
+    for p: component_iterator(Player) { players.append(p); p.murder_role = .INNOCENT; p.murder_kills = 0; p.murderer_chance_percent = 0; p.detective_chance_percent = 0; p.murder_round_active = true; }
     if players.count < 3 return;
     killers: s64 = players.count >= 15 ? 3 : players.count >= 9 ? 2 : 1;
+    // These are the odds for this round, not the final assigned role. Keep
+    // them on every player so the HUD remains useful when an admin overrides
+    // a role from the panel.
+    murderer_chance := killers.(float) / players.count.(float) * 100.0;
+    detective_chance := 1.0 / players.count.(float) * 100.0;
+    for p: players { p.murderer_chance_percent = murderer_chance; p.detective_chance_percent = detective_chance; }
     for i: 0..<killers { players[i].murder_role = .KILLER; }
     players[killers].murder_role = .DETECTIVE;
     for p: players { murder_give_loadout(p); p.play_reward_feedback(format_string("Role: %", {murder_role_name(p.murder_role)})); }
