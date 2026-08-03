@@ -53,6 +53,17 @@ buy_weapon_offer :: proc(player: Player, wt: Weapon_Type, cost: s64, feedback_te
     }
 
     grant_weapon_with_ammo(player, wt, get_weapon_config(wt).ammo_first_pickup);
+    if wt != .ICE_LAUNCHER && wt != .GLACIATOR {
+        player.gun_mutation_element = weapon_element(wt);
+        if player.gun_mutation_element == 0 { player.gun_mutation_element = 2; }
+    }
+    // Every purchased gun receives its elemental mutation; Ice is reserved for the Ice event.
+    if wt != .ICE_LAUNCHER && wt != .GLACIATOR {
+        element := weapon_element(wt);
+        if element == 1 { player.play_reward_feedback(format_string("% Fire mutation", {feedback_text})); }
+        if element == 2 { player.play_reward_feedback(format_string("% Water mutation", {feedback_text})); }
+        if element == 3 { player.play_reward_feedback(format_string("% Leaf mutation", {feedback_text})); }
+    }
     equip_weapon_item_if_present(player, wt);
     if !player.show_admin_shop {
         player.show_shop = false;

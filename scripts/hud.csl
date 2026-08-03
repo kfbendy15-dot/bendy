@@ -48,6 +48,20 @@ draw_settings :: proc(player: Player) {
     UIK.end();
 }
 
+draw_event_panel :: proc(player: Player) {
+    UIK.begin(UIK.modal(UIK.rect_window_small(), 30));
+    shell := UIK.panel_modal(.BLUE);
+    UIK.panel_begin(shell);
+    title := UIK.title_area(UIK.title_area_desc("Event Shop"));
+    if title.clicked { player.show_event_panel = false; }
+    UIK.text(UIK.text_title(), "Only Ice is available.");
+    UIK.text(UIK.text_body(), g_event_ice ? "Ice event active" : "Ice event inactive");
+    toggle := UIK.button("events/ice", g_event_ice ? "Stop Ice" : "Start Ice", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW));
+    UIK.panel_end();
+    UIK.end();
+    if UIK.clicked(toggle) { g_event_ice = !g_event_ice; }
+}
+
 draw_hud :: proc(player: Player) {
     UIK.begin(UIK.window(UIK.rect_topbar()));
 
@@ -88,76 +102,40 @@ draw_hud :: proc(player: Player) {
 
     UIK.spacer(UIK.flex(1), UIK.pixels(1));
 
-    tutorial_btn: Interact_Result;
-    if player.show_tutorial_button {
-        tutorial_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-        tutorial_desc.panel.width = UIK.pixels(120);
-        tutorial_desc.panel.height = UIK.pixels(52);
-        tutorial_btn = UIK.button("hud/tutorial_button", "Tutorial", tutorial_desc);
-    }
-
-    shop_btn: Interact_Result;
-    if !is_murder_mystery_active() || player.murder_role != .INNOCENT {
-        shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-        shop_desc.panel.width = UIK.pixels(120);
-        shop_desc.panel.height = UIK.pixels(52);
-        shop_btn = UIK.button("hud/shop_button", "Shop", shop_desc);
-    }
-
-    vs_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
-    vs_desc.panel.width = UIK.pixels(104);
-    vs_desc.panel.height = UIK.pixels(52);
-    vs_btn := UIK.button("hud/vs_button", "VS", vs_desc);
-
-
-    monetization_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
-    monetization_desc.panel.width = UIK.pixels(104);
-    monetization_desc.panel.height = UIK.pixels(52);
-    monetization_btn := UIK.button("hud/monetization_button", "Sparks Shop", monetization_desc);
-
     has_admin_button := can_access_admin_panel(player);
     admin_btn: Interact_Result;
     admin_shop_btn: Interact_Result;
     minigames_btn: Interact_Result;
+    vs_btn: Interact_Result;
     if has_admin_button {
+        vs_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+        vs_desc.panel.width = UIK.pixels(104);
+        vs_desc.panel.height = UIK.pixels(52);
+        vs_btn = UIK.button("hud/vs_button", "VS", vs_desc);
         minigames_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
         minigames_desc.panel.width = UIK.pixels(132);
         minigames_desc.panel.height = UIK.pixels(52);
-        minigames_btn = UIK.button("hud/minigames_button", "Minigames", minigames_desc);
+        minigames_btn = UIK.button("hud/event_shop_button", "EVENT SHOP", minigames_desc);
 
         admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
         admin_desc.panel.width = UIK.pixels(120);
         admin_desc.panel.height = UIK.pixels(52);
-        admin_btn = UIK.button("hud/admin_button", "EPIK PANEL", admin_desc);
+        admin_btn = UIK.button("hud/admin_button", "ADMIN PANEL", admin_desc);
 
         admin_shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
         admin_shop_desc.panel.width = UIK.pixels(120);
         admin_shop_desc.panel.height = UIK.pixels(52);
-        admin_shop_btn = UIK.button("hud/admin_shop_button", "EPIK SHOP", admin_shop_desc);
+        admin_shop_btn = UIK.button("hud/admin_shop_button", "ADMIN SHOP", admin_shop_desc);
     }
 
     UIK.panel_end();
     UIK.end();
 
-    if UIK.clicked(tutorial_btn) {
-        player.show_tutorial = true;
-        Save.set_int(player, "ui_test_show_tutorial", 1);
-    }
-    if UIK.clicked(shop_btn) {
-        player.shop_tab_index = 0;
-        player.show_shop = true;
-        Save.set_int(player, "ui_test_show_shop", 1);
-    }
-    if UIK.clicked(vs_btn) {
+    if has_admin_button && UIK.clicked(vs_btn) {
         start_vs_battle(player);
     }
     if has_admin_button && UIK.clicked(minigames_btn) {
-        player.show_minigames = true;
-    }
-    if UIK.clicked(monetization_btn) {
-        player.shop_tab_index = 1;
-        player.show_shop = true;
-        Save.set_int(player, "ui_test_show_shop", 1);
+        player.show_event_panel = true;
     }
     if has_admin_button && UIK.clicked(admin_btn) {
         player.show_admin_panel = true;
@@ -172,3 +150,8 @@ draw_hud :: proc(player: Player) {
         draw_settings(player);
     }
 }
+
+
+
+
+

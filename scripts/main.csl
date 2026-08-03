@@ -6,9 +6,10 @@ import "core:global_leaderboard"
 PLAYER_MAX_HEALTH :: 100.0;
 ARMOR_BONUS_HP    :: 50.0;
 STARTING_BULLETS  :: 100;
-KILL_COINS        :: 40;
+KILL_COINS        :: 20;
 DOUBLE_COIN_KILL_COINS :: 20;
-VS_KILL_COINS     :: 25;
+VS_KILL_COINS     :: 20;
+VS_ENTRY_COST     :: 100;
 BULLET_COST       :: 10;
 BULLETS_PER_BUY   :: 10;
 DASH_COST         :: 5;
@@ -66,8 +67,7 @@ ARMOR_TIER_KEY :: "armor_tier";
 EVENT_DOUBLE_COINS_KEY :: "event_double_coins";
 EVENT_ELEMENTAL_KEY :: "event_elemental";
 
-g_event_double_coins: bool;
-g_event_elemental: bool;
+g_event_ice: bool;
 
 coin_pass_amount_for_product :: proc(product_id: string) -> s64 {
     if product_id == COIN_PASS_25_PRODUCT_ID { return 25; }
@@ -725,6 +725,12 @@ get_nearest_vs_target :: proc(player: Player, max_range: float) -> Player {
 }
 
 start_vs_battle :: proc(player: Player) -> bool {
+    if player == null { return false; }
+    if !can_access_admin_panel(player) {
+        if !Economy.can_withdraw_currency(player, "Coins", VS_ENTRY_COST) { player.play_reward_feedback("Need 100 Coins"); return false; }
+        Economy.withdraw_currency(player, "Coins", VS_ENTRY_COST);
+        save_coin_balance(player);
+    }
     target := get_nearest_vs_target(player, 12.0);
     if target == null {
         Save.set_string(player, "ui_test_vs_feedback", "Need a nearby opponent");
@@ -917,6 +923,7 @@ Player :: class : Player_Base {
     // Reusable weapons (required fields)
     weapon_target: Weapon_Target;
     equipped_weapon_type: Weapon_Type;
+    gun_mutation_element: s64;
     equipped_item_def: Item_Definition;
     last_selected_index: s64;
     boomwheel_cannon: Boomwheel_Cannon;
@@ -933,6 +940,7 @@ Player :: class : Player_Base {
     show_tutorial: bool;
     show_admin_panel: bool;
     show_admin_shop: bool;
+    show_event_panel: bool;
     show_mimicer_selector: bool;
     show_minigames: bool;
     user_tag: string;
@@ -1168,6 +1176,8 @@ Player :: class : Player_Base {
         battlepass_music_effect_count = 0;
         is_admin_noclip = false;
         show_admin_shop = false;
+        show_event_panel = false;
+        gun_mutation_element = 0;
         mimicer_form_target_user_id = "";
         mimicer_form_expires_at = 0;
         mimicer_saved_look_valid = false;
@@ -1328,6 +1338,9 @@ Player :: class : Player_Base {
             if show_admin_shop && can_access_admin_panel(this) {
                 draw_admin_shop(this);
             }
+            if show_event_panel && can_access_admin_panel(this) {
+                draw_event_panel(this);
+            }
             if show_admin_unban && can_access_admin_panel(this) {
                 draw_admin_unban(this);
             }
@@ -1437,4 +1450,7 @@ Player :: class : Player_Base {
         }
     }
 }
+
+
+
 
