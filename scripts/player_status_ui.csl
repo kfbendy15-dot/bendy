@@ -47,7 +47,31 @@ insert_leaderboard_row :: proc(rows: ref [4]Player_Leaderboard_Row, row_count: r
 draw_player_statuses :: proc() {
     for player: component_iterator(Player) {
         draw_health_bar(player);
+        draw_player_element(player);
     }
+}
+
+element_icon_for_value :: proc(element: s64) -> string {
+    if element == 1 return "🔥";
+    if element == 2 return "🌊";
+    if element == 3 return "🍃";
+    if element == 4 return "❄";
+    return "";
+}
+
+draw_player_element :: proc(player: Player) {
+    if player == null || player.equipped_weapon_type == .NONE return;
+    element := weapon_element(player.equipped_weapon_type);
+    if element == 0 { element = player.gun_mutation_element; }
+    icon := element_icon_for_value(element);
+    if icon == "" return;
+    UI.begin_world_space_ui(player.entity);
+    defer UI.end_world_space_ui();
+    rect := UI.get_screen_rect().top_center_rect().offset(0, -10);
+    ts := UI.default_text_settings();
+    ts.size = 24;
+    ts.color = {1, 1, 1, 1};
+    UI.text(rect, ts, icon);
 }
 
 draw_leaderboard :: proc(viewer: Player) {

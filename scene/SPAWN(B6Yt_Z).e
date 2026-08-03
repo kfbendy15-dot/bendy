@@ -54,4 +54,23 @@
   "data": {
 
   }
+},
+{
+  "cid": 4,
+  "aoid": 2061181683,
+  "component_type": "Internal_Component",
+  "internal_component_type": "Element_Guide_Interactable",
+  "data": {
+    "subtitle_color": {
+      "X": 1,
+      "Y": 1,
+      "Z": 1,
+      "W": 1
+    },
+    "radius": 2,
+    "required_hold_time": 0.6000000238418579,
+    "prompt_offset": {
+      "Y": 1
+    }
+  }
 }

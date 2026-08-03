@@ -941,6 +941,7 @@ Player :: class : Player_Base {
     show_admin_panel: bool;
     show_admin_shop: bool;
     show_event_panel: bool;
+    show_element_guide: bool;
     show_mimicer_selector: bool;
     show_minigames: bool;
     user_tag: string;
