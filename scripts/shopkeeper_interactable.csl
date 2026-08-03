@@ -4,8 +4,10 @@ Shopkeeper_Interactable :: class : Component {
     ao_start :: method() {
         if interactable == null return;
         interactable.set_listener(this);
-        interactable.set_text("Shopkeeper Shop");
-        interactable.set_hold_text("Open");
+        // A shop is a tap action, not a hold-to-complete interaction.
+        interactable.set_text("Open Shop");
+        interactable.set_hold_text("Tap");
+        interactable.set_subtitle("Shop");
         interactable.radius = 4.0;
         interactable.required_hold_time = 0.0;
         interactable.prompt_offset = {0, 24};
