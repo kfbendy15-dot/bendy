@@ -53,4 +53,13 @@
     "hold_distance": 2,
     "lift_height": 1.1000000238418579
   }
+},
+{
+  "cid": 4,
+  "aoid": 2054134057,
+  "component_type": "Internal_Component",
+  "internal_component_type": "Shopkeeper_Interactable",
+  "data": {
+    "interactable": 2000000001
+  }
 }

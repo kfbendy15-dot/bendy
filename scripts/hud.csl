@@ -105,18 +105,12 @@ draw_hud :: proc(player: Player) {
     has_admin_button := can_access_admin_panel(player);
     admin_btn: Interact_Result;
     admin_shop_btn: Interact_Result;
-    minigames_btn: Interact_Result;
     vs_btn: Interact_Result;
     if has_admin_button {
         vs_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
         vs_desc.panel.width = UIK.pixels(104);
         vs_desc.panel.height = UIK.pixels(52);
         vs_btn = UIK.button("hud/vs_button", "VS", vs_desc);
-        minigames_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
-        minigames_desc.panel.width = UIK.pixels(132);
-        minigames_desc.panel.height = UIK.pixels(52);
-        minigames_btn = UIK.button("hud/event_shop_button", "EVENT SHOP", minigames_desc);
-
         admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
         admin_desc.panel.width = UIK.pixels(120);
         admin_desc.panel.height = UIK.pixels(52);
@@ -133,9 +127,6 @@ draw_hud :: proc(player: Player) {
 
     if has_admin_button && UIK.clicked(vs_btn) {
         start_vs_battle(player);
-    }
-    if has_admin_button && UIK.clicked(minigames_btn) {
-        player.show_event_panel = true;
     }
     if has_admin_button && UIK.clicked(admin_btn) {
         player.show_admin_panel = true;
