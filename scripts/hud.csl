@@ -92,6 +92,7 @@ draw_hud :: proc(player: Player) {
     shop_btn: Interact_Result;
     admin_btn: Interact_Result;
     admin_shop_btn: Interact_Result;
+    admin_element_btn: Interact_Result;
     vs_btn: Interact_Result;
     shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     shop_desc.panel.width = UIK.pixels(92);
@@ -113,6 +114,10 @@ draw_hud :: proc(player: Player) {
         admin_shop_desc.panel.width = UIK.pixels(120);
         admin_shop_desc.panel.height = UIK.pixels(52);
         admin_shop_btn = UIK.button("hud/admin_shop_button", "ADMIN SHOP", admin_shop_desc);
+        admin_element_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+        admin_element_desc.panel.width = UIK.pixels(140);
+        admin_element_desc.panel.height = UIK.pixels(52);
+        admin_element_btn = UIK.button("hud/admin_element_button", "ADMIN ELEMENTS", admin_element_desc);
     }
 
     UIK.panel_end();
@@ -133,12 +138,14 @@ draw_hud :: proc(player: Player) {
         player.show_admin_shop = true;
         Save.set_int(player, "ui_test_show_admin_shop", 1);
     }
+    if has_admin_button && UIK.clicked(admin_element_btn) {
+        player.show_admin_element_panel = true;
+        player.show_admin_panel = false;
+        player.show_admin_shop = false;
+    }
 
     if player.show_settings {
         draw_settings(player);
-    }
-    if player.show_element_guide {
-        draw_element_guide(player);
     }
 }
 

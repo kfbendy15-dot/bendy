@@ -1523,3 +1523,50 @@ draw_admin_panel :: proc(player: Player) {
     }
 
 }
+
+draw_admin_element_panel :: proc(player: Player) {
+    if !can_access_admin_panel(player) return;
+
+    UIK.begin(UIK.modal(UIK.rect_window_small(), 16));
+    shell := UIK.panel_modal(.BLACK);
+    UIK.panel_begin(shell);
+    title := UIK.title_area(UIK.title_area_desc("Admin Element Panel"));
+    if title.clicked { player.show_admin_element_panel = false; }
+
+    UIK.text("Select a player, then assign an element.", UIK.text_body());
+    if player.admin_target_username == "" { player.admin_target_username = player.get_username(); }
+    UIK.text(format_string("Target: %", {player.admin_target_username}), UIK.text_title());
+
+    target_handles: [..]Interact_Result;
+    target_names: [..]string;
+    for target: component_iterator(Player) {
+        name := target.get_username();
+        target_names.append(name);
+        desc := UIK.widget_desc_button_auto_default(name == player.admin_target_username ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_GREY);
+        desc.panel.width = UIK.flex(1); desc.panel.height = UIK.pixels(42);
+        target_handles.append(UIK.button(format_string("admin_element/target/%", {name}), name, desc));
+    }
+
+    UIK.text("Element", UIK.text_title());
+    fire := UIK.button("admin_element/fire", "🔥 Fire", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED));
+    water := UIK.button("admin_element/water", "🌊 Water", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE));
+    grass := UIK.button("admin_element/grass", "🍃 Grass", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN));
+    ice := UIK.button("admin_element/ice", "❄ Ice", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE));
+    close := UIK.button("admin_element/close", "Close", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY));
+    UIK.panel_end();
+    UIK.end();
+
+    for i: 0..target_names.count - 1 {
+        if UIK.clicked(target_handles[i]) { player.admin_target_username = target_names[i]; }
+    }
+    target := find_online_player_by_username(player.admin_target_username);
+    if target == null { target = player; }
+    if UIK.clicked(fire) { target.player_element = 1; }
+    if UIK.clicked(water) { target.player_element = 2; }
+    if UIK.clicked(grass) { target.player_element = 3; }
+    if UIK.clicked(ice) { target.player_element = 4; }
+    if UIK.clicked(fire) || UIK.clicked(water) || UIK.clicked(grass) || UIK.clicked(ice) {
+        player.play_reward_feedback(format_string("Element assigned to %", {target.get_username()}));
+    }
+    if UIK.clicked(close) { player.show_admin_element_panel = false; }
+}
