@@ -8,6 +8,10 @@ draw_shop_card :: proc(id: string, label: string, price: s64, icon: Texture_Asse
 
     UIK.card_zone(.BODY);
     UIK.text(UIK.text_body(), "%", {label});
+    element_icon := element_icon_for_name(label);
+    if element_icon != "" {
+        UIK.text(UIK.text_body(), element_icon);
+    }
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
     coin := get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png");
     UIK.currency(coin, price, UIK.text_body());
@@ -22,6 +26,14 @@ draw_shop_card :: proc(id: string, label: string, price: s64, icon: Texture_Asse
     UIK.card_zone_end();
 
     return UIK.card_end();
+}
+
+element_icon_for_name :: proc(name: string) -> string {
+    if name == "Fire Ray" || name == "Solar Siphoner" || name == "Meteorite" { return "🔥 Fire"; }
+    if name == "Water Gun" || name == "Water Balloon RPG" || name == "Hydro Cannon" || name == "Bubble Gun" { return "🌊 Water"; }
+    if name == "Poison Grenade" || name == "Shuriken" || name == "CTF Minion Gun" { return "🍃 Grass"; }
+    if name == "Ice Launcher" || name == "Glaciator" { return "❄ Ice"; }
+    return "";
 }
 
 play_pickup_feedback :: proc(player: Player, text: string) {
