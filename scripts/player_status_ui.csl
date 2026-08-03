@@ -59,19 +59,28 @@ element_icon_for_value :: proc(element: s64) -> string {
     return "";
 }
 
+element_name_for_value :: proc(element: s64) -> string {
+    if element == 1 return "Fire";
+    if element == 2 return "Water";
+    if element == 3 return "Grass";
+    if element == 4 return "Ice";
+    return "";
+}
+
 draw_player_element :: proc(player: Player) {
     if player == null || player.equipped_weapon_type == .NONE return;
     element := weapon_element(player.equipped_weapon_type);
     if element == 0 { element = player.gun_mutation_element; }
     icon := element_icon_for_value(element);
-    if icon == "" return;
+    name := element_name_for_value(element);
+    if icon == "" || name == "" return;
     UI.begin_world_space_ui(player.entity);
     defer UI.end_world_space_ui();
     rect := UI.get_screen_rect().top_center_rect().offset(0, -10);
     ts := UI.default_text_settings();
-    ts.size = 24;
+    ts.size = 18;
     ts.color = {1, 1, 1, 1};
-    UI.text(rect, ts, icon);
+    UI.text(rect, ts, format_string("% %", {icon, name}));
 }
 
 draw_leaderboard :: proc(viewer: Player) {

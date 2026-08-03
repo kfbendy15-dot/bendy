@@ -67,7 +67,6 @@ ARMOR_TIER_KEY :: "armor_tier";
 EVENT_DOUBLE_COINS_KEY :: "event_double_coins";
 EVENT_ELEMENTAL_KEY :: "event_elemental";
 
-g_event_ice: bool;
 
 coin_pass_amount_for_product :: proc(product_id: string) -> s64 {
     if product_id == COIN_PASS_25_PRODUCT_ID { return 25; }
@@ -940,7 +939,6 @@ Player :: class : Player_Base {
     show_tutorial: bool;
     show_admin_panel: bool;
     show_admin_shop: bool;
-    show_event_panel: bool;
     show_element_guide: bool;
     show_mimicer_selector: bool;
     show_minigames: bool;
@@ -1177,7 +1175,6 @@ Player :: class : Player_Base {
         battlepass_music_effect_count = 0;
         is_admin_noclip = false;
         show_admin_shop = false;
-        show_event_panel = false;
         gun_mutation_element = 0;
         mimicer_form_target_user_id = "";
         mimicer_form_expires_at = 0;
@@ -1339,9 +1336,6 @@ Player :: class : Player_Base {
             if show_admin_shop && can_access_admin_panel(this) {
                 draw_admin_shop(this);
             }
-            if show_event_panel && can_access_admin_panel(this) {
-                draw_event_panel(this);
-            }
             if show_admin_unban && can_access_admin_panel(this) {
                 draw_admin_unban(this);
             }
@@ -1455,3 +1449,4 @@ Player :: class : Player_Base {
 
 
 
+g_event_ice: bool;
