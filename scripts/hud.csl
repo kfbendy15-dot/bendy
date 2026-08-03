@@ -48,20 +48,6 @@ draw_settings :: proc(player: Player) {
     UIK.end();
 }
 
-draw_event_panel :: proc(player: Player) {
-    UIK.begin(UIK.modal(UIK.rect_window_small(), 30));
-    shell := UIK.panel_modal(.BLUE);
-    UIK.panel_begin(shell);
-    title := UIK.title_area(UIK.title_area_desc("Event Shop"));
-    if title.clicked { player.show_event_panel = false; }
-    UIK.text(UIK.text_title(), "Only Ice is available.");
-    UIK.text(UIK.text_body(), g_event_ice ? "Ice event active" : "Ice event inactive");
-    toggle := UIK.button("events/ice", g_event_ice ? "Stop Ice" : "Start Ice", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW));
-    UIK.panel_end();
-    UIK.end();
-    if UIK.clicked(toggle) { g_event_ice = !g_event_ice; }
-}
-
 draw_hud :: proc(player: Player) {
     UIK.begin(UIK.window(UIK.rect_topbar()));
 
@@ -104,7 +90,6 @@ draw_hud :: proc(player: Player) {
 
     has_admin_button := can_access_admin_panel(player);
     shop_btn: Interact_Result;
-    event_shop_btn: Interact_Result;
     admin_btn: Interact_Result;
     admin_shop_btn: Interact_Result;
     vs_btn: Interact_Result;
@@ -119,11 +104,6 @@ draw_hud :: proc(player: Player) {
     vs_btn = UIK.button("hud/vs_button", "VS", vs_desc);
 
     if has_admin_button {
-        event_shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE);
-        event_shop_desc.panel.width = UIK.pixels(116);
-        event_shop_desc.panel.height = UIK.pixels(52);
-        event_shop_btn = UIK.button("hud/event_shop_button", "EVENT SHOP", event_shop_desc);
-
         admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
         admin_desc.panel.width = UIK.pixels(120);
         admin_desc.panel.height = UIK.pixels(52);
@@ -140,10 +120,6 @@ draw_hud :: proc(player: Player) {
 
     if UIK.clicked(shop_btn) {
         player.shop_tab_index = 0;
-        player.show_shop = true;
-    }
-    if has_admin_button && UIK.clicked(event_shop_btn) {
-        player.shop_tab_index = 1;
         player.show_shop = true;
     }
     if UIK.clicked(vs_btn) {

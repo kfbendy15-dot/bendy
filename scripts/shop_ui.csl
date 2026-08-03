@@ -382,16 +382,10 @@ draw_shop :: proc(player: Player) {
     murderer_chance_handle: Interact_Result;
     detective_chance_handle: Interact_Result;
     mystery_bundle_handle: Interact_Result;
-    event_ice_handle: Interact_Result;
-    event_cryo_handle: Interact_Result;
-    event_close_handle: Interact_Result;
-
     tabs := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(tabs);
     normal_tab := UIK.button("shop/tab_normal", "Shop", UIK.widget_desc_button_auto_default(player.shop_tab_index == 0 ? .BUTTON_BASIC_GREEN : .BUTTON_BASIC_GREY));
-    event_tab := UIK.button("shop/tab_event", "Event Shop", UIK.widget_desc_button_auto_default(player.shop_tab_index == 1 ? .BUTTON_BASIC_GREEN : .BUTTON_BASIC_GREY));
     UIK.panel_end();
-    if player.shop_tab_index == 0 {
     content := UIK.layout_column();
     content.width = UIK.flex(1);
     content.height = UIK.flex(1);
@@ -556,22 +550,6 @@ draw_shop :: proc(player: Player) {
     UIK.panel_end();
 
     UIK.list_end();
-    } else {
-        content := UIK.layout_column();
-        content.width = UIK.flex(1);
-        content.height = UIK.flex(1);
-        content.padding = v4{12, 16, 12, 16};
-        content.gap = 8;
-        UIK.list_begin("event_shop_scroll", content);
-        UIK.text("Limited Event Items", UIK.text_title());
-        UIK.text(g_event_ice ? "Ice event active" : "Event items remain available", UIK.text_body());
-        ice_icon := get_asset(Texture_Asset, get_weapon_config(.ICE_LAUNCHER).weapon_icon_path);
-        event_ice_handle = draw_shop_card("event_shop/ice_launcher", "Ice Launcher", 125, ice_icon, {0.35, 0.8, 1.0, 1}, player_has_weapon(player, .ICE_LAUNCHER));
-        event_cryo_handle = draw_shop_card("event_shop/glaciator", "Glaciator", 175, get_asset(Texture_Asset, get_weapon_config(.GLACIATOR).weapon_icon_path), {0.6, 0.9, 1.0, 1}, player_has_weapon(player, .GLACIATOR));
-        event_close_handle = UIK.button("event_shop/close", "Close", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED));
-        UIK.list_end();
-    }
-
     UIK.panel_end();
     UIK.end();
 
@@ -579,11 +557,6 @@ draw_shop :: proc(player: Player) {
         player.show_shop = false;
     }
     if UIK.clicked(normal_tab) { player.shop_tab_index = 0; }
-    if UIK.clicked(event_tab) { player.shop_tab_index = 1; }
-    if UIK.clicked(event_close_handle) { player.show_shop = false; }
-    if UIK.clicked(event_ice_handle) { buy_weapon_offer(player, .ICE_LAUNCHER, 125, "+Ice Launcher"); }
-    if UIK.clicked(event_cryo_handle) { buy_weapon_offer(player, .GLACIATOR, 175, "+Glaciator"); }
-
     if UIK.clicked(starter_handle) {
         buy_starter_pack(player);
     }
