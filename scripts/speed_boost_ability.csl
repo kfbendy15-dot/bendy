@@ -1,0 +1,31 @@
+Speed_Boost_Effect :: class : Effect_Base {
+    original_speed: float;
+
+    effect_start :: method() {
+        original_speed = player.agent.movement_speed;
+        player.agent.movement_speed = original_speed * 1.75;
+        set_duration(20.0);
+    }
+
+    effect_end :: method(interrupt: bool) {
+        player.agent.movement_speed = original_speed;
+    }
+}
+
+Speed_Boost_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Speed Boost";
+        icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
+    }
+
+    can_use :: method() -> bool {
+        return player.(Player).has_speed_boost;
+    }
+
+    on_update :: method(params: ref Ability_Update_Params) {
+        if params.clicked && params.can_use {
+            current_cooldown = 5.0;
+            player.entity.add_passive_effect(new(Speed_Boost_Effect));
+        }
+    }
+}

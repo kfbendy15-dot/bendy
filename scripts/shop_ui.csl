@@ -349,10 +349,16 @@ draw_shop :: proc(player: Player) {
     lmg_handle: Interact_Result;
     dash_handle: Interact_Result;
     invis_handle: Interact_Result;
+    speed_boost_handle: Interact_Result;
+    shield_handle: Interact_Result;
+    paperclip_handle: Interact_Result;
     normal_handle: Interact_Result;
     finger_handle: Interact_Result;
     paper_handle: Interact_Result;
     starter_handle: Interact_Result;
+    murderer_chance_handle: Interact_Result;
+    detective_chance_handle: Interact_Result;
+    mystery_bundle_handle: Interact_Result;
     if player.shop_tab_index == 0 {
     content := UIK.layout_column();
     content.width = UIK.flex(1);
@@ -364,6 +370,15 @@ draw_shop :: proc(player: Player) {
     UIK.text("Support", UIK.text_title());
     starter_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
     starter_handle = draw_shop_card("shop/starter_pack", "Starter Pack (199 Sparks)", SPARKS_STARTER_COST, starter_icon, {0.25, 0.75, 1.0, 1}, Save.get_int(player, STARTER_PACK_CLAIMED_KEY, 0) != 0);
+    chance_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(chance_row);
+    murderer_chance_handle = draw_shop_card("shop/murderer_chance", "Murderer Chance Increased", 299, starter_icon, {0.85, 0.25, 0.25, 1}, false);
+    detective_chance_handle = draw_shop_card("shop/detective_chance", "Detective Chance Increased", 99, starter_icon, {0.25, 0.55, 0.95, 1}, false);
+    UIK.panel_end();
+    bundle_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(bundle_row);
+    mystery_bundle_handle = draw_shop_card("shop/murder_mystery_bundle", "Murder Mystery Bundle (all 9 items)", 399, starter_icon, {0.75, 0.35, 0.9, 1}, Save.get_int(player, MURDER_MYSTERY_PACK_KEY, 0) != 0);
+    UIK.panel_end();
     if player.has_vip {
         UIK.text(UIK.text_body(), "VIP: 50% off shop prices");
     }
@@ -479,6 +494,12 @@ draw_shop :: proc(player: Player) {
     dash_handle = draw_shop_card("shop/buy_dash", "Dash", DASH_COST, dash_icon, {0.3, 0.5, 0.9, 1}, player.has_dash);
     invis_handle = draw_shop_card("shop/buy_invisible", "Invisible", INVISIBLE_COST, inv_icon, {0.6, 0.2, 0.8, 1}, player.has_invisible);
     UIK.panel_end();
+    powerup_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(powerup_row_2);
+    speed_boost_handle = draw_shop_card("shop/buy_speed_boost", "Speed Boost", SPEED_BOOST_COST, dash_icon, {0.9, 0.65, 0.2, 1}, player.has_speed_boost);
+    shield_handle = draw_shop_card("shop/buy_shield", "Shield", SHIELD_COST, inv_icon, {0.25, 0.75, 0.9, 1}, player.has_shield);
+    paperclip_handle = draw_shop_card("shop/buy_paperclip", "Paperclip", PAPERCLIP_COST, inv_icon, {0.8, 0.8, 0.85, 1}, player.has_paperclip);
+    UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
     UIK.text("Gun Skins", UIK.text_title());
@@ -516,6 +537,15 @@ draw_shop :: proc(player: Player) {
 
     if UIK.clicked(starter_handle) {
         buy_starter_pack(player);
+    }
+    if UIK.clicked(murderer_chance_handle) && spend_coins(player, 299) {
+        player.play_reward_feedback("Murderer chance increased");
+    }
+    if UIK.clicked(detective_chance_handle) && spend_coins(player, 99) {
+        player.play_reward_feedback("Detective chance increased");
+    }
+    if UIK.clicked(mystery_bundle_handle) {
+        buy_murder_mystery_bundle(player);
     }
 
     if UIK.clicked(shop_gun_cutter_handle) && !player_has_weapon(player, .MEGA_BLADE) {
@@ -626,6 +656,19 @@ draw_shop :: proc(player: Player) {
                 SFX.play(sfx, d);
             }
         }
+    }
+
+    if UIK.clicked(speed_boost_handle) && !player.has_speed_boost && spend_coins(player, SPEED_BOOST_COST) {
+        player.has_speed_boost = true;
+        play_pickup_feedback(player, "+Speed Boost");
+    }
+    if UIK.clicked(shield_handle) && !player.has_shield && spend_coins(player, SHIELD_COST) {
+        player.has_shield = true;
+        play_pickup_feedback(player, "+Shield");
+    }
+    if UIK.clicked(paperclip_handle) && !player.has_paperclip && spend_coins(player, PAPERCLIP_COST) {
+        player.has_paperclip = true;
+        play_pickup_feedback(player, "+Paperclip");
     }
 
     if UIK.clicked(finger_handle) && !player.purchased_finger_gun {
@@ -1189,14 +1232,6 @@ draw_admin_panel :: proc(player: Player) {
     summon_desc.panel.height = UIK.pixels(52);
     summon_btn := UIK.button("admin/summon_paperclips", "Summon Paperclips", summon_desc);
 
-    double_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
-    double_desc.panel.width = UIK.flex(1);
-    double_desc.panel.height = UIK.pixels(52);
-    double_btn := UIK.button("admin/event_double", "2x Coins", double_desc);
-    elemental_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
-    elemental_desc.panel.width = UIK.flex(1);
-    elemental_desc.panel.height = UIK.pixels(52);
-    elemental_btn := UIK.button("admin/event_elements", "Elements", elemental_desc);
 
     meteor_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
     meteor_desc.panel.width = UIK.flex(1);
@@ -1353,15 +1388,6 @@ draw_admin_panel :: proc(player: Player) {
     }
 
     for tier: 1..8 { if UIK.clicked(armor_handles[tier - 1]) { player.admin_armor_tier = tier; set_armor_tier_for_admin(admin_target, tier); } }
-
-    if UIK.clicked(double_btn) {
-        g_event_double_coins = !g_event_double_coins;
-        player.play_reward_feedback(g_event_double_coins ? "2x coins on" : "2x coins off");
-    }
-    if UIK.clicked(elemental_btn) {
-        g_event_elemental = !g_event_elemental;
-        player.play_reward_feedback(g_event_elemental ? "Elements on" : "Elements off");
-    }
 
     if UIK.clicked(meteor_btn) {
         spawn_meteor_boss();
