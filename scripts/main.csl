@@ -1019,6 +1019,8 @@ Player :: class : Player_Base {
     role_mode_buff_until: float;
     role_mode_vote_target: string;
     murder_role: Murder_Role;
+    murderer_chance_percent: float;
+    detective_chance_percent: float;
     murder_kills: s64;
     murder_round_active: bool;
     murder_permadead: bool;

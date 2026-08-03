@@ -64,6 +64,12 @@ draw_hud :: proc(player: Player) {
     balance := Economy.get_balance(player, "Coins");
     UIK.currency(coin_tex, balance, UIK.text_title());
 
+    if is_murder_mystery_active() {
+        chance_style := UIK.text_body();
+        chance_style.color = {1, 0.85, 0.35, 1};
+        UIK.text(format_string("Detective chance: % | Murderer chance: %", {format_float(player.detective_chance_percent, decimals=1), format_float(player.murderer_chance_percent, decimals=1)}), chance_style);
+    }
+
     if is_murder_mystery_active() && player.murder_role != .NONE {
         role_style := UIK.text_title();
         role_style.color = player.murder_role == .KILLER ? {1, 0.2, 0.2, 1} : player.murder_role == .DETECTIVE ? {0.3, 0.7, 1, 1} : {0.5, 1, 0.5, 1};
