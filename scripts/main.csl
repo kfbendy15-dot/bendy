@@ -6,13 +6,16 @@ import "core:global_leaderboard"
 PLAYER_MAX_HEALTH :: 100.0;
 ARMOR_BONUS_HP    :: 50.0;
 STARTING_BULLETS  :: 100;
-KILL_COINS        :: 10;
+KILL_COINS        :: 40;
 DOUBLE_COIN_KILL_COINS :: 20;
 VS_KILL_COINS     :: 25;
 BULLET_COST       :: 10;
 BULLETS_PER_BUY   :: 10;
 DASH_COST         :: 5;
-INVISIBLE_COST    :: 5;
+INVISIBLE_COST    :: 15;
+SPEED_BOOST_COST  :: 10;
+SHIELD_COST       :: 23;
+PAPERCLIP_COST    :: 187;
 SKIN_COST         :: 10;
 SWORD_COST        :: 30;
 GUN_CUTTER_COST   :: 25;
@@ -57,6 +60,7 @@ VIP_CROWN_VISIBLE_SAVE_KEY :: "vip_crown_visible";
 ADMIN_TAG_VISIBLE_SAVE_KEY :: "admin_tag_visible";
 SPARKS_STARTER_COST :: 199;
 STARTER_PACK_CLAIMED_KEY :: "starter_pack_claimed";
+MURDER_MYSTERY_PACK_KEY :: "murder_mystery_pack_claimed";
 ARMOR_PURCHASES_KEY :: "armor_purchases";
 ARMOR_TIER_KEY :: "armor_tier";
 EVENT_DOUBLE_COINS_KEY :: "event_double_coins";
@@ -795,7 +799,7 @@ armor_tier_for_purchases :: proc(purchases: s64) -> s64 {
 }
 
 armor_tier_name :: proc(tier: s64) -> string {
-    switch tier { case 1: return "Wooden"; case 2: return "Stone"; case 3: return "Gold"; case 4: return "Iron"; case 5: return "Diamond"; case 6: return "Emerald"; case 7: return "Obsidian"; case 8: return "Netherite"; }
+    switch tier { case 1: return "Wooden"; case 2: return "Stone"; case 3: return "Iron"; case 4: return "Gold"; case 5: return "Diamond"; case 6: return "Emerald"; case 7: return "Obsidian"; case 8: return "Netherite"; }
     return "None";
 }
 
@@ -862,6 +866,23 @@ buy_starter_pack :: proc(player: Player) {
     player.play_reward_feedback("Starter pack claimed");
 }
 
+buy_murder_mystery_bundle :: proc(player: Player) {
+    if player == null || Save.get_int(player, MURDER_MYSTERY_PACK_KEY, 0) != 0 return;
+    if Economy.get_balance(player, "Sparks") < 399 { player.play_reward_feedback("Need 399 Sparks"); return; }
+    Economy.withdraw_currency(player, "Sparks", 399);
+    grant_weapon_with_ammo(player, .HYDRO_CANNON, 100);
+    grant_weapon_with_ammo(player, .MEGA_BLADE, 100);
+    grant_weapon_with_ammo(player, .ASSAULT_RIFLE, 100);
+    grant_weapon_with_ammo(player, .SUBMACHINE_GUN, 100);
+    grant_weapon_with_ammo(player, .GATLING_GUN, 100);
+    grant_weapon_with_ammo(player, .RAY_GUN, 100);
+    grant_weapon_with_ammo(player, .EXPLOSIVE_SHOTGUN, 100);
+    grant_weapon_with_ammo(player, .BEAM_MACHINE, 100);
+    grant_weapon_with_ammo(player, .LASER_GUN, 100);
+    Save.set_int(player, MURDER_MYSTERY_PACK_KEY, 1);
+    player.play_reward_feedback("Murder Mystery Bundle claimed");
+}
+
 ao_start :: proc() {
 }
 
@@ -923,6 +944,11 @@ Player :: class : Player_Base {
     // Purchased unlocks
     has_dash: bool;
     has_invisible: bool;
+    has_speed_boost: bool;
+    has_shield: bool;
+    shield_active: bool;
+    has_paperclip: bool;
+    paperclip_active: bool;
     armor_bonus_health: float;
     armor_tier: s64;
     armor_visual_entity: Entity;
@@ -1032,7 +1058,7 @@ Player :: class : Player_Base {
                 for attacker: component_iterator(Player) {
                     if attacker.entity.id == attacker_id {
                         reward := KILL_COINS;
-                        if g_event_double_coins { reward = DOUBLE_COIN_KILL_COINS; }
+                        // Events are retired; every kill has the same base reward.
                         if is_vs_battle(attacker, victim) {
                             reward = VS_KILL_COINS;
                             clear_vs_match(attacker, victim);
@@ -1096,6 +1122,14 @@ Player :: class : Player_Base {
 
         username := get_username();
         is_admin_user = can_access_admin_panel(this);
+        // Administrators receive every currently implemented power-up for testing.
+        if is_admin_user {
+            has_dash = true;
+            has_invisible = true;
+            has_speed_boost = true;
+            has_shield = true;
+            has_paperclip = true;
+        }
         user_tag = Save.get_string(this, PLAYER_TITLE_SAVE_KEY, "");
         if user_tag == "PAPERCLIP" && !is_admin_user {
             user_tag = "";
@@ -1327,6 +1361,9 @@ Player :: class : Player_Base {
 
                 if has_dash      { draw_ability_button(this, Dash_Ability, 2); }
                 if has_invisible { draw_ability_button(this, Invisible_Ability, 3); }
+                if has_speed_boost { draw_ability_button(this, Speed_Boost_Ability, 4); }
+                if has_shield { draw_ability_button(this, Shield_Ability, 5); }
+                if has_paperclip { draw_ability_button(this, Paperclip_Ability, 1); }
             }
 
             // Hotbar

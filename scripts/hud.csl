@@ -103,10 +103,6 @@ draw_hud :: proc(player: Player) {
     vs_desc.panel.height = UIK.pixels(52);
     vs_btn := UIK.button("hud/vs_button", "VS", vs_desc);
 
-    settings_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    settings_desc.panel.width = UIK.pixels(120);
-    settings_desc.panel.height = UIK.pixels(52);
-    settings_btn := UIK.button("hud/settings_button", "Settings", settings_desc);
 
     monetization_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     monetization_desc.panel.width = UIK.pixels(104);
@@ -148,9 +144,6 @@ draw_hud :: proc(player: Player) {
     }
     if UIK.clicked(vs_btn) {
         start_vs_battle(player);
-    }
-    if UIK.clicked(settings_btn) {
-        player.show_settings = true;
     }
     if has_admin_button && UIK.clicked(minigames_btn) {
         player.show_minigames = true;

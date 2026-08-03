@@ -1,0 +1,17 @@
+Shield_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Shield";
+        icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
+    }
+
+    can_use :: method() -> bool {
+        return player.(Player).has_shield && !player.(Player).shield_active;
+    }
+
+    on_update :: method(params: ref Ability_Update_Params) {
+        if params.clicked && params.can_use {
+            player.(Player).shield_active = true;
+            current_cooldown = 5.0;
+        }
+    }
+}
