@@ -4,7 +4,7 @@ Shopkeeper_Interactable :: class : Component {
     ao_start :: method() {
         if interactable == null return;
         interactable.set_listener(this);
-        interactable.set_text("Shop");
+        interactable.set_text("Shopkeeper Shop");
         interactable.set_hold_text("Open");
         interactable.radius = 4.0;
         interactable.required_hold_time = 0.0;
@@ -20,3 +20,4 @@ Shopkeeper_Interactable :: class : Component {
         player.show_shop = true;
     }
 }
+
