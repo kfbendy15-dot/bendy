@@ -103,9 +103,21 @@ draw_hud :: proc(player: Player) {
     UIK.spacer(UIK.flex(1), UIK.pixels(1));
 
     has_admin_button := can_access_admin_panel(player);
+    shop_btn: Interact_Result;
+    event_shop_btn: Interact_Result;
     admin_btn: Interact_Result;
     admin_shop_btn: Interact_Result;
     vs_btn: Interact_Result;
+    shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    shop_desc.panel.width = UIK.pixels(92);
+    shop_desc.panel.height = UIK.pixels(52);
+    shop_btn = UIK.button("hud/shop_button", "SHOP", shop_desc);
+
+    event_shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE);
+    event_shop_desc.panel.width = UIK.pixels(116);
+    event_shop_desc.panel.height = UIK.pixels(52);
+    event_shop_btn = UIK.button("hud/event_shop_button", "EVENT SHOP", event_shop_desc);
+
     if has_admin_button {
         vs_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
         vs_desc.panel.width = UIK.pixels(104);
@@ -125,6 +137,14 @@ draw_hud :: proc(player: Player) {
     UIK.panel_end();
     UIK.end();
 
+    if UIK.clicked(shop_btn) {
+        player.shop_tab_index = 0;
+        player.show_shop = true;
+    }
+    if UIK.clicked(event_shop_btn) {
+        player.shop_tab_index = 1;
+        player.show_shop = true;
+    }
     if has_admin_button && UIK.clicked(vs_btn) {
         start_vs_battle(player);
     }
