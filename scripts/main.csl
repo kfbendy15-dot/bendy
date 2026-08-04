@@ -375,6 +375,9 @@ load_saved_coins :: proc(player: Player) {
 }
 
 award_coins :: proc(player: Player, amount: s64) {
+    if g_event_double_coins {
+        amount *= 2;
+    }
     Economy.deposit_currency(player, "Coins", amount);
     save_coin_balance(player);
     if player != null {
@@ -889,6 +892,8 @@ buy_murder_mystery_bundle :: proc(player: Player) {
 }
 
 ao_start :: proc() {
+    g_event_double_coins = Save.get_game_int(EVENT_DOUBLE_COINS_KEY, 0) > 0;
+    g_event_elemental = Save.get_game_int(EVENT_ELEMENTAL_KEY, 0) > 0;
 }
 
 ao_update :: proc(dt: float) {
@@ -938,6 +943,7 @@ Player :: class : Player_Base {
     shop_tab_index: s64;
     show_tutorial: bool;
     show_admin_panel: bool;
+    show_event_panel: bool;
     show_admin_shop: bool;
     player_element: s64;
     show_mimicer_selector: bool;
@@ -1308,6 +1314,9 @@ Player :: class : Player_Base {
         if show_admin_panel && !can_access_admin_panel(this) {
             show_admin_panel = false;
         }
+        if show_event_panel && !can_access_admin_panel(this) {
+            show_event_panel = false;
+        }
         if show_admin_shop && !can_access_admin_panel(this) {
             show_admin_shop = false;
         }
@@ -1333,6 +1342,9 @@ Player :: class : Player_Base {
             }
             if show_admin_panel && can_access_admin_panel(this) {
                 draw_admin_panel(this);
+            }
+            if show_event_panel && can_access_admin_panel(this) {
+                draw_event_panel(this);
             }
             if show_admin_shop && can_access_admin_panel(this) {
                 draw_admin_shop(this);
@@ -1451,3 +1463,5 @@ Player :: class : Player_Base {
 
 
 g_event_ice: bool;
+g_event_double_coins: bool;
+g_event_elemental: bool;
