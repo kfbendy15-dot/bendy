@@ -66,6 +66,7 @@ ARMOR_PURCHASES_KEY :: "armor_purchases";
 ARMOR_TIER_KEY :: "armor_tier";
 EVENT_DOUBLE_COINS_KEY :: "event_double_coins";
 EVENT_ELEMENTAL_KEY :: "event_elemental";
+EVENT_ICE_KEY :: "event_ice";
 
 
 coin_pass_amount_for_product :: proc(product_id: string) -> s64 {
@@ -894,6 +895,8 @@ buy_murder_mystery_bundle :: proc(player: Player) {
 ao_start :: proc() {
     g_event_double_coins = Save.get_game_int(EVENT_DOUBLE_COINS_KEY, 0) > 0;
     g_event_elemental = Save.get_game_int(EVENT_ELEMENTAL_KEY, 0) > 0;
+    g_event_ice = Save.get_game_int(EVENT_ICE_KEY, 0) > 0;
+    g_active_element_event = g_event_ice ? 4 : 0;
 }
 
 ao_update :: proc(dt: float) {
@@ -1142,8 +1145,6 @@ Player :: class : Player_Base {
             has_dash = true;
             has_invisible = true;
             has_speed_boost = true;
-            has_shield = true;
-            has_paperclip = true;
         }
         user_tag = Save.get_string(this, PLAYER_TITLE_SAVE_KEY, "");
         if user_tag == "PAPERCLIP" && !is_admin_user {
@@ -1385,8 +1386,6 @@ Player :: class : Player_Base {
                 if has_dash      { draw_ability_button(this, Dash_Ability, 2); }
                 if has_invisible { draw_ability_button(this, Invisible_Ability, 3); }
                 if has_speed_boost { draw_ability_button(this, Speed_Boost_Ability, 4); }
-                if has_shield { draw_ability_button(this, Shield_Ability, 5); }
-                if has_paperclip { draw_ability_button(this, Paperclip_Ability, 1); }
             }
 
             // Hotbar
@@ -1465,3 +1464,4 @@ Player :: class : Player_Base {
 g_event_ice: bool;
 g_event_double_coins: bool;
 g_event_elemental: bool;
+g_active_element_event: s64;

@@ -130,7 +130,7 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.weapon_skin = "weapons/water_pistol";
             config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/watergun.png";
             config.item_id = "water_gun";
-            config.item_name = "Water Gun";
+            config.item_name = "Fish-Shooting Minigun";
             config.ammo_type_index = 0;
             config.ammo_first_pickup = 240;
             config.shoot_start_trigger = "shoot_fast_start";
@@ -245,7 +245,7 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.weapon_skin = "weapons/octo_siphoner";
             config.weapon_icon_path = "fish_6100a0/fish.spine.pages/p39.png";
             config.item_id = "killer_fish";
-            config.item_name = "CTF Minion Gun";
+            config.item_name = "Frog Grappler Gun";
             config.ammo_type_index = -1;
             config.ammo_first_pickup = 0;
             config.shoot_trigger = "shoot_1h_weapon";

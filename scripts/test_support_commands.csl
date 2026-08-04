@@ -219,7 +219,6 @@ normal_shop_test_buy_support_items :: proc(player: Player) {
     save_coin_balance(player);
 
     buy_armor_offer(player);
-    buy_heal_offer(player);
 } @chat_command @owner_or_editor
 
 prepare_normal_shop_test :: proc(player: Player) {
@@ -366,3 +365,5 @@ admin_shop_test_use_specials :: proc(player: Player) {
     equip_weapon_item_if_present(player, .GIANT_GUN);
     giant_gun_attack(player, {1, 0});
 } @chat_command @owner_or_editor
+
+
