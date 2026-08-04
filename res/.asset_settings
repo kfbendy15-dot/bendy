@@ -1,5 +1,11 @@
 [
   {
+    "id": "full_ice_90898d.png",
+    "texture": {
+      "wrap_repeat": true
+    }
+  },
+  {
     "id": "lava-cracked-ground-tile_d30606.png",
     "texture": {
       "wrap_repeat": true,

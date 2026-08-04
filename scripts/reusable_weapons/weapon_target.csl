@@ -23,6 +23,19 @@ elemental_damage_multiplier :: proc(attacker: s64, defender: s64) -> float {
     return 0.5;
 }
 
+elemental_zone_multiplier :: proc(attacker: s64, pos: v2) -> float {
+    // Public elemental lands: lava (east), lake (south), jungle (north-west), snow (north).
+    in_lava := pos.x > 16 && pos.y < -6;
+    in_lake := abs(pos.x) < 8 && pos.y < -6;
+    in_jungle := pos.x < -16 && pos.y > 6;
+    in_snow := abs(pos.x) < 8 && pos.y > 6;
+    if in_lava && attacker == 2 return 2.0; // water beats lava
+    if in_lake && (attacker == 3 || attacker == 4) return 2.0; // leaf and ice beat lake
+    if in_jungle && attacker == 4 return 2.0; // ice beats jungle
+    if in_snow && attacker == 1 return 2.0; // fire beats snow
+    return 1.0;
+}
+
 weapon_target_apply_damage :: proc(target: Weapon_Target, damage: float, attacker_id: u64) {
     if target == null {
         return;
@@ -61,7 +74,8 @@ weapon_target_apply_damage :: proc(target: Weapon_Target, damage: float, attacke
         }
     }
     if player != null { defender_element = weapon_element(player.equipped_weapon_type); }
-    target.health -= damage * elemental_damage_multiplier(attacker_element, defender_element);
+    target_pos := target.entity.world_position;
+    target.health -= damage * elemental_damage_multiplier(attacker_element, defender_element) * elemental_zone_multiplier(attacker_element, target_pos);
     if target.health < 0 {
         target.health = 0;
     }

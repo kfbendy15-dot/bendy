@@ -28,6 +28,22 @@ draw_shop_card :: proc(id: string, label: string, price: s64, icon: Texture_Asse
     return UIK.card_end();
 }
 
+elemental_shop_event :: proc() -> s64 {
+    // Each event lasts 45 seconds; only its matching public shop can be purchased.
+    phase := get_time() % 180.0;
+    if phase < 45 return 1;
+    if phase < 90 return 2;
+    if phase < 135 return 3;
+    return 4;
+}
+
+elemental_shop_name :: proc(event: s64) -> string {
+    if event == 1 return "Fire";
+    if event == 2 return "Water";
+    if event == 3 return "Leaf";
+    return "Ice";
+}
+
 element_icon_for_name :: proc(name: string) -> string {
     if name == "Fire Ray" || name == "Solar Siphoner" || name == "Meteorite" { return "🔥 Fire"; }
     if name == "Water Gun" || name == "Water Balloon RPG" || name == "Hydro Cannon" || name == "Bubble Gun" { return "🌊 Water"; }
@@ -345,6 +361,10 @@ draw_shop :: proc(player: Player) {
 
     shop_close_btn: Interact_Result;
     armor_handle: Interact_Result;
+    fire_shop_handle: Interact_Result;
+    water_shop_handle: Interact_Result;
+    leaf_shop_handle: Interact_Result;
+    ice_shop_handle: Interact_Result;
     heal_handle: Interact_Result;
     shop_gun_cutter_handle: Interact_Result;
     shop_ar_handle: Interact_Result;
@@ -394,6 +414,15 @@ draw_shop :: proc(player: Player) {
     UIK.list_begin("shop_scroll", content);
 
     UIK.text("Support", UIK.text_title());
+    event := elemental_shop_event();
+    UIK.text(format_string("Element event: % Shop open", {elemental_shop_name(event)}), UIK.text_body());
+    elemental_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(elemental_row);
+    if event == 1 { fire_shop_handle = draw_shop_card("shop/fire_shop", "Fire Shop", 120, get_asset(Texture_Asset, get_weapon_config(.FIRE_RAY).weapon_icon_path), {0.95, 0.3, 0.15, 1}, player_has_weapon(player, .FIRE_RAY)); }
+    if event == 2 { water_shop_handle = draw_shop_card("shop/water_shop", "Water Shop", 120, get_asset(Texture_Asset, get_weapon_config(.WATER_GUN).weapon_icon_path), {0.2, 0.55, 0.95, 1}, player_has_weapon(player, .WATER_GUN)); }
+    if event == 3 { leaf_shop_handle = draw_shop_card("shop/leaf_shop", "Leaf Shop", 120, get_asset(Texture_Asset, get_weapon_config(.POISON_GRENADE).weapon_icon_path), {0.2, 0.8, 0.25, 1}, player_has_weapon(player, .POISON_GRENADE)); }
+    if event == 4 { ice_shop_handle = draw_shop_card("shop/ice_shop", "Ice Shop", 120, get_asset(Texture_Asset, get_weapon_config(.ICE_LAUNCHER).weapon_icon_path), {0.55, 0.85, 1.0, 1}, player_has_weapon(player, .ICE_LAUNCHER)); }
+    UIK.panel_end();
     starter_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
     starter_handle = draw_shop_card("shop/starter_pack", "Starter Pack (199 Sparks)", SPARKS_STARTER_COST, starter_icon, {0.25, 0.75, 1.0, 1}, Save.get_int(player, STARTER_PACK_CLAIMED_KEY, 0) != 0);
     chance_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
@@ -557,6 +586,10 @@ draw_shop :: proc(player: Player) {
         player.show_shop = false;
     }
     if UIK.clicked(normal_tab) { player.shop_tab_index = 0; }
+    if UIK.clicked(fire_shop_handle) && event == 1 { buy_weapon_offer(player, .FIRE_RAY, 120, "+Fire Gun"); }
+    if UIK.clicked(water_shop_handle) && event == 2 { buy_weapon_offer(player, .WATER_GUN, 120, "+Water Gun"); }
+    if UIK.clicked(leaf_shop_handle) && event == 3 { buy_weapon_offer(player, .POISON_GRENADE, 120, "+Leaf Gun"); }
+    if UIK.clicked(ice_shop_handle) && event == 4 { buy_weapon_offer(player, .ICE_LAUNCHER, 120, "+Ice Gun"); }
     if UIK.clicked(starter_handle) {
         buy_starter_pack(player);
     }
@@ -1524,49 +1557,5 @@ draw_admin_panel :: proc(player: Player) {
 
 }
 
-draw_admin_element_panel :: proc(player: Player) {
-    if !can_access_admin_panel(player) return;
 
-    UIK.begin(UIK.modal(UIK.rect_window_small(), 16));
-    shell := UIK.panel_modal(.BLACK);
-    UIK.panel_begin(shell);
-    title := UIK.title_area(UIK.title_area_desc("Admin Element Panel"));
-    if title.clicked { player.show_admin_element_panel = false; }
 
-    UIK.text("Select a player, then assign an element.", UIK.text_body());
-    if player.admin_target_username == "" { player.admin_target_username = player.get_username(); }
-    UIK.text(format_string("Target: %", {player.admin_target_username}), UIK.text_title());
-
-    target_handles: [..]Interact_Result;
-    target_names: [..]string;
-    for target: component_iterator(Player) {
-        name := target.get_username();
-        target_names.append(name);
-        desc := UIK.widget_desc_button_auto_default(name == player.admin_target_username ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_GREY);
-        desc.panel.width = UIK.flex(1); desc.panel.height = UIK.pixels(42);
-        target_handles.append(UIK.button(format_string("admin_element/target/%", {name}), name, desc));
-    }
-
-    UIK.text("Element", UIK.text_title());
-    fire := UIK.button("admin_element/fire", "🔥 Fire", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED));
-    water := UIK.button("admin_element/water", "🌊 Water", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE));
-    grass := UIK.button("admin_element/grass", "🍃 Grass", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN));
-    ice := UIK.button("admin_element/ice", "❄ Ice", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE));
-    close := UIK.button("admin_element/close", "Close", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY));
-    UIK.panel_end();
-    UIK.end();
-
-    for i: 0..target_names.count - 1 {
-        if UIK.clicked(target_handles[i]) { player.admin_target_username = target_names[i]; }
-    }
-    target := find_online_player_by_username(player.admin_target_username);
-    if target == null { target = player; }
-    if UIK.clicked(fire) { target.player_element = 1; }
-    if UIK.clicked(water) { target.player_element = 2; }
-    if UIK.clicked(grass) { target.player_element = 3; }
-    if UIK.clicked(ice) { target.player_element = 4; }
-    if UIK.clicked(fire) || UIK.clicked(water) || UIK.clicked(grass) || UIK.clicked(ice) {
-        player.play_reward_feedback(format_string("Element assigned to %", {target.get_username()}));
-    }
-    if UIK.clicked(close) { player.show_admin_element_panel = false; }
-}
