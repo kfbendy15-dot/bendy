@@ -101,8 +101,13 @@ killer_fish_attack :: proc(player: Player) {
         if victim.weapon_target != null {
             Save.set_int(player, "ui_test_killer_fish_used", 1);
             spawn_simple_vfx("fish_6100a0/fish.spine", "angry_fish", victim.entity.world_position, {1.1, 1.1}, "attack", 0.9);
-            weapon_target_apply_damage(victim.weapon_target, 9999.0, player.entity.id);
-            Save.set_int(victim, "ui_test_killer_fish_killed", 1);
+            // The frog grappler pulls the opponent toward the shooter instead of dealing damage.
+            pull := player.entity.world_position - victim.entity.world_position;
+            if length(pull) > 0.1 {
+                pull = normalize(pull);
+                victim.agent.velocity = v2{pull.x * 48.0, pull.y * 48.0};
+            }
+            Save.set_int(victim, "ui_test_frog_grappled", 1);
         }
     }
 }

@@ -45,35 +45,29 @@ weapon_target_apply_damage :: proc(target: Weapon_Target, damage: float, attacke
     if player != null && player.is_admin_invincible {
         return;
     }
-    if player != null && player.shield_active {
-        player.shield_active = false;
-        player.play_reward_feedback("Shield blocked attack");
-        return;
-    }
-    if player != null && player.paperclip_active {
-        player.paperclip_active = false;
-        for shooter: component_iterator(Player) {
-            if shooter.entity.id == attacker_id && shooter.weapon_target != null {
-                weapon_target_apply_damage(shooter.weapon_target, damage, player.entity.id);
-                player.play_reward_feedback("Paperclip reflected attack");
-                return;
-            }
-        }
-    }
     if player != null && is_player_invisible_for_targeting(player) {
         return;
     }
 
     attacker_element: s64 = 0;
+    attacker_weapon := Weapon_Type.NONE;
     defender_element: s64 = 0;
     for attacker: component_iterator(Player) {
         if attacker.entity.id == attacker_id {
+            attacker_weapon = attacker.equipped_weapon_type;
             attacker_element = weapon_element(attacker.equipped_weapon_type);
             if attacker_element == 0 { attacker_element = attacker.gun_mutation_element; }
             break;
         }
     }
     if player != null { defender_element = weapon_element(player.equipped_weapon_type); }
+    if player != null && attacker_weapon == .ICE_LAUNCHER {
+        if player.admin_freeze_until <= get_time() {
+            player.admin_freeze_previous_speed = player.agent.movement_speed;
+        }
+        player.agent.movement_speed = 150.0;
+        player.admin_freeze_until = get_time() + 2.5;
+    }
     target_pos := target.entity.world_position;
     target.health -= damage * elemental_damage_multiplier(attacker_element, defender_element) * elemental_zone_multiplier(attacker_element, target_pos);
     if target.health < 0 {

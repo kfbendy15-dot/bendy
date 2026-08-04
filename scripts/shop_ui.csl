@@ -30,13 +30,7 @@ draw_shop_card :: proc(id: string, label: string, price: s64, icon: Texture_Asse
 
 elemental_shop_event :: proc() -> s64 {
     if !g_event_elemental return 0;
-    if g_event_ice return 4;
-    // Each event lasts 45 seconds; only its matching public shop can be purchased.
-    phase := get_time() % 180.0;
-    if phase < 45 return 1;
-    if phase < 90 return 2;
-    if phase < 135 return 3;
-    return 4;
+    return g_active_element_event;
 }
 
 elemental_shop_name :: proc(event: s64) -> string {
@@ -197,12 +191,6 @@ grant_admin_ammo_offer :: proc(player: Player, ammo_index: s64, amount: s64, fee
 buy_armor_offer :: proc(player: Player) {
     if spend_coins(player, 750) {
         buy_armor_progression(player);
-    }
-}
-
-buy_heal_offer :: proc(player: Player) {
-    if spend_coins(player, 50) {
-        fully_heal_player(player);
     }
 }
 
@@ -368,7 +356,6 @@ draw_shop :: proc(player: Player) {
     water_shop_handle: Interact_Result;
     leaf_shop_handle: Interact_Result;
     ice_shop_handle: Interact_Result;
-    heal_handle: Interact_Result;
     shop_gun_cutter_handle: Interact_Result;
     shop_ar_handle: Interact_Result;
     shop_smg_handle: Interact_Result;
@@ -396,8 +383,6 @@ draw_shop :: proc(player: Player) {
     dash_handle: Interact_Result;
     invis_handle: Interact_Result;
     speed_boost_handle: Interact_Result;
-    shield_handle: Interact_Result;
-    paperclip_handle: Interact_Result;
     normal_handle: Interact_Result;
     finger_handle: Interact_Result;
     paper_handle: Interact_Result;
@@ -416,15 +401,15 @@ draw_shop :: proc(player: Player) {
     content.gap = 8;
     UIK.list_begin("shop_scroll", content);
 
-    UIK.text("Support", UIK.text_title());
+    UIK.text("Featured Shop", UIK.text_title());
     event := elemental_shop_event();
     UIK.text(format_string(g_event_elemental ? "Element event: % Shop open" : "Element event: Closed", {elemental_shop_name(event)}), UIK.text_body());
     elemental_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(elemental_row);
-    if event == 1 { fire_shop_handle = draw_shop_card("shop/fire_shop", "Fire Shop", 120, get_asset(Texture_Asset, get_weapon_config(.FIRE_RAY).weapon_icon_path), {0.95, 0.3, 0.15, 1}, player_has_weapon(player, .FIRE_RAY)); }
-    if event == 2 { water_shop_handle = draw_shop_card("shop/water_shop", "Water Shop", 120, get_asset(Texture_Asset, get_weapon_config(.WATER_GUN).weapon_icon_path), {0.2, 0.55, 0.95, 1}, player_has_weapon(player, .WATER_GUN)); }
-    if event == 3 { leaf_shop_handle = draw_shop_card("shop/leaf_shop", "Leaf Shop", 120, get_asset(Texture_Asset, get_weapon_config(.POISON_GRENADE).weapon_icon_path), {0.2, 0.8, 0.25, 1}, player_has_weapon(player, .POISON_GRENADE)); }
-    if event == 4 { ice_shop_handle = draw_shop_card("shop/ice_shop", "Ice Shop", 120, get_asset(Texture_Asset, get_weapon_config(.ICE_LAUNCHER).weapon_icon_path), {0.55, 0.85, 1.0, 1}, player_has_weapon(player, .ICE_LAUNCHER)); }
+    if event == 1 { fire_shop_handle = draw_shop_card("shop/fire_shop", "Fireball", 120, get_asset(Texture_Asset, get_weapon_config(.FIREBALL).weapon_icon_path), {0.95, 0.3, 0.15, 1}, player_has_weapon(player, .FIRE_RAY)); }
+    if event == 2 { water_shop_handle = draw_shop_card("shop/water_shop", "Fish-Shooting Minigun", 120, get_asset(Texture_Asset, get_weapon_config(.WATER_GUN).weapon_icon_path), {0.2, 0.55, 0.95, 1}, player_has_weapon(player, .WATER_GUN)); }
+    if event == 3 { leaf_shop_handle = draw_shop_card("shop/leaf_shop", "Frog Grappler Gun", 120, get_asset(Texture_Asset, get_weapon_config(.KILLER_FISH).weapon_icon_path), {0.2, 0.8, 0.25, 1}, player_has_weapon(player, .POISON_GRENADE)); }
+    if event == 4 { ice_shop_handle = draw_shop_card("shop/ice_shop", "Ice Launcher", 120, get_asset(Texture_Asset, get_weapon_config(.ICE_LAUNCHER).weapon_icon_path), {0.55, 0.85, 1.0, 1}, player_has_weapon(player, .ICE_LAUNCHER)); }
     UIK.panel_end();
     starter_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
     starter_handle = draw_shop_card("shop/starter_pack", "Starter Pack (199 Sparks)", SPARKS_STARTER_COST, starter_icon, {0.25, 0.75, 1.0, 1}, Save.get_int(player, STARTER_PACK_CLAIMED_KEY, 0) != 0);
@@ -444,9 +429,7 @@ draw_shop :: proc(player: Player) {
     support_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(support_row);
     armor_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
-    heal_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/heart_icon_full.png");
     armor_handle = draw_shop_card("shop/armor", "Armor", shop_price(player, 750), armor_icon, {0.35, 0.55, 0.85, 1}, false);
-    heal_handle = draw_shop_card("shop/heal", "Heal", shop_price(player, 50), heal_icon, {0.35, 0.8, 0.45, 1}, false);
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
@@ -555,8 +538,6 @@ draw_shop :: proc(player: Player) {
     powerup_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(powerup_row_2);
     speed_boost_handle = draw_shop_card("shop/buy_speed_boost", "Speed Boost", SPEED_BOOST_COST, dash_icon, {0.9, 0.65, 0.2, 1}, player.has_speed_boost);
-    shield_handle = draw_shop_card("shop/buy_shield", "Shield", SHIELD_COST, inv_icon, {0.25, 0.75, 0.9, 1}, player.has_shield);
-    paperclip_handle = draw_shop_card("shop/buy_paperclip", "Paperclip", PAPERCLIP_COST, inv_icon, {0.8, 0.8, 0.85, 1}, player.has_paperclip);
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
@@ -589,10 +570,10 @@ draw_shop :: proc(player: Player) {
         player.show_shop = false;
     }
     if UIK.clicked(normal_tab) { player.shop_tab_index = 0; }
-    if UIK.clicked(fire_shop_handle) && event == 1 { buy_weapon_offer(player, .FIRE_RAY, 120, "+Fire Gun"); }
-    if UIK.clicked(water_shop_handle) && event == 2 { buy_weapon_offer(player, .WATER_GUN, 120, "+Water Gun"); }
-    if UIK.clicked(leaf_shop_handle) && event == 3 { buy_weapon_offer(player, .POISON_GRENADE, 120, "+Leaf Gun"); }
-    if UIK.clicked(ice_shop_handle) && event == 4 { buy_weapon_offer(player, .ICE_LAUNCHER, 120, "+Ice Gun"); }
+    if UIK.clicked(fire_shop_handle) && event == 1 { buy_weapon_offer(player, .FIREBALL, 120, "+Fireball"); }
+    if UIK.clicked(water_shop_handle) && event == 2 { buy_weapon_offer(player, .WATER_GUN, 120, "+Fish-Shooting Minigun"); }
+    if UIK.clicked(leaf_shop_handle) && event == 3 { buy_weapon_offer(player, .KILLER_FISH, 120, "+Frog Grappler Gun"); }
+    if UIK.clicked(ice_shop_handle) && event == 4 { buy_weapon_offer(player, .ICE_LAUNCHER, 120, "+Ice Launcher"); }
     if UIK.clicked(starter_handle) {
         buy_starter_pack(player);
     }
@@ -660,9 +641,6 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(armor_handle) {
         buy_armor_offer(player);
     }
-    if UIK.clicked(heal_handle) {
-        buy_heal_offer(player);
-    }
     if UIK.clicked(bullets_handle) {
         buy_bullets(player);
     }
@@ -721,14 +699,6 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(speed_boost_handle) && !player.has_speed_boost && spend_coins(player, SPEED_BOOST_COST) {
         player.has_speed_boost = true;
         play_pickup_feedback(player, "+Speed Boost");
-    }
-    if UIK.clicked(shield_handle) && !player.has_shield && spend_coins(player, SHIELD_COST) {
-        player.has_shield = true;
-        play_pickup_feedback(player, "+Shield");
-    }
-    if UIK.clicked(paperclip_handle) && !player.has_paperclip && spend_coins(player, PAPERCLIP_COST) {
-        player.has_paperclip = true;
-        play_pickup_feedback(player, "+Paperclip");
     }
 
     if UIK.clicked(finger_handle) && !player.purchased_finger_gun {
@@ -1189,10 +1159,6 @@ draw_admin_panel :: proc(player: Player) {
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     power_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(power_row);
-    heal_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
-    heal_desc.panel.width = UIK.flex(1);
-    heal_desc.panel.height = UIK.pixels(52);
-    heal_btn := UIK.button("admin/fully_heal", "Fully Heal", heal_desc);
     inv_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
     inv_desc.panel.width = UIK.flex(1);
     inv_desc.panel.height = UIK.pixels(52);
@@ -1473,9 +1439,6 @@ draw_admin_panel :: proc(player: Player) {
         grant_mimicer_mode(player);
         player.show_admin_panel = false;
     }
-    if UIK.clicked(heal_btn) {
-        fully_heal_player(admin_target);
-    }
 
     if UIK.clicked(inv_btn) {
         set_player_invincible(admin_target, true);
@@ -1588,7 +1551,17 @@ draw_event_panel :: proc(player: Player) {
     body.gap = 8;
     UIK.list_begin("admin/events_body", body);
     UIK.text("Start a server-wide event.", UIK.text_title());
-    UIK.text("The Ice Shop opens when the Ice Event starts.", UIK.text_body());
+    UIK.text("Start an event to open its Featured Shop item.", UIK.text_body());
+
+    fire_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    fire_desc.panel.width = UIK.flex(1); fire_desc.panel.height = UIK.pixels(52);
+    fire_btn := UIK.button("events/start_fire", "Start Fire Event", fire_desc);
+    water_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    water_desc.panel.width = UIK.flex(1); water_desc.panel.height = UIK.pixels(52);
+    water_btn := UIK.button("events/start_water", "Start Water Event", water_desc);
+    leaf_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    leaf_desc.panel.width = UIK.flex(1); leaf_desc.panel.height = UIK.pixels(52);
+    leaf_btn := UIK.button("events/start_leaf", "Start Leaf Event", leaf_desc);
 
     ice_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     ice_desc.panel.width = UIK.flex(1);
@@ -1606,20 +1579,18 @@ draw_event_panel :: proc(player: Player) {
         player.show_event_panel = false;
         player.show_admin_panel = true;
     }
-    if UIK.clicked(ice_btn) {
-        if !g_event_elemental {
-            Save.increment_game_int(EVENT_ELEMENTAL_KEY, 1);
-        }
-        if !g_event_ice {
-            Save.increment_game_int(EVENT_ICE_KEY, 1);
-        }
+    if UIK.clicked(fire_btn) || UIK.clicked(water_btn) || UIK.clicked(leaf_btn) || UIK.clicked(ice_btn) {
         g_event_elemental = true;
-        g_event_ice = true;
+        g_event_ice = UIK.clicked(ice_btn);
+        g_active_element_event = UIK.clicked(fire_btn) ? 1 : (UIK.clicked(water_btn) ? 2 : (UIK.clicked(leaf_btn) ? 3 : 4));
+        Save.increment_game_int(EVENT_ELEMENTAL_KEY, 1);
+        if g_event_ice { Save.increment_game_int(EVENT_ICE_KEY, 1); }
         player.show_event_panel = false;
         player.show_shop = true;
-        player.play_reward_feedback("Ice Event started");
+        player.play_reward_feedback(format_string("% Event started", {elemental_shop_name(g_active_element_event)}));
     }
 }
+
 
 
 
