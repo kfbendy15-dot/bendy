@@ -939,7 +939,6 @@ Player :: class : Player_Base {
     show_tutorial: bool;
     show_admin_panel: bool;
     show_admin_shop: bool;
-    show_admin_element_panel: bool;
     player_element: s64;
     show_mimicer_selector: bool;
     show_minigames: bool;
@@ -1176,7 +1175,6 @@ Player :: class : Player_Base {
         battlepass_music_effect_count = 0;
         is_admin_noclip = false;
         show_admin_shop = false;
-        show_admin_element_panel = false;
         player_element = 0;
         gun_mutation_element = 0;
         mimicer_form_target_user_id = "";
@@ -1316,9 +1314,6 @@ Player :: class : Player_Base {
         if show_admin_unban && !can_access_admin_panel(this) {
             show_admin_unban = false;
         }
-        if show_admin_element_panel && !can_access_admin_panel(this) {
-            show_admin_element_panel = false;
-        }
 
         if is_local_or_server() {
             if is_murder_mystery_active() && murder_role == .INNOCENT { show_shop = false; }
@@ -1341,9 +1336,6 @@ Player :: class : Player_Base {
             }
             if show_admin_shop && can_access_admin_panel(this) {
                 draw_admin_shop(this);
-            }
-            if show_admin_element_panel && can_access_admin_panel(this) {
-                draw_admin_element_panel(this);
             }
             if show_admin_unban && can_access_admin_panel(this) {
                 draw_admin_unban(this);
