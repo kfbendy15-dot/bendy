@@ -66,6 +66,7 @@ ARMOR_PURCHASES_KEY :: "armor_purchases";
 ARMOR_TIER_KEY :: "armor_tier";
 EVENT_DOUBLE_COINS_KEY :: "event_double_coins";
 EVENT_ELEMENTAL_KEY :: "event_elemental";
+EVENT_ICE_KEY :: "event_ice";
 
 
 coin_pass_amount_for_product :: proc(product_id: string) -> s64 {
@@ -894,6 +895,7 @@ buy_murder_mystery_bundle :: proc(player: Player) {
 ao_start :: proc() {
     g_event_double_coins = Save.get_game_int(EVENT_DOUBLE_COINS_KEY, 0) > 0;
     g_event_elemental = Save.get_game_int(EVENT_ELEMENTAL_KEY, 0) > 0;
+    g_event_ice = Save.get_game_int(EVENT_ICE_KEY, 0) > 0;
 }
 
 ao_update :: proc(dt: float) {
