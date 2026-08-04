@@ -30,6 +30,7 @@ draw_shop_card :: proc(id: string, label: string, price: s64, icon: Texture_Asse
 
 elemental_shop_event :: proc() -> s64 {
     if !g_event_elemental return 0;
+    if g_event_ice return 4;
     // Each event lasts 45 seconds; only its matching public shop can be purchased.
     phase := get_time() % 180.0;
     if phase < 45 return 1;
@@ -1577,7 +1578,7 @@ draw_event_panel :: proc(player: Player) {
     shell := UIK.panel_modal(.BLACK);
     shell.gap = 0;
     UIK.panel_begin(shell);
-    title_desc := UIK.title_area_desc("Events");
+    title_desc := UIK.title_area_desc("Event Panel");
     title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
     exit_handle := UIK.title_area(title_desc);
     body := UIK.layout_column();
@@ -1586,17 +1587,13 @@ draw_event_panel :: proc(player: Player) {
     body.padding = v4{12, 16, 12, 16};
     body.gap = 8;
     UIK.list_begin("admin/events_body", body);
-    UIK.text("Live event controls", UIK.text_title());
-    UIK.text("These effects apply to the whole server.", UIK.text_body());
+    UIK.text("Start a server-wide event.", UIK.text_title());
+    UIK.text("The Ice Shop opens when the Ice Event starts.", UIK.text_body());
 
-    double_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
-    double_desc.panel.width = UIK.flex(1);
-    double_desc.panel.height = UIK.pixels(56);
-    double_btn := UIK.button("events/double_coins", "Double Coins", double_desc);
-    elemental_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
-    elemental_desc.panel.width = UIK.flex(1);
-    elemental_desc.panel.height = UIK.pixels(56);
-    elemental_btn := UIK.button("events/elemental", "Elemental Event", elemental_desc);
+    ice_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    ice_desc.panel.width = UIK.flex(1);
+    ice_desc.panel.height = UIK.pixels(60);
+    ice_btn := UIK.button("events/start_ice", "Start Ice Event", ice_desc);
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     close_desc.panel.width = UIK.flex(1);
     close_desc.panel.height = UIK.pixels(52);
@@ -1609,15 +1606,18 @@ draw_event_panel :: proc(player: Player) {
         player.show_event_panel = false;
         player.show_admin_panel = true;
     }
-    if UIK.clicked(double_btn) {
-        g_event_double_coins = !g_event_double_coins;
-        Save.increment_game_int(EVENT_DOUBLE_COINS_KEY, g_event_double_coins ? 1 : -1);
-        player.play_reward_feedback(g_event_double_coins ? "Double Coins on" : "Double Coins off");
-    }
-    if UIK.clicked(elemental_btn) {
-        g_event_elemental = !g_event_elemental;
-        Save.increment_game_int(EVENT_ELEMENTAL_KEY, g_event_elemental ? 1 : -1);
-        player.play_reward_feedback(g_event_elemental ? "Elemental Event on" : "Elemental Event off");
+    if UIK.clicked(ice_btn) {
+        if !g_event_elemental {
+            Save.increment_game_int(EVENT_ELEMENTAL_KEY, 1);
+        }
+        if !g_event_ice {
+            Save.increment_game_int(EVENT_ICE_KEY, 1);
+        }
+        g_event_elemental = true;
+        g_event_ice = true;
+        player.show_event_panel = false;
+        player.show_shop = true;
+        player.play_reward_feedback("Ice Event started");
     }
 }
 
