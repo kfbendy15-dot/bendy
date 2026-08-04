@@ -9,27 +9,11 @@ Element_Guide_Interactable :: class : Interactable {
         this.prompt_offset = {0, 28};
     }
 
-    can_use :: method(player: Player) -> bool { return true; }
+    can_use :: method(player: Player) -> bool { return false; }
 
     on_interact :: method(player: Player) {
-        player.show_element_guide = true;
+        return;
     }
 }
 
-draw_element_guide :: proc(player: Player) {
-    UIK.begin(UIK.modal(UIK.rect_window_small(), 40));
-    shell := UIK.panel_modal(.BLUE);
-    UIK.panel_begin(shell);
-    title := UIK.title_area(UIK.title_area_desc("Element Guide"));
-    if title.clicked { player.show_element_guide = false; }
-    UIK.text(UIK.text_title(), "🔥 Fire");
-    UIK.text(UIK.text_body(), "Strong against Grass • Weak against Water");
-    UIK.text(UIK.text_title(), "🍃 Grass");
-    UIK.text(UIK.text_body(), "Strong against Water • Weak against Fire");
-    UIK.text(UIK.text_title(), "🌊 Water");
-    UIK.text(UIK.text_body(), "Strong against Fire • Weak against Grass");
-    UIK.text(UIK.text_title(), "❄ Ice");
-    UIK.text(UIK.text_body(), "Event element • Strong against Grass during the Ice event");
-    UIK.panel_end();
-    UIK.end();
-}
+draw_element_guide :: proc(player: Player) {}
