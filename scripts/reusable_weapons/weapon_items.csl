@@ -1,4 +1,4 @@
-WEAPON_COUNT :: 46;
+WEAPON_COUNT :: 47;
 AMMO_TYPE_COUNT :: 10;
 
 g_weapon_item_defs: [WEAPON_COUNT]Item_Definition;
@@ -59,6 +59,7 @@ weapon_type_to_index :: proc(wt: Weapon_Type) -> s64 {
         case .ADMIN_NUKE_GUN:         return 43;
         case .BUILDING_TOOLS:         return 44;
         case .LASER_GUN:              return 45;
+        case .WARPER:                 return 46;
     }
     return -1;
 }

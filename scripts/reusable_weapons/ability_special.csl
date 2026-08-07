@@ -236,6 +236,10 @@ Special_Ability :: class : Ability_Base {
                     };
                     spawn_landmine(mine_pos, p.entity.id, config.aoe_damage, 1.15);
                 }
+                case .WARPER: {
+                    weapon_shoot(p, wt);
+                    place_warper_portal(p, aiming.aim_direction);
+                }
                 case .SUBSPACE_TRIPMINE: {
                     weapon_shoot(p, wt);
                     dir := aiming.aim_direction;
