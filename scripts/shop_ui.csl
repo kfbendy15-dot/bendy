@@ -1555,12 +1555,32 @@ draw_event_panel :: proc(player: Player) {
     body.gap = 8;
     UIK.list_begin("admin/events_body", body);
     UIK.text("Start a server-wide event.", UIK.text_title());
-    UIK.text("Choose an element for the event and assign one to a player.", UIK.text_body());
+    UIK.text("Choose an event, then select a player to assign that element.", UIK.text_body());
+
+    target_usernames: [..]string;
+    target_handles: [..]Interact_Result;
+    target_scroll := UIK.layout_column();
+    target_scroll.width = UIK.flex(1);
+    target_scroll.height = UIK.pixels(150);
+    target_scroll.gap = 4;
+    UIK.list_begin("events/targets", target_scroll);
+    for target_player: component_iterator(Player) {
+        username := target_player.get_username();
+        target_usernames.append(username);
+        target_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+        if username == player.admin_target_username {
+            target_desc = UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+        }
+        target_desc.panel.width = UIK.flex(1);
+        target_desc.panel.height = UIK.pixels(40);
+        target_handles.append(UIK.button(format_string("events/target/%", {username}), username, target_desc));
+    }
+    UIK.list_end();
 
     target := find_online_player_by_username(player.admin_target_username);
     if target == null { target = player; }
     element_buttons: [..]Interact_Result;
-    if target != null {
+    if target != null && g_event_elemental {
         UIK.text(format_string("Target element: %", {element_name_for_value(target.player_element)}), UIK.text_body());
         for i: 0..4 {
             element_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
@@ -1618,9 +1638,17 @@ draw_event_panel :: proc(player: Player) {
         player.show_shop = true;
         player.play_reward_feedback(format_string("% Event started", {elemental_shop_name(g_active_element_event)}));
     }
-    if target != null {
+    for i: 0..target_usernames.count - 1 {
+        if UIK.clicked(target_handles[i]) {
+            player.admin_target_username = target_usernames[i];
+        }
+    }
+    if target != null && g_event_elemental {
         for i: 0..4 {
-            if UIK.clicked(element_buttons[i]) { target.player_element = i + 1; }
+            if UIK.clicked(element_buttons[i]) {
+                target.player_element = i + 1;
+                player.play_reward_feedback(format_string("% became %", {target.get_username(), element_name_for_value(i + 1)}));
+            }
         }
     }
 }
