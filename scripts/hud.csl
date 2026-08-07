@@ -92,6 +92,7 @@ draw_hud :: proc(player: Player) {
     shop_btn: Interact_Result;
     admin_btn: Interact_Result;
     admin_shop_btn: Interact_Result;
+    events_btn: Interact_Result;
     vs_btn: Interact_Result;
     shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     shop_desc.panel.width = UIK.pixels(92);
@@ -113,6 +114,11 @@ draw_hud :: proc(player: Player) {
         admin_shop_desc.panel.width = UIK.pixels(120);
         admin_shop_desc.panel.height = UIK.pixels(52);
         admin_shop_btn = UIK.button("hud/admin_shop_button", "ADMIN SHOP", admin_shop_desc);
+
+        events_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+        events_desc.panel.width = UIK.pixels(120);
+        events_desc.panel.height = UIK.pixels(52);
+        events_btn = UIK.button("hud/events_button", "EVENTS", events_desc);
     }
 
     UIK.panel_end();
@@ -132,6 +138,9 @@ draw_hud :: proc(player: Player) {
     if has_admin_button && UIK.clicked(admin_shop_btn) {
         player.show_admin_shop = true;
         Save.set_int(player, "ui_test_show_admin_shop", 1);
+    }
+    if has_admin_button && UIK.clicked(events_btn) {
+        player.show_event_panel = true;
     }
 
     if player.show_settings {

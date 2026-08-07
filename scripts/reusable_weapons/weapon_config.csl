@@ -707,6 +707,18 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.shoot_end_trigger = "void_splitter_end";
             config.use_ik_var = "use_1h_ik";
         }
+        case .WARPER: {
+            config.fire_mode = .SPECIAL;
+            config.hand_type = .ONE_HAND;
+            config.fire_rate = 0.35;
+            config.weapon_skin = "weapons/void_spitter";
+            config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/void_splitter.png";
+            config.item_id = "warper";
+            config.item_name = "Warper";
+            config.ammo_type_index = 8;
+            config.ammo_first_pickup = 9999;
+            config.use_ik_var = "use_1h_ik";
+        }
         case .AKIMBO_PISTOLS: {
             config.fire_mode = .SPECIAL;
             config.hand_type = .CUSTOM;

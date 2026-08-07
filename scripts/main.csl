@@ -897,10 +897,21 @@ ao_start :: proc() {
     g_event_elemental = Save.get_game_int(EVENT_ELEMENTAL_KEY, 0) > 0;
     g_event_ice = Save.get_game_int(EVENT_ICE_KEY, 0) > 0;
     g_active_element_event = g_event_ice ? 4 : 0;
+    g_event_ends_at = 0;
 }
 
 ao_update :: proc(dt: float) {
     admin_chat_poll();
+    if g_event_elemental && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
+        stop_active_event();
+    }
+}
+
+stop_active_event :: proc() {
+    g_event_elemental = false;
+    g_event_ice = false;
+    g_active_element_event = 0;
+    g_event_ends_at = 0;
 }
 
 ao_late_update :: proc(dt: float) {
@@ -934,6 +945,9 @@ Player :: class : Player_Base {
     equipped_item_def: Item_Definition;
     last_selected_index: s64;
     boomwheel_cannon: Boomwheel_Cannon;
+    warper_first_portal: Entity;
+    warper_second_portal: Entity;
+    warper_teleport_cooldown: float;
 
     // Game state
     is_dead: bool;
@@ -1465,3 +1479,4 @@ g_event_ice: bool;
 g_event_double_coins: bool;
 g_event_elemental: bool;
 g_active_element_event: s64;
+g_event_ends_at: float;
