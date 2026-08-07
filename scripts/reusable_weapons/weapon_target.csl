@@ -25,6 +25,11 @@ elemental_damage_multiplier :: proc(attacker: s64, defender: s64) -> float {
     return 0.5;
 }
 
+// Returns the final elemental damage so callbacks and hit feedback agree with health loss.
+elemental_damage_amount :: proc(damage: float, attacker: s64, defender: s64, target_pos: v2) -> float {
+    return damage * elemental_damage_multiplier(attacker, defender) * elemental_zone_multiplier(attacker, target_pos);
+}
+
 elemental_zone_multiplier :: proc(attacker: s64, pos: v2) -> float {
     // Public elemental lands: lava (east), lake (south), jungle (north-west), snow (north).
     in_lava := pos.x > 16 && pos.y < -6;
@@ -74,12 +79,13 @@ weapon_target_apply_damage :: proc(target: Weapon_Target, damage: float, attacke
         player.admin_freeze_until = get_time() + 2.5;
     }
     target_pos := target.entity.world_position;
-    target.health -= damage * elemental_damage_multiplier(attacker_element, defender_element) * elemental_zone_multiplier(attacker_element, target_pos);
+    final_damage := elemental_damage_amount(damage, attacker_element, defender_element, target_pos);
+    target.health -= final_damage;
     if target.health < 0 {
         target.health = 0;
     }
     if target.on_damaged != null {
-        target.on_damaged(target, damage, attacker_id, target.on_damaged_userdata);
+        target.on_damaged(target, final_damage, attacker_id, target.on_damaged_userdata);
     }
 }
 

@@ -3,7 +3,7 @@ Element_Guide_Interactable :: class : Interactable {
         this.set_listener(this);
         this.set_text("Elements");
         this.set_hold_text("Tap");
-        this.set_subtitle("Fire, Grass, Water, Ice");
+        this.set_subtitle("Fire, Leaf, Water, Ice");
         this.required_hold_time = 0.0;
         this.radius = 3.5;
         this.prompt_offset = {0, 28};
