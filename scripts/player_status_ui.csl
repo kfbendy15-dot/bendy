@@ -77,7 +77,7 @@ element_icon_for_value :: proc(element: s64) -> string {
 element_name_for_value :: proc(element: s64) -> string {
     if element == 1 return "Fire";
     if element == 2 return "Water";
-    if element == 3 return "Grass";
+    if element == 3 return "Leaf";
     if element == 4 return "Ice";
     if element == 5 return "Void";
     return "";
