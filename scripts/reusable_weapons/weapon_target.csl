@@ -19,6 +19,8 @@ elemental_damage_multiplier :: proc(attacker: s64, defender: s64) -> float {
     if attacker == 0 || defender == 0 return 1.0;
     if attacker == defender return 1.0;
     if (attacker == 2 && defender == 1) || (attacker == 1 && defender == 3) || (attacker == 3 && defender == 2) return 2.0;
+    if (attacker == 5 && (defender == 1 || defender == 2 || defender == 3)) return 2.0;
+    if attacker == 1 && defender == 5 return 2.0;
     if g_event_ice && ((attacker == 1 && defender == 4) || (attacker == 4 && defender == 3)) return 2.0;
     return 0.5;
 }
@@ -60,7 +62,10 @@ weapon_target_apply_damage :: proc(target: Weapon_Target, damage: float, attacke
             break;
         }
     }
-    if player != null { defender_element = weapon_element(player.equipped_weapon_type); }
+    if player != null {
+        defender_element = player.player_element;
+        if defender_element == 0 { defender_element = weapon_element(player.equipped_weapon_type); }
+    }
     if player != null && attacker_weapon == .ICE_LAUNCHER {
         if player.admin_freeze_until <= get_time() {
             player.admin_freeze_previous_speed = player.agent.movement_speed;

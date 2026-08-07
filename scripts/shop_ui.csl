@@ -38,7 +38,8 @@ elemental_shop_name :: proc(event: s64) -> string {
     if event == 1 return "Fire";
     if event == 2 return "Water";
     if event == 3 return "Leaf";
-    return "Ice";
+    if event == 4 return "Ice";
+    return "Void";
 }
 
 element_icon_for_name :: proc(name: string) -> string {
@@ -1009,12 +1010,6 @@ draw_admin_panel :: proc(player: Player) {
     UIK.text("Choose Capture the Flag, assign players to teams, and start.", UIK.text_body());
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
-    events_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
-    events_desc.panel.width = UIK.flex(1);
-    events_desc.panel.height = UIK.pixels(52);
-    events_btn := UIK.button("admin/events", "Event Panel", events_desc);
-
-    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     unban_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
     unban_desc.panel.width = UIK.flex(1);
     unban_desc.panel.height = UIK.pixels(52);
@@ -1414,11 +1409,6 @@ draw_admin_panel :: proc(player: Player) {
         player.show_minigames = true;
     }
 
-    if UIK.clicked(events_btn) {
-        player.show_admin_panel = false;
-        player.show_event_panel = true;
-    }
-
     if UIK.clicked(summon_btn) {
         spawn_paperclips_boss();
         player.play_reward_feedback("Paperclips approaches!");
@@ -1551,7 +1541,19 @@ draw_event_panel :: proc(player: Player) {
     body.gap = 8;
     UIK.list_begin("admin/events_body", body);
     UIK.text("Start a server-wide event.", UIK.text_title());
-    UIK.text("Start an event to open its Featured Shop item.", UIK.text_body());
+    UIK.text("Choose an element for the event and assign one to a player.", UIK.text_body());
+
+    target := find_online_player_by_username(player.admin_target_username);
+    if target == null { target = player; }
+    element_buttons: [..]Interact_Result;
+    if target != null {
+        UIK.text(format_string("Target element: %", {element_name_for_value(target.player_element)}), UIK.text_body());
+        for i: 0..4 {
+            element_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+            element_desc.panel.width = UIK.flex(1); element_desc.panel.height = UIK.pixels(44);
+            element_buttons.append(UIK.button(format_string("events/assign/%", {i + 1}), element_name_for_value(i + 1), element_desc));
+        }
+    }
 
     fire_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     fire_desc.panel.width = UIK.flex(1); fire_desc.panel.height = UIK.pixels(52);
@@ -1567,6 +1569,9 @@ draw_event_panel :: proc(player: Player) {
     ice_desc.panel.width = UIK.flex(1);
     ice_desc.panel.height = UIK.pixels(60);
     ice_btn := UIK.button("events/start_ice", "Start Ice Event", ice_desc);
+    void_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    void_desc.panel.width = UIK.flex(1); void_desc.panel.height = UIK.pixels(52);
+    void_btn := UIK.button("events/start_void", "Start Void Event", void_desc);
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     close_desc.panel.width = UIK.flex(1);
     close_desc.panel.height = UIK.pixels(52);
@@ -1577,17 +1582,21 @@ draw_event_panel :: proc(player: Player) {
 
     if UIK.clicked(exit_handle) || UIK.clicked(close_btn) {
         player.show_event_panel = false;
-        player.show_admin_panel = true;
     }
-    if UIK.clicked(fire_btn) || UIK.clicked(water_btn) || UIK.clicked(leaf_btn) || UIK.clicked(ice_btn) {
+    if UIK.clicked(fire_btn) || UIK.clicked(water_btn) || UIK.clicked(leaf_btn) || UIK.clicked(ice_btn) || UIK.clicked(void_btn) {
         g_event_elemental = true;
         g_event_ice = UIK.clicked(ice_btn);
-        g_active_element_event = UIK.clicked(fire_btn) ? 1 : (UIK.clicked(water_btn) ? 2 : (UIK.clicked(leaf_btn) ? 3 : 4));
+        g_active_element_event = UIK.clicked(fire_btn) ? 1 : (UIK.clicked(water_btn) ? 2 : (UIK.clicked(leaf_btn) ? 3 : (UIK.clicked(ice_btn) ? 4 : 5)));
         Save.increment_game_int(EVENT_ELEMENTAL_KEY, 1);
         if g_event_ice { Save.increment_game_int(EVENT_ICE_KEY, 1); }
         player.show_event_panel = false;
         player.show_shop = true;
         player.play_reward_feedback(format_string("% Event started", {elemental_shop_name(g_active_element_event)}));
+    }
+    if target != null {
+        for i: 0..4 {
+            if UIK.clicked(element_buttons[i]) { target.player_element = i + 1; }
+        }
     }
 }
 
