@@ -140,6 +140,10 @@ draw_hud :: proc(player: Player) {
         Save.set_int(player, "ui_test_show_admin_shop", 1);
     }
     if has_admin_button && UIK.clicked(events_btn) {
+        // Events are a standalone panel, never a child/state of the admin panel.
+        player.show_admin_panel = false;
+        player.show_admin_shop = false;
+        player.show_admin_unban = false;
         player.show_event_panel = true;
     }
 
