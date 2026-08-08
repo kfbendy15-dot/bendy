@@ -1158,12 +1158,10 @@ Player :: class : Player_Base {
 
         username := get_username();
         is_admin_user = can_access_admin_panel(this);
-        // Administrators receive every currently implemented power-up for testing.
-        if is_admin_user {
-            has_dash = true;
-            has_invisible = true;
-            has_speed_boost = true;
-        }
+        // Power-ups are not granted on join - must be purchased in shop
+        has_dash = false;
+        has_invisible = false;
+        has_speed_boost = false;
         user_tag = Save.get_string(this, PLAYER_TITLE_SAVE_KEY, "");
         if user_tag == "PAPERCLIP" && !is_admin_user {
             user_tag = "";

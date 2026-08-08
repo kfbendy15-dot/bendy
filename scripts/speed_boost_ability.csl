@@ -4,7 +4,7 @@ Speed_Boost_Effect :: class : Effect_Base {
     effect_start :: method() {
         original_speed = player.agent.movement_speed;
         player.agent.movement_speed = original_speed * 1.75;
-        set_duration(20.0);
+        set_duration(7.0);
     }
 
     effect_end :: method(interrupt: bool) {
@@ -19,12 +19,18 @@ Speed_Boost_Ability :: class : Ability_Base {
     }
 
     can_use :: method() -> bool {
-        return player.(Player).has_speed_boost;
+        p := player.(Player);
+        if !p.has_speed_boost return false;
+        // Prevent stacking while already boosted
+        if p.entity.has_effect(Speed_Boost_Effect) return false;
+        return true;
     }
 
     on_update :: method(params: ref Ability_Update_Params) {
         if params.clicked && params.can_use {
-            current_cooldown = 5.0;
+            // Consume the purchase - must re-buy after it expires
+            player.(Player).has_speed_boost = false;
+            current_cooldown = 1.0;
             player.entity.add_passive_effect(new(Speed_Boost_Effect));
         }
     }
