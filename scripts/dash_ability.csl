@@ -34,7 +34,7 @@ Dash_Ability :: class : Ability_Base {
     }
 
     on_update :: method(params: ref Ability_Update_Params) {
-        activation := Ability_Utilities.full_update_aimed_ability(player, ref params);
+        activation := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
         if activation.activate {
             current_cooldown = 3.0;
             effect := new(Dash_Effect);
