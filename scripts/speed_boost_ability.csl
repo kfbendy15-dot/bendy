@@ -28,8 +28,6 @@ Speed_Boost_Ability :: class : Ability_Base {
 
     on_update :: method(params: ref Ability_Update_Params) {
         if params.clicked && params.can_use {
-            // Consume the purchase - must re-buy after it expires
-            player.(Player).has_speed_boost = false;
             current_cooldown = 1.0;
             player.entity.add_passive_effect(new(Speed_Boost_Effect));
         }
