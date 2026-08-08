@@ -7,31 +7,20 @@ draw_shop_card :: proc(id: string, label: string, price: s64, icon: Texture_Asse
     UIK.card_zone_end();
 
     UIK.card_zone(.BODY);
-    // Wider text graphics: increased size_multiplier for card labels and prices
     label_style := UIK.text_body();
-    label_style.size_multiplier = 1.06;
     UIK.text(label_style, "%", {label});
-    element_icon := element_icon_for_name(label);
-    if element_icon != "" {
-        icon_style := UIK.text_body();
-        icon_style.size_multiplier = 1.06;
-        UIK.text(icon_style, element_icon);
-    }
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
     coin := get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png");
     price_style := UIK.text_body();
-    price_style.size_multiplier = 1.04;
     UIK.currency(coin, price, price_style);
     if id == "admin_shop/giant_gun" {
         UIK.spacer(UIK.pixels(1), UIK.pixels(4));
         by_style := UIK.text_body();
-        by_style.size_multiplier = 1.04;
         UIK.text(by_style, "By 59zttiotnra");
     }
     if owned {
         UIK.spacer(UIK.pixels(1), UIK.pixels(4));
         owned_style := UIK.text_body();
-        owned_style.size_multiplier = 1.04;
         UIK.text(owned_style, "Owned");
     }
     UIK.card_zone_end();
@@ -54,10 +43,10 @@ elemental_shop_name :: proc(event: s64) -> string {
 }
 
 element_icon_for_name :: proc(name: string) -> string {
-    if name == "Fire Ray" || name == "Solar Siphoner" || name == "Meteorite" { return "🔥 Fire"; }
-    if name == "Water Gun" || name == "Water Balloon RPG" || name == "Hydro Cannon" || name == "Bubble Gun" { return "🌊 Water"; }
-    if name == "Poison Grenade" || name == "Shuriken" || name == "CTF Minion Gun" { return "🍃 Grass"; }
-    if name == "Ice Launcher" || name == "Glaciator" { return "❄ Ice"; }
+    if name == "Fire Ray" || name == "Solar Siphoner" || name == "Meteorite" { return "Fire"; }
+    if name == "Water Gun" || name == "Water Balloon RPG" || name == "Hydro Cannon" || name == "Bubble Gun" { return "Water"; }
+    if name == "Poison Grenade" || name == "Shuriken" || name == "CTF Minion Gun" { return "Leaf"; }
+    if name == "Ice Launcher" || name == "Glaciator" { return "Ice"; }
     return "";
 }
 
@@ -419,9 +408,9 @@ draw_shop :: proc(player: Player) {
     UIK.text(format_string(g_event_elemental ? (event == 5 ? "Void Shop open" : "Element event: % Shop open") : "Element event: Closed", {elemental_shop_name(event)}), UIK.text_body());
     elemental_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(elemental_row);
-    if event == 1 { fire_shop_handle = draw_shop_card("shop/fire_shop", "Fireball", 120, get_asset(Texture_Asset, get_weapon_config(.FIREBALL).weapon_icon_path), {0.95, 0.3, 0.15, 1}, player_has_weapon(player, .FIRE_RAY)); }
+    if event == 1 { fire_shop_handle = draw_shop_card("shop/fire_shop", "Fireball", 120, get_asset(Texture_Asset, get_weapon_config(.FIREBALL).weapon_icon_path), {0.95, 0.3, 0.15, 1}, player_has_weapon(player, .FIREBALL)); }
     if event == 2 { water_shop_handle = draw_shop_card("shop/water_shop", "Fish-Shooting Minigun", 120, get_asset(Texture_Asset, get_weapon_config(.WATER_GUN).weapon_icon_path), {0.2, 0.55, 0.95, 1}, player_has_weapon(player, .WATER_GUN)); }
-    if event == 3 { leaf_shop_handle = draw_shop_card("shop/leaf_shop", "Frog Grappler Gun", 120, get_asset(Texture_Asset, get_weapon_config(.KILLER_FISH).weapon_icon_path), {0.2, 0.8, 0.25, 1}, player_has_weapon(player, .POISON_GRENADE)); }
+    if event == 3 { leaf_shop_handle = draw_shop_card("shop/leaf_shop", "Frog Grappler Gun", 120, get_asset(Texture_Asset, get_weapon_config(.KILLER_FISH).weapon_icon_path), {0.2, 0.8, 0.25, 1}, player_has_weapon(player, .KILLER_FISH)); }
     if event == 4 { ice_shop_handle = draw_shop_card("shop/ice_shop", "Ice Launcher", 120, get_asset(Texture_Asset, get_weapon_config(.ICE_LAUNCHER).weapon_icon_path), {0.55, 0.85, 1.0, 1}, player_has_weapon(player, .ICE_LAUNCHER)); }
     if event == 5 { warper_shop_handle = draw_shop_card("shop/void_special_warper", "Special Warper", 0, get_asset(Texture_Asset, get_weapon_config(.WARPER).weapon_icon_path), {0.7, 0.25, 1.0, 1}, player_has_weapon(player, .WARPER)); }
     UIK.panel_end();
@@ -1644,7 +1633,6 @@ draw_event_panel :: proc(player: Player) {
         else if ice_clicked { g_active_element_event = 4; }
         else { g_active_element_event = 5; }
         g_event_ends_at = get_time() + 600.0;
-        // Idempotent save: ensure elemental is 1 and ice reflects current choice without growing unbounded
         cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
         if cur_elem == 0 { Save.increment_game_int(EVENT_ELEMENTAL_KEY, 1); }
         cur_ice := Save.get_game_int(EVENT_ICE_KEY, 0);
@@ -1653,21 +1641,26 @@ draw_event_panel :: proc(player: Player) {
         player.show_event_panel = false;
         player.show_admin_panel = false;
         player.show_admin_shop = false;
-        player.show_shop = true;
+        player.show_shop = false;
         if player != null {
             player.play_reward_feedback(format_string("% Event started", {elemental_shop_name(g_active_element_event)}));
         }
+        Chat.server_send_message(format_string("% Event started", {elemental_shop_name(g_active_element_event)}));
     }
     for i: 0..target_usernames.count - 1 {
-        if UIK.clicked(target_handles[i]) {
+        if i < target_handles.count && UIK.clicked(target_handles[i]) {
             player.admin_target_username = target_usernames[i];
         }
     }
-    if target != null && g_event_elemental {
+    if target != null && g_event_elemental && element_buttons.count >= 5 {
         for i: 0..4 {
-            if UIK.clicked(element_buttons[i]) {
-                target.player_element = i + 1;
-                player.play_reward_feedback(format_string("% became %", {target.get_username(), element_name_for_value(i + 1)}));
+            if i < element_buttons.count && UIK.clicked(element_buttons[i]) {
+                if target != null && #alive(target) && #alive(target.entity) {
+                    target.player_element = i + 1;
+                    if target.get_username().count > 0 {
+                        player.play_reward_feedback(format_string("% became %", {target.get_username(), element_name_for_value(i + 1)}));
+                    }
+                }
             }
         }
     }
