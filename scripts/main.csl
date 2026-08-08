@@ -1245,7 +1245,7 @@ Player :: class : Player_Base {
         killer_fish_cooldown = 0;
         warper_cooldown = 0;
         if is_local() {
-            Voice.set_range(40.0);
+            Voice.set_range(0.0);
         }
         if Game.is_editor() {
             entity.set_name("Player");
@@ -1369,8 +1369,8 @@ Player :: class : Player_Base {
         }
 
         if is_local() {
-            if Voice.get_range() != 40.0 {
-                Voice.set_range(40.0);
+            if Voice.get_range() != 0.0 {
+                Voice.set_range(0.0);
             }
         }
 
