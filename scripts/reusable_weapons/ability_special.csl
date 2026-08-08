@@ -215,7 +215,22 @@ Special_Ability :: class : Ability_Base {
                     spoon_attack(p);
                 }
                 case .KILLER_FISH: {
-                    killer_fish_attack(p);
+                    weapon_shoot(p, wt);
+                    dir := aiming.aim_direction;
+                    if length(dir) < 0.1 {
+                        dir = v2{1, 0};
+                        if p.entity.world_position.x < 0 {
+                            dir = v2{-1, 0};
+                        }
+                    }
+                    if dir.x != 0 {
+                        p.set_facing_right(dir.x > 0);
+                    }
+                    trap_pos := v2{
+                        p.entity.world_position.x + dir.x * 1.0,
+                        p.entity.world_position.y - 0.15,
+                    };
+                    spawn_tree_trap(trap_pos, p.entity.id);
                 }
                 case .LANDMINE: {
                     weapon_shoot(p, wt);
@@ -238,7 +253,21 @@ Special_Ability :: class : Ability_Base {
                 }
                 case .WARPER: {
                     weapon_shoot(p, wt);
-                    place_warper_portal(p, aiming.aim_direction);
+                    dir := aiming.aim_direction;
+                    if length(dir) < 0.1 {
+                        dir = v2{1, 0};
+                        if p.entity.world_position.x < 0 {
+                            dir = v2{-1, 0};
+                        }
+                    }
+                    if dir.x != 0 {
+                        p.set_facing_right(dir.x > 0);
+                    }
+                    hole_pos := v2{
+                        p.entity.world_position.x + dir.x * 2.0,
+                        p.entity.world_position.y + dir.y * 0.5,
+                    };
+                    spawn_black_hole_trap(hole_pos, p.entity.id);
                 }
                 case .SUBSPACE_TRIPMINE: {
                     weapon_shoot(p, wt);

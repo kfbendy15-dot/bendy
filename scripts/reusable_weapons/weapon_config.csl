@@ -239,16 +239,18 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
         case .KILLER_FISH: {
             config.fire_mode = .SPECIAL;
             config.hand_type = .ONE_HAND;
-            config.fire_rate = 2.0;
-            config.base_damage = 999.0;
+            config.fire_rate = 45.0;
+            config.base_damage = 0.0;
+            config.aoe_radius = 2.6;
+            config.aoe_damage = 0.0;
             config.ammo_per_shot = 0;
-            config.weapon_skin = "weapons/octo_siphoner";
-            config.weapon_icon_path = "fish_6100a0/fish.spine.pages/p39.png";
+            config.weapon_skin = "";
+            config.weapon_icon_path = "mine_on_0a827f.png";
             config.item_id = "killer_fish";
-            config.item_name = "Frog Grappler Gun";
+            config.item_name = "Tree Trap";
             config.ammo_type_index = -1;
             config.ammo_first_pickup = 0;
-            config.shoot_trigger = "shoot_1h_weapon";
+            config.shoot_trigger = "throw";
             config.use_ik_var = "";
         }
         case .GIANT_GUN: {
@@ -710,13 +712,18 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
         case .WARPER: {
             config.fire_mode = .SPECIAL;
             config.hand_type = .ONE_HAND;
-            config.fire_rate = 0.35;
+            config.fire_rate = 30.0;
+            config.base_damage = 10.0;
+            config.aoe_radius = 4.5;
+            config.aoe_damage = 10.0;
+            config.ammo_per_shot = 0;
             config.weapon_skin = "weapons/void_spitter";
             config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/void_splitter.png";
             config.item_id = "warper";
-            config.item_name = "Warper";
-            config.ammo_type_index = 8;
-            config.ammo_first_pickup = 9999;
+            config.item_name = "Black Hole";
+            config.ammo_type_index = -1;
+            config.ammo_first_pickup = 0;
+            config.shoot_trigger = "throw";
             config.use_ik_var = "use_1h_ik";
         }
         case .AKIMBO_PISTOLS: {

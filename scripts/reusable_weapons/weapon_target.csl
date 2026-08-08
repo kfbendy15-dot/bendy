@@ -12,6 +12,7 @@ weapon_element :: proc(wt: Weapon_Type) -> s64 {
     if wt == .WATER_GUN || wt == .WATER_BALLOON_RPG || wt == .HYDRO_CANNON || wt == .BUBBLE_GUN return 2; // water
     if wt == .POISON_GRENADE || wt == .KILLER_FISH || wt == .SHURIKEN return 3; // leaf
     if wt == .ICE_LAUNCHER || wt == .GLACIATOR return 4; // ice
+    if wt == .WARPER return 5; // void - black hole
     return 0; // normal
 }
 
