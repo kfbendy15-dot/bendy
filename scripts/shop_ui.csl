@@ -412,7 +412,7 @@ draw_shop :: proc(player: Player) {
     if event == 2 { water_shop_handle = draw_shop_card("shop/water_shop", "Water Gun", 30, get_asset(Texture_Asset, get_weapon_config(.WATER_GUN).weapon_icon_path), {0.2, 0.55, 0.95, 1}, player_has_weapon(player, .WATER_GUN)); }
     if event == 3 { leaf_shop_handle = draw_shop_card("shop/leaf_shop", "Tree Trap", 60, get_asset(Texture_Asset, get_weapon_config(.KILLER_FISH).weapon_icon_path), {0.2, 0.8, 0.25, 1}, player_has_weapon(player, .KILLER_FISH)); }
     if event == 4 { ice_shop_handle = draw_shop_card("shop/ice_shop", "Ice Launcher", 85, get_asset(Texture_Asset, get_weapon_config(.ICE_LAUNCHER).weapon_icon_path), {0.55, 0.85, 1.0, 1}, player_has_weapon(player, .ICE_LAUNCHER)); }
-    if event == 5 { warper_shop_handle = draw_shop_card("shop/void_special_warper", "Black Hole", 1000, get_asset(Texture_Asset, get_weapon_config(.WARPER).weapon_icon_path), {0.7, 0.25, 1.0, 1}, player_has_weapon(player, .WARPER)); }
+    if event == 5 { warper_shop_handle = draw_shop_card("shop/void_special_warper", "Black Hole Gun", 1000, get_asset(Texture_Asset, get_weapon_config(.WARPER).weapon_icon_path), {0.7, 0.25, 1.0, 1}, player_has_weapon(player, .WARPER)); }
     UIK.panel_end();
     starter_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
     starter_handle = draw_shop_card("shop/starter_pack", "Starter Pack (199 Sparks)", SPARKS_STARTER_COST, starter_icon, {0.25, 0.75, 1.0, 1}, Save.get_int(player, STARTER_PACK_CLAIMED_KEY, 0) != 0);
@@ -577,7 +577,7 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(water_shop_handle) && event == 2 { buy_weapon_offer(player, .WATER_GUN, 30, "+Water Gun"); }
     if UIK.clicked(leaf_shop_handle) && event == 3 { buy_weapon_offer(player, .KILLER_FISH, 60, "+Tree Trap"); }
     if UIK.clicked(ice_shop_handle) && event == 4 { buy_weapon_offer(player, .ICE_LAUNCHER, 85, "+Ice Launcher"); }
-    if UIK.clicked(warper_shop_handle) && event == 5 { buy_weapon_offer(player, .WARPER, 1000, "+Black Hole"); }
+    if UIK.clicked(warper_shop_handle) && event == 5 { buy_weapon_offer(player, .WARPER, 1000, "+Black Hole Gun"); }
     if UIK.clicked(starter_handle) {
         buy_starter_pack(player);
     }

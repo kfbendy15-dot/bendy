@@ -720,7 +720,7 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.weapon_skin = "weapons/void_spitter";
             config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/void_splitter.png";
             config.item_id = "warper";
-            config.item_name = "Black Hole";
+            config.item_name = "Black Hole Gun";
             config.ammo_type_index = -1;
             config.ammo_first_pickup = 0;
             config.shoot_trigger = "throw";
