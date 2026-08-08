@@ -206,6 +206,7 @@ init_weapon_items :: proc() {
     register_weapon(.ADMIN_NUKE_GUN);
     register_weapon(.BUILDING_TOOLS);
     register_weapon(.LASER_GUN);
+    register_weapon(.WARPER);
 
     // Load fire sounds for each weapon
     load_fire_sounds();
@@ -359,6 +360,7 @@ load_fire_sounds :: proc() {
     load_single_sound(.ADMIN_GUN, "reusable_weapons/sounds/reusable-weapons/plasma_gun_shoot_05.wav");
     load_single_sound(.ADMIN_NUKE_GUN, "reusable_weapons/sounds/reusable-weapons/cannon_explode.wav");
     load_single_sound(.BUILDING_TOOLS, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+    load_single_sound(.WARPER, "reusable_weapons/sounds/reusable-weapons/void_splitter_shoot_start.wav");
 }
 
 load_sound_range :: proc(wt: Weapon_Type, prefix: string, count: s64) {
@@ -431,6 +433,7 @@ get_weapon_type_for_item :: proc(item_def: Item_Definition) -> Weapon_Type {
                 case 43: return .ADMIN_NUKE_GUN;
                 case 44: return .BUILDING_TOOLS;
                 case 45: return .LASER_GUN;
+                case 46: return .WARPER;
             }
         }
         i += 1;

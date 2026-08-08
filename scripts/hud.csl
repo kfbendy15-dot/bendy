@@ -66,12 +66,14 @@ draw_hud :: proc(player: Player) {
 
     if is_murder_mystery_active() {
         chance_style := UIK.text_body();
+        chance_style.size_multiplier = 1.05;
         chance_style.color = {1, 0.85, 0.35, 1};
         UIK.text(format_string("Detective chance: % | Murderer chance: %", {format_float(player.detective_chance_percent, decimals=1), format_float(player.murderer_chance_percent, decimals=1)}), chance_style);
     }
 
     if is_murder_mystery_active() && player.murder_role != .NONE {
         role_style := UIK.text_title();
+        role_style.size_multiplier = 1.1;
         role_style.color = player.murder_role == .KILLER ? {1, 0.2, 0.2, 1} : player.murder_role == .DETECTIVE ? {0.3, 0.7, 1, 1} : {0.5, 1, 0.5, 1};
         UIK.text(format_string("Role: %", {murder_role_name(player.murder_role)}), role_style);
     }
@@ -81,6 +83,7 @@ draw_hud :: proc(player: Player) {
         if elapsed < player.reward_feedback_duration {
             pct := clamp(elapsed / player.reward_feedback_duration, 0, 1);
             ts := UIK.text_body();
+            ts.size_multiplier = 1.08;
             ts.color = {0.35, 1.0, 0.5, 1.0 - pct};
             UIK.text(player.reward_feedback_text, ts);
         }
