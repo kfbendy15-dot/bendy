@@ -58,9 +58,10 @@ draw_admin_assigned_element :: proc(player: Player) {
     if icon == "" || name == "" return;
     UI.begin_world_space_ui(player.entity);
     defer UI.end_world_space_ui();
-    rect := UI.get_screen_rect().top_center_rect().offset(0, -10);
+    // Wider rect and larger size for clearer readable text
+    rect := UI.get_screen_rect().top_center_rect().offset(0, -10).grow(0, 24, 0, 24);
     ts := UI.default_text_settings();
-    ts.size = 18;
+    ts.size = 22;
     ts.color = {1, 1, 1, 1};
     UI.text(rect, ts, format_string("% %", {icon, name}));
 }
@@ -114,14 +115,14 @@ draw_leaderboard :: proc(viewer: Player) {
         UIK.panel_begin(entry);
 
         rank_desc := UIK.text_body();
-        rank_desc.size_multiplier = 0.82;
+        rank_desc.size_multiplier = 1.02;
         if row.player == viewer {
             rank_desc.color = {1.0, 0.88, 0.28, 1.0};
         }
         UIK.text(format_string("%.", {i + 1}), rank_desc);
 
         name_desc := UIK.text_body();
-        name_desc.size_multiplier = 0.82;
+        name_desc.size_multiplier = 1.02;
         if row.player == viewer {
             name_desc.color = {1.0, 0.88, 0.28, 1.0};
         }

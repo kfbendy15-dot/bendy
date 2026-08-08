@@ -912,6 +912,10 @@ stop_active_event :: proc() {
     g_event_ice = false;
     g_active_element_event = 0;
     g_event_ends_at = 0;
+    cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
+    if cur_elem != 0 { Save.increment_game_int(EVENT_ELEMENTAL_KEY, -cur_elem); }
+    cur_ice := Save.get_game_int(EVENT_ICE_KEY, 0);
+    if cur_ice != 0 { Save.increment_game_int(EVENT_ICE_KEY, -cur_ice); }
 }
 
 ao_late_update :: proc(dt: float) {

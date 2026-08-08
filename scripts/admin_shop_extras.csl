@@ -337,8 +337,14 @@ Warper_Portal :: class : Component {
 }
 
 place_warper_portal :: proc(player: Player, direction: v2) {
-    if player == null return;
-    pos := player.entity.world_position + normalize(direction) * 2.0;
+    if player == null || !#alive(player.entity) return;
+    // Guard against zero-length direction (can crash normalize)
+    dir := direction;
+    if length_squared(dir) < 0.001 {
+        dir = v2{1, 0};
+    }
+    dir = normalize(dir);
+    pos := player.entity.world_position + dir * 2.0;
     if !#alive(player.warper_first_portal) {
         first := Scene.create_entity();
         first.set_local_position(pos);

@@ -38,9 +38,10 @@ draw_health_bar :: proc(player: Player) {
     UI.push_scale_factor(5.0 / 540.0);
     defer UI.pop_scale_factor();
 
+    // Wider health bar and text area
     health_rect := player.username_rect.top_center_rect().offset(0, 5);
-    health_rect = health_rect.grow(13, 70, 0, 70);
-    border_rect := health_rect.grow(5.5, 4, 5.5, 4).offset(0, -2);
+    health_rect = health_rect.grow(13, 84, 0, 84);
+    border_rect := health_rect.grow(5.5, 5, 5.5, 5).offset(0, -2);
 
     back := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/hud_elements/health_bar_green/healthbar_back.png");
     fill := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/hud_elements/health_bar_green/healthbar_fill.png");
@@ -78,17 +79,18 @@ draw_health_bar :: proc(player: Player) {
     }
 
     if player.user_tag.count > 0 && (!can_access_admin_panel(player) || player.show_admin_tag) {
+        // Wider tag rect for wider text graphics
         tag_rect := player.username_rect.top_center_rect().offset(0, 26);
-        tag_rect = tag_rect.grow(10, 20, 10, 20);
+        tag_rect = tag_rect.grow(10, 34, 10, 34);
 
         tag_ts := UI.default_text_settings();
-        tag_ts.size = 20;
+        tag_ts.size = 24;
         tag_ts.color = {1.0, 0.86, 0.18, 1.0};
         tag_ts.do_drop_shadow = true;
         tag_ts.drop_shadow_offset = {1, -1};
         tag_ts.drop_shadow_color = {0, 0, 0, 0.75};
         tag_ts.do_outline = true;
-        tag_ts.outline_thickness = 2.0;
+        tag_ts.outline_thickness = 2.2;
         tag_ts.outline_color = {0.08, 0.05, 0.0, 0.95};
         tag_ts.halign = .CENTER;
         tag_ts.valign = .CENTER;
