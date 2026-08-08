@@ -239,7 +239,7 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
         case .KILLER_FISH: {
             config.fire_mode = .SPECIAL;
             config.hand_type = .ONE_HAND;
-            config.fire_rate = 45.0;
+            config.fire_rate = 15.0;
             config.base_damage = 0.0;
             config.aoe_radius = 2.6;
             config.aoe_damage = 0.0;
@@ -712,7 +712,7 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
         case .WARPER: {
             config.fire_mode = .SPECIAL;
             config.hand_type = .ONE_HAND;
-            config.fire_rate = 30.0;
+            config.fire_rate = 32.0;
             config.base_damage = 10.0;
             config.aoe_radius = 4.5;
             config.aoe_damage = 10.0;

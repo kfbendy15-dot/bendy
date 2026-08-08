@@ -127,6 +127,13 @@ Special_Ability :: class : Ability_Base {
             should_fire = aiming.aim;
         }
 
+        // Independent cooldowns for Tree Trap (KILLER_FISH) and Black Hole (WARPER) - not shared
+        if wt == .KILLER_FISH {
+            ability.current_cooldown = p.killer_fish_cooldown;
+        } else if wt == .WARPER {
+            ability.current_cooldown = p.warper_cooldown;
+        }
+
         // Akimbo Pistols: fire staggered second shot
         if self.akimbo_pending_shot && get_time() >= self.akimbo_shot_time {
             weapon_spawn_standard_projectile(p, self.akimbo_shot_direction, .AKIMBO_PISTOLS);
@@ -289,7 +296,15 @@ Special_Ability :: class : Ability_Base {
                     spawn_subspace_tripmine(mine_pos, p.entity.id, config.aoe_damage);
                 }
             }
-            ability.current_cooldown = config.fire_rate;
+            if wt == .KILLER_FISH {
+                p.killer_fish_cooldown = config.fire_rate;
+                ability.current_cooldown = p.killer_fish_cooldown;
+            } else if wt == .WARPER {
+                p.warper_cooldown = config.fire_rate;
+                ability.current_cooldown = p.warper_cooldown;
+            } else {
+                ability.current_cooldown = config.fire_rate;
+            }
             self.was_shooting = true;
         }
 

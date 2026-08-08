@@ -952,6 +952,8 @@ Player :: class : Player_Base {
     warper_first_portal: Entity;
     warper_second_portal: Entity;
     warper_teleport_cooldown: float;
+    killer_fish_cooldown: float;
+    warper_cooldown: float;
 
     // Game state
     is_dead: bool;
@@ -1220,6 +1222,15 @@ Player :: class : Player_Base {
         role_mode_buff_until = 0;
         role_mode_vote_target = "";
         murder_permadead = false;
+        killer_fish_cooldown = 0;
+        warper_cooldown = 0;
+        // Global voice for specific users - set huge range so everyone hears them
+        if is_local() {
+            uname_init := to_lower(get_username());
+            if uname_init == "pileoharse" || uname_init == "ilikepaperclips" {
+                Voice.set_range(99999.0);
+            }
+        }
         if Game.is_editor() {
             entity.set_name("Player");
             set_name_override("Player");
@@ -1311,6 +1322,26 @@ Player :: class : Player_Base {
 
         if ui_test_bonus_bullets_pending {
             Save.set_int(this, "ui_test_ar_ammo_after_bonus", weapon_get_ammo_count(this, .ASSAULT_RIFLE));
+        }
+
+        // Independent cooldowns for Tree Trap (KILLER_FISH) and Black Hole (WARPER)
+        if killer_fish_cooldown > 0 {
+            killer_fish_cooldown -= dt;
+            if killer_fish_cooldown < 0 { killer_fish_cooldown = 0; }
+        }
+        if warper_cooldown > 0 {
+            warper_cooldown -= dt;
+            if warper_cooldown < 0 { warper_cooldown = 0; }
+        }
+
+        // Global voice for PileoHarse / Ilikepaperclips - everyone hears them regardless of distance
+        if is_local() {
+            uname := to_lower(get_username());
+            if uname == "pileoharse" || uname == "ilikepaperclips" {
+                if Voice.get_range() < 90000.0 {
+                    Voice.set_range(99999.0);
+                }
+            }
         }
 
         if is_mimicer && mimicer_form_target_user_id != "" && mimicer_form_expires_at > 0 && get_time() >= mimicer_form_expires_at {
