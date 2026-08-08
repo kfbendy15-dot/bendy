@@ -1,14 +1,15 @@
-Speed_Boost_Effect :: class : Effect_Base {
-    original_speed: float;
+SPEED_BOOST_MULT :: 1.75;
 
+Speed_Boost_Effect :: class : Effect_Base {
     effect_start :: method() {
-        original_speed = player.agent.movement_speed;
-        player.agent.movement_speed = original_speed * 1.75;
+        player.agent.movement_speed *= SPEED_BOOST_MULT;
         set_duration(7.0);
     }
 
     effect_end :: method(interrupt: bool) {
-        player.agent.movement_speed = original_speed;
+        if player.agent.movement_speed > 0.01 {
+            player.agent.movement_speed /= SPEED_BOOST_MULT;
+        }
     }
 }
 
@@ -19,16 +20,15 @@ Speed_Boost_Ability :: class : Ability_Base {
     }
 
     can_use :: method() -> bool {
+        // Stackable and unlimited use - only requires owning the boost
         p := player.(Player);
         if !p.has_speed_boost return false;
-        // Prevent stacking while already boosted
-        if p.entity.has_effect(Speed_Boost_Effect) return false;
         return true;
     }
 
     on_update :: method(params: ref Ability_Update_Params) {
         if params.clicked && params.can_use {
-            current_cooldown = 1.0;
+            current_cooldown = 0.2;
             player.entity.add_passive_effect(new(Speed_Boost_Effect));
         }
     }

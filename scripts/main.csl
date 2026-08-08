@@ -954,6 +954,7 @@ Player :: class : Player_Base {
     warper_teleport_cooldown: float;
     killer_fish_cooldown: float;
     warper_cooldown: float;
+    weapon_cooldowns: [50]float;
 
     // Game state
     is_dead: bool;
@@ -1324,7 +1325,14 @@ Player :: class : Player_Base {
             Save.set_int(this, "ui_test_ar_ammo_after_bonus", weapon_get_ammo_count(this, .ASSAULT_RIFLE));
         }
 
-        // Independent cooldowns for Tree Trap (KILLER_FISH) and Black Hole (WARPER)
+        // Independent per-weapon cooldowns - nothing shares cooldown
+        for i: 0..49 {
+            if weapon_cooldowns[i] > 0 {
+                weapon_cooldowns[i] -= dt;
+                if weapon_cooldowns[i] < 0 { weapon_cooldowns[i] = 0; }
+            }
+        }
+        // Legacy compat (kept for any external reads)
         if killer_fish_cooldown > 0 {
             killer_fish_cooldown -= dt;
             if killer_fish_cooldown < 0 { killer_fish_cooldown = 0; }
