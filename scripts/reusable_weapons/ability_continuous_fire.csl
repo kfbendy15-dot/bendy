@@ -22,6 +22,11 @@ Continuous_Fire_Ability :: class : Ability_Base {
         wt := p.equipped_weapon_type;
         config := get_weapon_config(wt);
 
+        // Use per-weapon cooldown - nothing shares cooldown
+        if wt != .NONE {
+            ability.current_cooldown = p.weapon_cooldowns[wt.(int)];
+        }
+
         // Update icon to match current weapon
         ability.icon = get_asset(Texture_Asset, config.weapon_icon_path);
 
@@ -72,7 +77,8 @@ Continuous_Fire_Ability :: class : Ability_Base {
                 }
             }
 
-            ability.current_cooldown = config.fire_rate;
+            p.weapon_cooldowns[wt.(int)] = config.fire_rate;
+            ability.current_cooldown = p.weapon_cooldowns[wt.(int)];
             self.was_shooting = true;
         }
 

@@ -540,7 +540,7 @@ draw_shop :: proc(player: Player) {
     UIK.panel_end();
     powerup_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(powerup_row_2);
-    speed_boost_handle = draw_shop_card("shop/buy_speed_boost", "Speed Boost", SPEED_BOOST_COST, dash_icon, {0.9, 0.65, 0.2, 1}, player.has_speed_boost);
+    speed_boost_handle = draw_shop_card("shop/buy_speed_boost", "Speed Boost", SPEED_BOOST_COST, dash_icon, {0.9, 0.65, 0.2, 1}, false);
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
@@ -700,9 +700,17 @@ draw_shop :: proc(player: Player) {
         }
     }
 
-    if UIK.clicked(speed_boost_handle) && !player.has_speed_boost && spend_coins(player, SPEED_BOOST_COST) {
+    if UIK.clicked(speed_boost_handle) && spend_coins(player, SPEED_BOOST_COST) {
         player.has_speed_boost = true;
+        // Each purchase also applies a stack immediately
+        player.entity.add_passive_effect(new(Speed_Boost_Effect));
         play_pickup_feedback(player, "+Speed Boost");
+        if player.is_local() {
+            sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+            d := SFX.default_sfx_desc();
+            d.volume = 0.6;
+            SFX.play(sfx, d);
+        }
     }
 
     if UIK.clicked(finger_handle) && !player.purchased_finger_gun {
