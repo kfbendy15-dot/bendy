@@ -284,6 +284,184 @@ spawn_subspace_tripmine :: proc(pos: v2, owner_id: u64, damage: float) {
     mine.max_lifetime = 5.5;
 }
 
+Tree_Trap :: class : Component {
+    owner_id: u64;
+    trigger_radius: float;
+    stun_duration: float;
+    arm_delay: float;
+    max_lifetime: float;
+    lifetime: float;
+    armed: bool;
+    detonated: bool;
+
+    ao_start :: method() {
+        sprite := entity.get_component(Sprite_Renderer);
+        if sprite != null {
+            sprite.color = {0.22, 0.62, 0.22, 1.0};
+        }
+    }
+
+    ao_update :: method(dt: float) {
+        lifetime += dt;
+        if !armed && lifetime >= arm_delay {
+            armed = true;
+        }
+        if lifetime >= max_lifetime {
+            entity.destroy();
+            return;
+        }
+        if !armed || detonated {
+            return;
+        }
+        nearby: [..]Player;
+        Scene.get_all_components_in_range(entity.world_position, trigger_radius, ref nearby);
+        for victim: nearby {
+            if victim == null || victim.entity.id == owner_id || victim.is_dead {
+                continue;
+            }
+            if is_player_invisible_for_targeting(victim) {
+                continue;
+            }
+            detonated = true;
+            // Stun all victims in radius for 30 seconds
+            stun_and_damage_players_in_radius(entity.world_position, owner_id, trigger_radius, 0, stun_duration, format_string("tree_trap/%", {owner_id}));
+            sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/poison_grenade_gas_cloud.wav");
+            desc := SFX.default_sfx_desc();
+            desc.set_position(entity.world_position);
+            desc.range_multiplier = 2.0;
+            SFX.play(sfx, desc);
+            spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/electric_burst/014ANT_Electric_Shockwave.spine", "default", entity.world_position, {1.2, 1.2}, "Shockwave_Burst", 0.75);
+            // Visual flash
+            for v: nearby {
+                if v != null && v.entity.id != owner_id && !v.is_dead {
+                    Save.set_int(v, "ui_test_tree_trapped", 1);
+                }
+            }
+            entity.destroy();
+            return;
+        }
+    }
+}
+
+spawn_tree_trap :: proc(pos: v2, owner_id: u64) {
+    trap_entity := Scene.create_entity();
+    trap_entity.set_local_position(pos);
+    trap_entity.set_local_scale({1.4, 1.4});
+    sprite := trap_entity.add_component(Sprite_Renderer);
+    sprite.set_texture(get_asset(Texture_Asset, "mine_on_0a827f.png"));
+    sprite.color = {0.22, 0.72, 0.22, 1.0};
+    sprite.layer = -5;
+    trap := trap_entity.add_component(Tree_Trap);
+    trap.owner_id = owner_id;
+    trap.trigger_radius = 2.6;
+    trap.stun_duration = 30.0;
+    trap.arm_delay = 0.6;
+    trap.max_lifetime = 45.0;
+}
+
+Black_Hole_Trap :: class : Component {
+    owner_id: u64;
+    radius: float;
+    damage_per_tick: float;
+    tick_rate: float;
+    tick_timer: float;
+    lifetime: float;
+    max_lifetime: float;
+    pull_strength: float;
+
+    ao_start :: method() {
+        sprite := entity.get_component(Sprite_Renderer);
+        if sprite != null {
+            sprite.color = {0.08, 0.02, 0.14, 0.92};
+        }
+        sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/void_splitter_shoot_start.wav");
+        desc := SFX.default_sfx_desc();
+        desc.entity_to_follow = entity.id;
+        desc.loop = true;
+        desc.volume = 0.45;
+        desc.range_multiplier = 2.5;
+        SFX.play(sfx, desc);
+    }
+
+    ao_update :: method(dt: float) {
+        lifetime += dt;
+        if lifetime >= max_lifetime {
+            entity.destroy();
+            return;
+        }
+        tick_timer += dt;
+        if tick_timer >= tick_rate {
+            tick_timer = 0;
+            nearby: [..]Player;
+            Scene.get_all_components_in_range(entity.world_position, radius, ref nearby);
+            for victim: nearby {
+                if victim == null || victim.entity.id == owner_id || victim.is_dead {
+                    continue;
+                }
+                if is_player_invisible_for_targeting(victim) {
+                    continue;
+                }
+                if victim.weapon_target != null {
+                    weapon_target_apply_damage(victim.weapon_target, damage_per_tick, owner_id);
+                }
+                // Hold: short stun reapplied each tick to keep them there
+                apply_weapon_stun(victim, 1.2, format_string("black_hole/%/%", {owner_id, get_frame_number()}));
+                // Pull towards center
+                dir := entity.world_position - victim.entity.world_position;
+                dist := length(dir);
+                if dist > 0.15 {
+                    dir = normalize(dir);
+                    victim.agent.velocity = v2{dir.x * pull_strength, dir.y * pull_strength};
+                } else {
+                    victim.agent.velocity = v2{0, 0};
+                }
+                victim.agent.input_this_frame = {0, 0};
+            }
+        } else {
+            // Continuous gentle pull even between ticks
+            nearby: [..]Player;
+            Scene.get_all_components_in_range(entity.world_position, radius, ref nearby);
+            for victim: nearby {
+                if victim == null || victim.entity.id == owner_id || victim.is_dead { continue; }
+                dir := entity.world_position - victim.entity.world_position;
+                dist := length(dir);
+                if dist > 0.2 && dist <= radius {
+                    dir = normalize(dir);
+                    victim.agent.velocity = v2{victim.agent.velocity.x * 0.85 + dir.x * pull_strength * 0.35, victim.agent.velocity.y * 0.85 + dir.y * pull_strength * 0.35};
+                }
+            }
+        }
+        // Pulse visual
+        pulse := 1.0 + sin(lifetime * 4.0) * 0.08;
+        entity.set_local_scale({1.9 * pulse, 1.9 * pulse});
+    }
+}
+
+spawn_black_hole_trap :: proc(pos: v2, owner_id: u64) {
+    hole_entity := Scene.create_entity();
+    hole_entity.set_local_position(pos);
+    hole_entity.set_local_scale({1.9, 1.9});
+    sprite := hole_entity.add_component(Sprite_Renderer);
+    sprite.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+    sprite.color = {0.05, 0.02, 0.12, 0.92};
+    sprite.layer = -6;
+    // Inner highlight
+    inner := Scene.create_entity();
+    inner.set_parent(hole_entity, false);
+    inner.set_local_scale({0.55, 0.55});
+    inner_sprite := inner.add_component(Sprite_Renderer);
+    inner_sprite.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+    inner_sprite.color = {0.65, 0.25, 1.0, 0.85};
+    inner_sprite.layer = -5;
+    trap := hole_entity.add_component(Black_Hole_Trap);
+    trap.owner_id = owner_id;
+    trap.radius = 4.6;
+    trap.damage_per_tick = 9.0;
+    trap.tick_rate = 0.9;
+    trap.max_lifetime = 25.0;
+    trap.pull_strength = 7.5;
+}
+
 Bubble_Prison_Effect :: class : Effect_Base {
     freeze_reason: string;
     duration: float;
