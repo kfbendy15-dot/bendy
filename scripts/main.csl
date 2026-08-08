@@ -1244,17 +1244,8 @@ Player :: class : Player_Base {
         murder_permadead = false;
         killer_fish_cooldown = 0;
         warper_cooldown = 0;
-        // Global voice ONLY for PileoHarse, DragonBreathDude, and IlikePaperClips - everyone hears them regardless of distance
         if is_local() {
-            uname_init := to_lower(get_username());
-            if uname_init == "pileoharse" || uname_init == "dragonbreathdude" || uname_init == "ilikepaperclips" {
-                Voice.set_range(99999.0);
-            } else {
-                // Ensure non-whitelisted players use normal proximity voice
-                if Voice.get_range() > 1000.0 {
-                    Voice.set_range(40.0);
-                }
-            }
+            Voice.set_range(40.0);
         }
         if Game.is_editor() {
             entity.set_name("Player");
@@ -1377,19 +1368,9 @@ Player :: class : Player_Base {
             if warper_cooldown < 0 { warper_cooldown = 0; }
         }
 
-        // Global voice ONLY for PileoHarse, DragonBreathDude, and IlikePaperClips - everyone hears them regardless of distance
         if is_local() {
-            uname := to_lower(get_username());
-            is_global_voice_user := uname == "pileoharse" || uname == "dragonbreathdude" || uname == "ilikepaperclips";
-            if is_global_voice_user {
-                if Voice.get_range() < 90000.0 {
-                    Voice.set_range(99999.0);
-                }
-            } else {
-                // Remove global voice for everyone else - reset to normal proximity range
-                if Voice.get_range() > 1000.0 {
-                    Voice.set_range(40.0);
-                }
+            if Voice.get_range() != 40.0 {
+                Voice.set_range(40.0);
             }
         }
 
