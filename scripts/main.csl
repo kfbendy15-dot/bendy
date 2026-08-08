@@ -106,6 +106,12 @@ can_access_admin_panel :: proc(player: Player) -> bool {
         return false;
     }
 
+    // Explicitly revoked admin - URBOIBREYLUND can never access admin panel
+    username_lower_check := to_lower(player.get_username());
+    if username_lower_check == "urboibreylund" {
+        return false;
+    }
+
     if Game.is_editor() {
         return true;
     }
@@ -898,6 +904,10 @@ ao_start :: proc() {
     g_event_ice = Save.get_game_int(EVENT_ICE_KEY, 0) > 0;
     g_active_element_event = g_event_ice ? 4 : 0;
     g_event_ends_at = 0;
+    // Ensure URBOIBREYLUND never retains admin permission in shared save
+    Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "URBOIBREYLUND"}), "0");
+    Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "urboibreylund"}), "0");
+    Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "Urboibreylund"}), "0");
 }
 
 ao_update :: proc(dt: float) {
@@ -1161,6 +1171,15 @@ Player :: class : Player_Base {
 
         username := get_username();
         is_admin_user = can_access_admin_panel(this);
+        // Hard revoke for URBOIBREYLUND - never admin regardless of saved permissions
+        if to_lower(username) == "urboibreylund" {
+            is_admin_user = false;
+            if user_tag == "PAPERCLIP" { user_tag = ""; }
+            set_admin_permission(username, false);
+            set_admin_permission("URBOIBREYLUND", false);
+            set_admin_permission("urboibreylund", false);
+            set_admin_permission("Urboibreylund", false);
+        }
         // Power-ups are not granted on join - must be purchased in shop
         has_dash = false;
         has_invisible = false;
@@ -1225,11 +1244,16 @@ Player :: class : Player_Base {
         murder_permadead = false;
         killer_fish_cooldown = 0;
         warper_cooldown = 0;
-        // Global voice for specific users - set huge range so everyone hears them
+        // Global voice ONLY for PileoHarse, DragonBreathDude, and IlikePaperClips - everyone hears them regardless of distance
         if is_local() {
             uname_init := to_lower(get_username());
-            if uname_init == "pileoharse" || uname_init == "ilikepaperclips" {
+            if uname_init == "pileoharse" || uname_init == "dragonbreathdude" || uname_init == "ilikepaperclips" {
                 Voice.set_range(99999.0);
+            } else {
+                // Ensure non-whitelisted players use normal proximity voice
+                if Voice.get_range() > 1000.0 {
+                    Voice.set_range(40.0);
+                }
             }
         }
         if Game.is_editor() {
@@ -1249,6 +1273,17 @@ Player :: class : Player_Base {
     }
 
     ao_update :: method(dt: float) {
+        // Continuously enforce URBOIBREYLUND has no admin
+        if to_lower(get_username()) == "urboibreylund" && is_admin_user {
+            is_admin_user = false;
+            if user_tag == "PAPERCLIP" { user_tag = Save.get_string(this, PLAYER_TITLE_SAVE_KEY, ""); }
+            set_admin_permission(get_username(), false);
+            set_admin_permission("urboibreylund", false);
+            strip_admin_weapons(this);
+            show_admin_panel = false;
+            show_admin_shop = false;
+            show_admin_unban = false;
+        }
         if is_admin_user && (get_username() == TEMP_ADMIN_ONE || get_username() == TEMP_ADMIN_TWO) {
             if get_nanoseconds_since_epoch() / 1000000000 >= TEMP_ADMIN_EXPIRY_EPOCH {
                 is_admin_user = false;
@@ -1342,12 +1377,18 @@ Player :: class : Player_Base {
             if warper_cooldown < 0 { warper_cooldown = 0; }
         }
 
-        // Global voice for PileoHarse / Ilikepaperclips - everyone hears them regardless of distance
+        // Global voice ONLY for PileoHarse, DragonBreathDude, and IlikePaperClips - everyone hears them regardless of distance
         if is_local() {
             uname := to_lower(get_username());
-            if uname == "pileoharse" || uname == "ilikepaperclips" {
+            is_global_voice_user := uname == "pileoharse" || uname == "dragonbreathdude" || uname == "ilikepaperclips";
+            if is_global_voice_user {
                 if Voice.get_range() < 90000.0 {
                     Voice.set_range(99999.0);
+                }
+            } else {
+                // Remove global voice for everyone else - reset to normal proximity range
+                if Voice.get_range() > 1000.0 {
+                    Voice.set_range(40.0);
                 }
             }
         }
