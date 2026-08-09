@@ -1245,7 +1245,9 @@ Player :: class : Player_Base {
         killer_fish_cooldown = 0;
         warper_cooldown = 0;
         if is_local() {
-            Voice.set_range(0.0);
+            // Voice range is measured in world units. Zero means unlimited/global,
+            // so keep voice explicitly local to nearby players.
+            Voice.set_range(12.0);
         }
         if Game.is_editor() {
             entity.set_name("Player");
@@ -1369,8 +1371,8 @@ Player :: class : Player_Base {
         }
 
         if is_local() {
-            if Voice.get_range() != 0.0 {
-                Voice.set_range(0.0);
+            if Voice.get_range() != 12.0 {
+                Voice.set_range(12.0);
             }
         }
 
