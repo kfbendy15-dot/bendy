@@ -1583,7 +1583,7 @@ draw_event_panel :: proc(player: Player) {
     element_buttons: [..]Interact_Result;
     if target != null && g_event_elemental {
         UIK.text(format_string("Target element: %", {element_name_for_value(target.player_element)}), UIK.text_body());
-        for i: 0..4 {
+        for i: 0..5 {
             element_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
             element_desc.panel.width = UIK.flex(1); element_desc.panel.height = UIK.pixels(44);
             element_buttons.append(UIK.button(format_string("events/assign/%", {i + 1}), element_name_for_value(i + 1), element_desc));
@@ -1665,8 +1665,8 @@ draw_event_panel :: proc(player: Player) {
             player.admin_target_username = target_usernames[i];
         }
     }
-    if target != null && g_event_elemental && element_buttons.count >= 5 {
-        for i: 0..4 {
+    if target != null && g_event_elemental && element_buttons.count >= 6 {
+        for i: 0..5 {
             if i < element_buttons.count && UIK.clicked(element_buttons[i]) {
                 if target != null && #alive(target) && #alive(target.entity) {
                     target.player_element = i + 1;
