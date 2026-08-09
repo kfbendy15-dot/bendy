@@ -3,6 +3,7 @@ Standard_Projectile :: class : Component {
     lifetime: float;
     direction: v2;
     owner_id: u64;
+    weapon_type: Weapon_Type;
     speed: float;
     max_lifetime: float;
 
@@ -24,6 +25,12 @@ Standard_Projectile :: class : Component {
         if found && hit_target != null {
             if hit_target.entity.id != owner_id {
                 weapon_target_apply_damage(hit_target, damage, owner_id);
+                if weapon_type == .RAY_GUN {
+                    target_player := hit_target.entity.get_component(Player);
+                    if target_player != null {
+                        apply_weapon_stun(target_player, 10.0, "lightning_gun");
+                    }
+                }
 
                 hit_sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/bullet_hit.wav");
                 sfx_desc := SFX.default_sfx_desc();

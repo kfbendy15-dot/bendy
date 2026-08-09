@@ -235,6 +235,7 @@ weapon_spawn_standard_projectile :: proc(player: Player, direction: v2, wt: Weap
     proj.damage = config.base_damage;
     proj.direction = normalize(direction);
     proj.owner_id = player.entity.id;
+    proj.weapon_type = wt;
     proj.speed = config.projectile_speed;
     proj.max_lifetime = config.projectile_lifetime;
 }
@@ -254,6 +255,7 @@ spawn_shuriken_projectile :: proc(player: Player, direction: v2, wt: Weapon_Type
     proj.damage = config.base_damage;
     proj.direction = normalize(direction);
     proj.owner_id = player.entity.id;
+    proj.weapon_type = wt;
     proj.speed = config.projectile_speed;
     proj.max_lifetime = config.projectile_lifetime;
 }
@@ -306,6 +308,7 @@ spawn_blunderbuss_projectile :: proc(player: Player, direction: v2, wt: Weapon_T
     proj.damage = config.base_damage;
     proj.direction = normalize(direction);
     proj.owner_id = player.entity.id;
+    proj.weapon_type = wt;
     proj.speed = config.projectile_speed;
     proj.max_lifetime = config.projectile_lifetime;
 }
