@@ -368,15 +368,16 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
         case .RAY_GUN: {
             config.fire_mode = .SINGLE_SHOT;
             config.hand_type = .ONE_HAND;
-            config.fire_rate = 2.0;
-            config.base_damage = 50.0;
-            config.projectile_speed = 17.0;
+            config.fire_rate = 8.0;
+            config.base_damage = 25.0;
+            config.projectile_speed = 10.0;
+            config.projectile_lifetime = 0.6;
             config.weapon_skin = "weapons/lightning_gun";
             config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/raygun.png";
             config.item_id = "ray_gun";
-            config.item_name = "Ray Gun";
-            config.ammo_type_index = 5;
-            config.ammo_first_pickup = 108;
+            config.item_name = "Lightning Gun";
+            config.ammo_type_index = 1;
+            config.ammo_first_pickup = 30;
             config.shoot_trigger = "shoot_1h_weapon";
             config.use_ik_var = "use_1h_ik";
         }
