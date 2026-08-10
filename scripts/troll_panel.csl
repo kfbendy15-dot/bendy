@@ -1,0 +1,643 @@
+TROLL_JUMPSCARE_COOLDOWN :: 15.0;
+TROLL_JUMPSCARE_DURATION :: 2.4;
+TROLL_FREEZE_DURATION :: 10.0;
+TROLL_FREEZE_COOLDOWN :: 30.0;
+TROLL_MIND_DURATION :: 30.0;
+TROLL_MIND_COOLDOWN :: 45.0;
+
+TROLL_MC_STAND :: 1;
+TROLL_MC_GUN :: 2;
+TROLL_MC_INVENTORY :: 3;
+TROLL_MC_EMOTE :: 4;
+
+troll_jumpscare_name :: proc(idx: s64) -> string {
+    if idx == 0 return "The Boiled One";
+    if idx == 1 return "Verity";
+    if idx == 2 return "67 Kid";
+    if idx == 3 return "Tung Tung Tung Sahur";
+    if idx == 4 return "Alpha Mosasaurus";
+    return "Unknown";
+}
+
+troll_jumpscare_color :: proc(idx: s64) -> v4 {
+    if idx == 0 return {0.15, 0.08, 0.08, 1}; // boiled - dark red
+    if idx == 1 return {1.0, 0.92, 0.2, 1};   // verity yellow
+    if idx == 2 return {0.25, 0.75, 0.35, 1}; // 67 kid green
+    if idx == 3 return {0.55, 0.35, 0.15, 1}; // tung wood
+    if idx == 4 return {0.2, 0.5, 0.85, 1};   // mosasaurus blue
+    return {0.5, 0.5, 0.5, 1};
+}
+
+troll_jumpscare_icon_path :: proc(idx: s64) -> string {
+    if idx == 0 return "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png";
+    if idx == 1 return "$AO/ui/kit/Icons/face/face_icon.png";
+    if idx == 2 return "$AO/ui/kit/Icons/coin/coin_icon.png";
+    if idx == 3 return "$AO/ui/kit/Icons/misc_icons_1/lock_closed.png";
+    if idx == 4 return "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png";
+    return "$AO/ui/kit/Icons/face/face_icon.png";
+}
+
+troll_emote_name :: proc(idx: s64) -> string {
+    if idx == 0 return "Emote/Dance";
+    if idx == 1 return "Emote/Wave";
+    if idx == 2 return "Emote/Fart";
+    if idx == 3 return "Emote/Thumbs_Up";
+    if idx == 4 return "Emote/T_Pose";
+    if idx == 5 return "Emote/Cartwheels";
+    return "Emote/Dance";
+}
+
+troll_emote_label :: proc(idx: s64) -> string {
+    if idx == 0 return "Dance";
+    if idx == 1 return "Wave";
+    if idx == 2 return "Fart";
+    if idx == 3 return "Thumbs Up";
+    if idx == 4 return "T-Pose";
+    if idx == 5 return "Cartwheel";
+    return "Dance";
+}
+
+troll_mc_mode_name :: proc(mode: s64) -> string {
+    if mode == TROLL_MC_STAND return "Stand Still";
+    if mode == TROLL_MC_GUN return "Force Gun";
+    if mode == TROLL_MC_INVENTORY return "Mess Inventory";
+    if mode == TROLL_MC_EMOTE return "Force Emote";
+    return "None";
+}
+
+troll_find_target :: proc(admin: Player) -> Player {
+    if admin == null return null;
+    name := admin.troll_target_username;
+    if name.count == 0 {
+        name = admin.admin_target_username;
+    }
+    if name.count == 0 return null;
+    return find_online_player_by_username(name);
+}
+
+troll_can_jumpscare :: proc(admin: Player, idx: s64) -> bool {
+    if admin == null || idx < 0 || idx >= 5 return false;
+    if !can_access_admin_panel(admin) return false;
+    return get_time() >= admin.troll_jumpscare_next_allowed[idx];
+}
+
+troll_do_jumpscare :: proc(admin: Player, target: Player, idx: s64) -> bool {
+    if admin == null || target == null return false;
+    if !troll_can_jumpscare(admin, idx) {
+        admin.play_reward_feedback("Jumpscare on cooldown");
+        return false;
+    }
+    target.troll_scare_until = get_time() + TROLL_JUMPSCARE_DURATION;
+    target.troll_scare_type = idx;
+    admin.troll_jumpscare_next_allowed[idx] = get_time() + TROLL_JUMPSCARE_COOLDOWN;
+    // SFX for victim and admin
+    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/cannon_explode.wav");
+    desc := SFX.default_sfx_desc();
+    desc.volume = 0.95;
+    desc.range_multiplier = 2.5;
+    // Play for victim (everyone hears but we mark specific not needed, victim local will be loudest)
+    desc.set_position(target.entity.world_position);
+    SFX.play(sfx, desc);
+    // Also a second layer for intensity
+    sfx2 := get_asset(SFX_Asset, "$AO/sfx/character_emote_fart.wav");
+    if sfx2 != null {
+        d2 := SFX.default_sfx_desc();
+        d2.set_position(target.entity.world_position);
+        d2.volume = 0.8;
+        SFX.play(sfx2, d2);
+    }
+    admin.play_reward_feedback(format_string("Jumpscared % with %", {target.get_username(), troll_jumpscare_name(idx)}));
+    target.play_reward_feedback(format_string("JUMPSCARE: %!", {troll_jumpscare_name(idx)}));
+    Save.set_int(admin, "ui_test_troll_jumpscare_type", idx);
+    Save.set_string(admin, "ui_test_troll_jumpscare_target", target.get_username());
+    return true;
+}
+
+troll_can_freeze :: proc(admin: Player) -> bool {
+    if admin == null return false;
+    if !can_access_admin_panel(admin) return false;
+    return get_time() >= admin.troll_freeze_next_allowed;
+}
+
+troll_do_freeze :: proc(admin: Player, target: Player) -> bool {
+    if admin == null || target == null return false;
+    if !troll_can_freeze(admin) {
+        remaining := admin.troll_freeze_next_allowed - get_time();
+        if remaining < 0 { remaining = 0; }
+        admin.play_reward_feedback(format_string("Freeze %.s left", {format_float(remaining, decimals=1)}));
+        return false;
+    }
+    if target.is_dead {
+        admin.play_reward_feedback("Target dead");
+        return false;
+    }
+    target.troll_frozen_until = get_time() + TROLL_FREEZE_DURATION;
+    admin.troll_freeze_next_allowed = get_time() + TROLL_FREEZE_COOLDOWN;
+    target.play_reward_feedback("FROZEN 10s!");
+    admin.play_reward_feedback(format_string("Froze %", {target.get_username()}));
+    Save.set_int(admin, "ui_test_troll_frozen", 1);
+    Save.set_string(admin, "ui_test_troll_freeze_target", target.get_username());
+    // SFX
+    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/heal_oneshot.wav");
+    desc := SFX.default_sfx_desc();
+    desc.set_position(target.entity.world_position);
+    desc.volume = 0.7;
+    desc.speed_perturb = 0.15;
+    SFX.play(sfx, desc);
+    return true;
+}
+
+troll_can_mind_control :: proc(admin: Player) -> bool {
+    if admin == null return false;
+    if !can_access_admin_panel(admin) return false;
+    return get_time() >= admin.troll_mind_next_allowed;
+}
+
+troll_do_mind_control :: proc(admin: Player, target: Player, mode: s64, emote_idx: s64) -> bool {
+    if admin == null || target == null return false;
+    if !troll_can_mind_control(admin) {
+        remaining := admin.troll_mind_next_allowed - get_time();
+        if remaining < 0 { remaining = 0; }
+        admin.play_reward_feedback(format_string("Mind Control %.s left", {format_float(remaining, decimals=1)}));
+        return false;
+    }
+    if mode < TROLL_MC_STAND || mode > TROLL_MC_EMOTE {
+        admin.play_reward_feedback("Pick a mode");
+        return false;
+    }
+    if target.is_dead {
+        admin.play_reward_feedback("Target dead");
+        return false;
+    }
+    target.troll_control_until = get_time() + TROLL_MIND_DURATION;
+    target.troll_control_mode = mode;
+    target.troll_control_owner_id = admin.get_user_id();
+    target.troll_control_emote_idx = emote_idx;
+    target.troll_inventory_mess_next = get_time() + 1.0;
+    target.troll_emote_next = get_time() + 0.5;
+    target.troll_force_shoot_next = get_time() + 0.3;
+    admin.troll_mind_next_allowed = get_time() + TROLL_MIND_COOLDOWN;
+    target.play_reward_feedback(format_string("MIND CONTROLLED: %", {troll_mc_mode_name(mode)}));
+    admin.play_reward_feedback(format_string("Mind control %: %", {target.get_username(), troll_mc_mode_name(mode)}));
+    Save.set_int(admin, "ui_test_troll_mc_mode", mode);
+    Save.set_string(admin, "ui_test_troll_mc_target", target.get_username());
+    sfx := get_asset(SFX_Asset, "$AO/sfx/character_emote_thumbs_up_v2.wav");
+    desc := SFX.default_sfx_desc();
+    desc.set_position(target.entity.world_position);
+    desc.volume = 0.6;
+    SFX.play(sfx, desc);
+    return true;
+}
+
+troll_tick :: proc(player: Player, dt: float) {
+    now := get_time();
+    // Victim side: freeze
+    if now < player.troll_frozen_until {
+        player.agent.input_this_frame = {0, 0};
+        player.agent.velocity = {0, 0};
+    }
+    // Victim side: mind control
+    if now < player.troll_control_until {
+        mode := player.troll_control_mode;
+        if mode == TROLL_MC_STAND {
+            player.agent.input_this_frame = {0, 0};
+            player.agent.velocity = {0, 0};
+        } else if mode == TROLL_MC_GUN {
+            // Keep zero movement but force shooting
+            player.agent.input_this_frame = {0, 0};
+            // Random drift to mess aim a bit
+            // don't zero velocity completely? Keep zero for stand-like
+            player.agent.velocity = {0, 0};
+            if now >= player.troll_force_shoot_next {
+                player.troll_force_shoot_next = now + 0.35;
+                if player.equipped_weapon_type != .NONE && weapon_has_ammo(player, player.equipped_weapon_type) {
+                    rng: u64 = rng_root_seed() ^ cast(u64)(player.entity.id) ^ cast(u64)(get_frame_number() * 7919);
+                    ang := rng_range_float(ref rng, 0, 6.28318);
+                    dir := v2{cos(ang), sin(ang)};
+                    // Force a shot: play fire sound + anim + spawn projectile
+                    weapon_shoot(player, player.equipped_weapon_type);
+                    // Generic projectile spawn for most guns
+                    // Try to spawn appropriate type: standard fallback
+                    weapon_spawn_standard_projectile(player, dir, player.equipped_weapon_type);
+                } else if player.equipped_weapon_type == .NONE {
+                    // No gun - force emote instead
+                }
+            }
+        } else if mode == TROLL_MC_INVENTORY {
+            // Move randomly + mess inventory
+            if now >= player.troll_inventory_mess_next {
+                player.troll_inventory_mess_next = now + 1.2;
+                // Swap two random inventory slots
+                cap := player.default_inventory.capacity;
+                if cap >= 2 {
+                    rng: u64 = rng_root_seed() ^ cast(u64)(player.entity.id) ^ cast(u64)(get_frame_number());
+                    a := rng_range_int(ref rng, 0, cap - 1);
+                    b := rng_range_int(ref rng, 0, cap - 1);
+                    if a != b {
+                        if Items.can_swap_items(player.default_inventory, player.default_inventory, a, b) {
+                            Items.swap_items(player.default_inventory, player.default_inventory, a, b);
+                        }
+                    }
+                    // Occasionally drop a random item
+                    rng2: u64 = rng_root_seed() ^ cast(u64)(player.entity.id) ^ cast(u64)(get_nanoseconds_since_epoch() % 1000000);
+                    if rng_range_float(ref rng2, 0, 1) < 0.35 {
+                        slot := rng_range_int(ref rng2, 0, cap - 1);
+                        it := player.default_inventory.get_item(slot);
+                        if it != null {
+                            // Don't destroy verity or admin essentials? just swap for now drop simulation
+                            // Destroy 1 quantity to mess
+                            // Instead force drop via Dropped_Item
+                            pos := player.entity.world_position + v2{rng_range_float(ref rng2, -1, 1), rng_range_float(ref rng2, -1, 1)};
+                            dropped: Dropped_Item;
+                            // Use handle_dropped_item style? Simpler destroy
+                            Items.destroy_item_instance(it, 1);
+                        }
+                    }
+                }
+            }
+            // Also jitter movement
+            rng3: u64 = rng_root_seed() ^ cast(u64)(player.entity.id) ^ cast(u64)(get_frame_number() * 13);
+            if rng_range_float(ref rng3, 0, 1) < 0.5 {
+                ang2 := rng_range_float(ref rng3, 0, 6.28318);
+                player.agent.input_this_frame = v2{cos(ang2) * 0.6, sin(ang2) * 0.6};
+            }
+        } else if mode == TROLL_MC_EMOTE {
+            player.agent.input_this_frame = {0, 0};
+            player.agent.velocity = {0, 0};
+            if now >= player.troll_emote_next {
+                player.troll_emote_next = now + 2.2;
+                emote_idx := player.troll_control_emote_idx;
+                trig := troll_emote_name(emote_idx);
+                // Try to trigger emote (will set active effect)
+                player.try_trigger_emote(trig);
+                // Fallback: if blocked, still set trigger via effect directly
+                if player.entity.get_active_effect() == null {
+                    eff := new(Emote_Effect);
+                    eff.trigger_name = trig;
+                    player.entity.set_active_effect(eff);
+                }
+            }
+        }
+    } else if player.troll_control_until > 0 && now >= player.troll_control_until {
+        // Expired
+        player.troll_control_mode = 0;
+        player.troll_control_owner_id = "";
+        player.play_reward_feedback("Mind control ended");
+    }
+}
+
+draw_troll_status_overlays :: proc(viewer: Player) {
+    now := get_time();
+    // World-space indicators for victims (visible to everyone nearby)
+    for player: component_iterator(Player) {
+        is_frozen := now < player.troll_frozen_until;
+        is_controlled := now < player.troll_control_until;
+        if !is_frozen && !is_controlled continue;
+        UI.begin_world_space_ui(player.entity);
+        defer UI.end_world_space_ui();
+        rect := UI.get_screen_rect().top_center_rect().offset(0, 28).grow(0, 12, 0, 10);
+        ts := UI.default_text_settings();
+        ts.size = 15;
+        ts.do_outline = true;
+        ts.outline_thickness = 2;
+        ts.outline_color = {0, 0, 0, 1};
+        if is_frozen {
+            remain := player.troll_frozen_until - now;
+            if remain < 0 { remain = 0; }
+            ts.color = {0.4, 0.75, 1.0, 1};
+            UI.text(rect, ts, format_string("FROZEN {s}s", {format_float(remain, decimals=1)}));
+            // Also second line if mind controlled
+            if is_controlled {
+                rect2 := rect.offset(0, -18);
+                ts2 := ts;
+                ts2.color = {1.0, 0.35, 0.85, 1};
+                ts2.size = 13;
+                UI.text(rect2, ts2, format_string("MIND {s}s", {format_float(player.troll_control_until - now, decimals=1)}));
+            }
+        } else if is_controlled {
+            remain2 := player.troll_control_until - now;
+            if remain2 < 0 { remain2 = 0; }
+            ts.color = {1.0, 0.35, 0.85, 1};
+            UI.text(rect, ts, format_string("CONTROLLED:% %s", {troll_mc_mode_name(player.troll_control_mode), format_float(remain2, decimals=1)}));
+        }
+    }
+}
+
+draw_troll_jumpscare :: proc(viewer: Player) {
+    if viewer == null return;
+    if get_time() >= viewer.troll_scare_until return;
+    // Only the victim sees it on their local client / server sees for preview
+    if !viewer.is_local_or_server() return;
+    // Show fullscreen jumpscare modal
+    idx := viewer.troll_scare_type;
+    if idx < 0 || idx >= 5 { idx = 0; }
+    remain := viewer.troll_scare_until - get_time();
+    pct := remain / TROLL_JUMPSCARE_DURATION;
+    if pct < 0 { pct = 0; }
+    if pct > 1 { pct = 1; }
+
+    col := troll_jumpscare_color(idx);
+    // Flash intensity
+    flash := 0.85 + sin(get_time() * 38.0) * 0.15;
+    panel_col := v4{col.x * flash, col.y * flash, col.z * flash, 0.92};
+
+    UIK.begin(UIK.modal(UIK.rect_window_large(), 20));
+    bg := UIK.panel_modal(.BLACK);
+    bg.tint = panel_col;
+    bg.opacity = 0.96;
+    UIK.panel_begin(bg);
+
+    // Icon
+    icon_path := troll_jumpscare_icon_path(idx);
+    tex := get_asset(Texture_Asset, icon_path);
+    // Big centered column
+    col_layout := UIK.layout_column();
+    col_layout.width = UIK.flex(1);
+    col_layout.height = UIK.flex(1);
+    col_layout.cross_align = .CENTER;
+    col_layout.main_align = .CENTER;
+    col_layout.gap = 10;
+    UIK.panel_begin(col_layout);
+    UIK.image_fitted(tex, UIK.image_desc(.CONTAIN));
+
+    title_style := UIK.text_title();
+    title_style.color = {1, 1, 1, 1};
+    UIK.text(troll_jumpscare_name(idx), title_style);
+    sub_style := UIK.text_body();
+    sub_style.color = {1, 1, 0.85, 1};
+    UIK.text("JUMPSCARE!", sub_style);
+    time_style := UIK.text_body();
+    time_style.color = {1, 0.9, 0.9, 0.8};
+    UIK.text(format_string("{s}s", {format_float(remain, decimals=1)}), time_style);
+    UIK.panel_end();
+    UIK.panel_end();
+    UIK.end();
+
+    // Screen shake via world-space? Use immediate noise - just play extra SFX shake handled elsewhere
+}
+
+draw_troll_panel :: proc(admin: Player) {
+    if admin == null || !can_access_admin_panel(admin) return;
+
+    UIK.begin(UIK.modal(UIK.rect_window(), 15));
+    shell := UIK.panel_modal(.BLACK);
+    shell.gap = 0;
+    UIK.panel_begin(shell);
+
+    title_desc := UIK.title_area_desc("Troll Panel");
+    title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/face/face_icon.png");
+    exit_handle := UIK.title_area(title_desc);
+    UIK.text(UIK.text_body(), "Admin only. Victims see effects synced.");
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+
+    body := UIK.layout_column();
+    body.width = UIK.flex(1);
+    body.height = UIK.flex(1);
+    body.padding = v4{12, 16, 12, 16};
+    body.gap = 8;
+    UIK.list_begin("troll/body_scroll", body);
+
+    if admin.troll_target_username == "" {
+        admin.troll_target_username = admin.admin_target_username;
+        if admin.troll_target_username == "" {
+            admin.troll_target_username = admin.get_username();
+        }
+    }
+
+    UIK.text("Target player", UIK.text_title());
+    UIK.text(format_string("Target: %", {admin.troll_target_username}), UIK.text_body());
+
+    // Target list
+    target_scroll := UIK.layout_column();
+    target_scroll.width = UIK.flex(1);
+    target_scroll.height = UIK.pixels(150);
+    target_scroll.gap = 4;
+    UIK.list_begin("troll/targets", target_scroll);
+
+    target_usernames: [..]string;
+    target_handles: [..]Interact_Result;
+    for target: component_iterator(Player) {
+        username := target.get_username();
+        target_usernames.append(username);
+        row_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+        if username == admin.troll_target_username {
+            row_desc = UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+        }
+        row_desc.panel.width = UIK.flex(1);
+        row_desc.panel.height = UIK.pixels(42);
+        target_handles.append(UIK.button(format_string("troll/target/%", {username}), username, row_desc));
+    }
+    if target_usernames.count == 0 {
+        UIK.text("No players online", UIK.text_body());
+    }
+    UIK.list_end();
+
+    // Jumpscares
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    UIK.text("Jumpscares (15s cooldown each)", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    // Row 1: 3 buttons
+    js_row1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+    UIK.panel_begin(js_row1);
+    js_handles: [5]Interact_Result;
+    for i: 0..4 {
+        // Layout split into two rows manually for clean wrapping: we'll create two rows
+        // but keep handles array unified
+    }
+    UIK.panel_end();
+    // Actually create two rows with proper buttons
+    row_a := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+    UIK.panel_begin(row_a);
+    for i: 0..2 {
+        idx := i;
+        can := troll_can_jumpscare(admin, idx);
+        btn_desc := UIK.widget_desc_button_auto_default(can ? .BUTTON_BASIC_RED : .BUTTON_BASIC_GREY);
+        btn_desc.panel.width = UIK.flex(1);
+        btn_desc.panel.height = UIK.pixels(54);
+        label := troll_jumpscare_name(idx);
+        js_handles[idx] = UIK.button(format_string("troll/js/%", {idx}), label, btn_desc);
+        // Cooldown text below button handled via overlay? We'll do text after rows
+    }
+    UIK.panel_end();
+    row_b := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+    UIK.panel_begin(row_b);
+    for i: 3..4 {
+        idx := i;
+        can := troll_can_jumpscare(admin, idx);
+        btn_desc := UIK.widget_desc_button_auto_default(can ? .BUTTON_BASIC_RED : .BUTTON_BASIC_GREY);
+        btn_desc.panel.width = UIK.flex(1);
+        btn_desc.panel.height = UIK.pixels(54);
+        label := troll_jumpscare_name(idx);
+        js_handles[idx] = UIK.button(format_string("troll/js/%", {idx}), label, btn_desc);
+    }
+    // filler
+    filler := UIK.layout_row(UIK.flex(1), UIK.fit(), 0);
+    UIK.panel_begin(filler);
+    UIK.spacer(UIK.flex(1), UIK.pixels(1));
+    UIK.panel_end();
+    UIK.panel_end();
+
+    // Cooldown info line
+    now := get_time();
+    for i: 0..4 {
+        next := admin.troll_jumpscare_next_allowed[i];
+        if next > now {
+            remain := next - now;
+            s := UIK.text_body();
+            s.color = {1, 0.55, 0.55, 1};
+            UIK.text(format_string("%: %.s", {troll_jumpscare_name(i), format_float(remain, decimals=1)}), s);
+        }
+    }
+
+    // Freeze
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    UIK.text("Freeze (10s duration / 30s cooldown)", UIK.text_title());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    freeze_desc := UIK.widget_desc_button_auto_default(troll_can_freeze(admin) ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_GREY);
+    freeze_desc.panel.width = UIK.flex(1);
+    freeze_desc.panel.height = UIK.pixels(54);
+    freeze_btn := UIK.button("troll/freeze", "FREEZE 10s", freeze_desc);
+    if admin.troll_freeze_next_allowed > now {
+        remain_f := admin.troll_freeze_next_allowed - now;
+        s2 := UIK.text_body();
+        s2.color = {0.6, 0.85, 1, 1};
+        UIK.text(format_string("Freeze cooldown: %.s", {format_float(remain_f, decimals=1)}), s2);
+    } else {
+        UIK.text("Freeze ready", UIK.text_body());
+    }
+
+    // Mind Control
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    UIK.text("Mind Control (30s duration / 45s cooldown)", UIK.text_title());
+    UIK.text("15s gap where you cannot mind control", UIK.text_body());
+    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+    UIK.text(format_string("Selected: %", {troll_mc_mode_name(admin.troll_selected_mc_mode)}), UIK.text_body());
+    mc_row1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+    UIK.panel_begin(mc_row1);
+    stand_desc := UIK.widget_desc_button_auto_default(admin.troll_selected_mc_mode == TROLL_MC_STAND ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_GREY);
+    stand_desc.panel.width = UIK.flex(1); stand_desc.panel.height = UIK.pixels(46);
+    stand_btn := UIK.button("troll/mc_stand", "Stand Still", stand_desc);
+    gun_desc := UIK.widget_desc_button_auto_default(admin.troll_selected_mc_mode == TROLL_MC_GUN ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_GREY);
+    gun_desc.panel.width = UIK.flex(1); gun_desc.panel.height = UIK.pixels(46);
+    gun_btn := UIK.button("troll/mc_gun", "Force Gun", gun_desc);
+    UIK.panel_end();
+    mc_row2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+    UIK.panel_begin(mc_row2);
+    inv_desc := UIK.widget_desc_button_auto_default(admin.troll_selected_mc_mode == TROLL_MC_INVENTORY ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_GREY);
+    inv_desc.panel.width = UIK.flex(1); inv_desc.panel.height = UIK.pixels(46);
+    inv_btn := UIK.button("troll/mc_inventory", "Mess Inventory", inv_desc);
+    emote_desc := UIK.widget_desc_button_auto_default(admin.troll_selected_mc_mode == TROLL_MC_EMOTE ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_GREY);
+    emote_desc.panel.width = UIK.flex(1); emote_desc.panel.height = UIK.pixels(46);
+    emote_btn := UIK.button("troll/mc_emote", "Force Emote", emote_desc);
+    UIK.panel_end();
+
+    // Emote picker if emote mode selected
+    if admin.troll_selected_mc_mode == TROLL_MC_EMOTE {
+        UIK.spacer(UIK.pixels(1), UIK.pixels(4));
+        UIK.text(format_string("Emote: %", {troll_emote_label(admin.troll_selected_emote_idx)}), UIK.text_body());
+        emote_row1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+        UIK.panel_begin(emote_row1);
+        for e: 0..2 {
+            ed := UIK.widget_desc_button_auto_default(admin.troll_selected_emote_idx == e ? .BUTTON_BASIC_PURPLE : .BUTTON_BASIC_GREY);
+            ed.panel.width = UIK.flex(1); ed.panel.height = UIK.pixels(42);
+            eb := UIK.button(format_string("troll/emote_pick/%", {e}), troll_emote_label(e), ed);
+            if UIK.clicked(eb) {
+                admin.troll_selected_emote_idx = e;
+            }
+        }
+        UIK.panel_end();
+        emote_row2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+        UIK.panel_begin(emote_row2);
+        for e: 3..5 {
+            ed := UIK.widget_desc_button_auto_default(admin.troll_selected_emote_idx == e ? .BUTTON_BASIC_PURPLE : .BUTTON_BASIC_GREY);
+            ed.panel.width = UIK.flex(1); ed.panel.height = UIK.pixels(42);
+            eb := UIK.button(format_string("troll/emote_pick/%", {e}), troll_emote_label(e), ed);
+            if UIK.clicked(eb) {
+                admin.troll_selected_emote_idx = e;
+            }
+        }
+        UIK.panel_end();
+    }
+
+    mc_can := troll_can_mind_control(admin);
+    mc_btn_desc := UIK.widget_desc_button_auto_default(mc_can ? .BUTTON_BASIC_PURPLE : .BUTTON_BASIC_GREY);
+    mc_btn_desc.panel.width = UIK.flex(1);
+    mc_btn_desc.panel.height = UIK.pixels(54);
+    mc_btn := UIK.button("troll/mc_apply", "APPLY MIND CONTROL 30s", mc_btn_desc);
+    if admin.troll_mind_next_allowed > now {
+        remain_m := admin.troll_mind_next_allowed - now;
+        sm := UIK.text_body();
+        sm.color = {1, 0.5, 0.85, 1};
+        UIK.text(format_string("Mind cooldown: %.s", {format_float(remain_m, decimals=1)}), sm);
+    } else {
+        UIK.text("Mind control ready", UIK.text_body());
+    }
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    close_desc.panel.width = UIK.flex(1);
+    close_desc.panel.height = UIK.pixels(52);
+    close_btn := UIK.button("troll/close", "Close", close_desc);
+
+    UIK.list_end();
+    UIK.panel_end();
+    UIK.end();
+
+    if UIK.clicked(exit_handle) || UIK.clicked(close_btn) {
+        admin.show_troll_panel = false;
+    }
+
+    // Target selection
+    for i: 0..target_usernames.count - 1 {
+        if UIK.clicked(target_handles[i]) {
+            admin.troll_target_username = target_usernames[i];
+        }
+    }
+
+    target_player := troll_find_target(admin);
+    if target_player == null {
+        target_player = admin; // fallback for feedback but actions will require valid target
+        // don't allow self-target for most actions - require explicit selection
+        // keep target_player as admin for preview, but jumpscare/freeze will check username
+    }
+    // Validate target is not admin self for trolling? Allow self for testing
+    real_target := find_online_player_by_username(admin.troll_target_username);
+    if real_target == null {
+        // No target selected
+    }
+
+    // Jumpscare clicks
+    for i: 0..4 {
+        if UIK.clicked(js_handles[i]) {
+            if real_target != null {
+                troll_do_jumpscare(admin, real_target, i);
+            } else {
+                admin.play_reward_feedback("Select a target");
+            }
+        }
+    }
+
+    if UIK.clicked(freeze_btn) {
+        if real_target != null {
+            troll_do_freeze(admin, real_target);
+        } else {
+            admin.play_reward_feedback("Select a target");
+        }
+    }
+
+    if UIK.clicked(stand_btn) { admin.troll_selected_mc_mode = TROLL_MC_STAND; }
+    if UIK.clicked(gun_btn) { admin.troll_selected_mc_mode = TROLL_MC_GUN; }
+    if UIK.clicked(inv_btn) { admin.troll_selected_mc_mode = TROLL_MC_INVENTORY; }
+    if UIK.clicked(emote_btn) { admin.troll_selected_mc_mode = TROLL_MC_EMOTE; }
+
+    if UIK.clicked(mc_btn) {
+        if admin.troll_selected_mc_mode == 0 {
+            admin.play_reward_feedback("Pick mode first");
+        } else if real_target != null {
+            troll_do_mind_control(admin, real_target, admin.troll_selected_mc_mode, admin.troll_selected_emote_idx);
+        } else {
+            admin.play_reward_feedback("Select a target");
+        }
+    }
+}
+
