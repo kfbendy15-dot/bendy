@@ -13,6 +13,7 @@ weapon_element :: proc(wt: Weapon_Type) -> s64 {
     if wt == .POISON_GRENADE || wt == .KILLER_FISH || wt == .SHURIKEN return 3; // leaf
     if wt == .ICE_LAUNCHER || wt == .GLACIATOR return 4; // ice
     if wt == .WARPER return 5; // void - black hole
+    if wt == .RAY_GUN || wt == .STORMS_EYE return 6; // lightning
     return 0; // normal
 }
 
@@ -22,6 +23,8 @@ elemental_damage_multiplier :: proc(attacker: s64, defender: s64) -> float {
     if (attacker == 2 && defender == 1) || (attacker == 1 && defender == 3) || (attacker == 3 && defender == 2) return 2.0;
     if (attacker == 5 && (defender == 1 || defender == 2 || defender == 3)) return 2.0;
     if attacker == 1 && defender == 5 return 2.0;
+    if attacker == 6 && (defender == 1 || defender == 2 || defender == 3) return 2.0;
+    if (attacker == 5 || attacker == 4) && defender == 6 return 2.0;
     if g_event_ice && ((attacker == 1 && defender == 4) || (attacker == 4 && defender == 3)) return 2.0;
     return 0.5;
 }
