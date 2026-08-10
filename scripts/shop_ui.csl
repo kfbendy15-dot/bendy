@@ -387,6 +387,7 @@ draw_shop :: proc(player: Player) {
     dash_handle: Interact_Result;
     invis_handle: Interact_Result;
     speed_boost_handle: Interact_Result;
+    zoom_out_handle: Interact_Result;
     normal_handle: Interact_Result;
     finger_handle: Interact_Result;
     paper_handle: Interact_Result;
@@ -544,6 +545,8 @@ draw_shop :: proc(player: Player) {
     powerup_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(powerup_row_2);
     speed_boost_handle = draw_shop_card("shop/buy_speed_boost", "Speed Boost", SPEED_BOOST_COST, dash_icon, {0.9, 0.65, 0.2, 1}, false);
+    zoom_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/_misc/binoculars_icon.png");
+    zoom_out_handle = draw_shop_card("shop/buy_zoom_out", "Zoom Out (13s, 7s cd)", ZOOM_OUT_COST, zoom_icon, {0.25, 0.65, 0.85, 1}, player.has_zoom_out);
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
@@ -714,6 +717,19 @@ draw_shop :: proc(player: Player) {
             d := SFX.default_sfx_desc();
             d.volume = 0.6;
             SFX.play(sfx, d);
+        }
+    }
+
+    if UIK.clicked(zoom_out_handle) && !player.has_zoom_out {
+        if spend_coins(player, ZOOM_OUT_COST) {
+            player.has_zoom_out = true;
+            play_pickup_feedback(player, "+Zoom Out");
+            if player.is_local() {
+                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+                d := SFX.default_sfx_desc();
+                d.volume = 0.6;
+                SFX.play(sfx, d);
+            }
         }
     }
 
