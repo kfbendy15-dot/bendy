@@ -992,6 +992,7 @@ Player :: class : Player_Base {
     has_dash: bool;
     has_invisible: bool;
     has_speed_boost: bool;
+    has_zoom_out: bool;
     has_shield: bool;
     shield_active: bool;
     has_paperclip: bool;
@@ -1203,6 +1204,7 @@ Player :: class : Player_Base {
         has_dash = false;
         has_invisible = false;
         has_speed_boost = false;
+        has_zoom_out = false;
         user_tag = Save.get_string(this, PLAYER_TITLE_SAVE_KEY, "");
         if user_tag == "PAPERCLIP" && !is_admin_user {
             user_tag = "";
@@ -1419,6 +1421,12 @@ Player :: class : Player_Base {
         update_role_mode_player(this, dt);
         update_murder_mystery_player(this, dt);
         troll_tick(this, dt);
+
+        // Reset zoom if dead — keep camera sane
+        if is_dead && entity.has_effect(Zoom_Out_Effect) {
+            remove_effect(entity, Zoom_Out_Effect, true);
+            camera.size = 7.0;
+        }
     }
 
     play_reward_feedback :: method(text: string) {
@@ -1513,6 +1521,7 @@ Player :: class : Player_Base {
                 if has_dash      { draw_ability_button(this, Dash_Ability, 2); }
                 if has_invisible { draw_ability_button(this, Invisible_Ability, 3); }
                 if has_speed_boost { draw_ability_button(this, Speed_Boost_Ability, 4); }
+                if has_zoom_out { draw_ability_button(this, Zoom_Out_Ability, 5); }
             }
 
             // Hotbar

@@ -1,0 +1,93 @@
+ZOOM_OUT_COST :: 30000;
+ZOOM_OUT_DURATION :: 13.0;
+ZOOM_OUT_COOLDOWN :: 20.0; // 13s active + 7s wait = 20s total before reuse
+ZOOM_OUT_MULT :: 1.75;
+ZOOM_OUT_MAX_SIZE :: 14.0;
+
+Zoom_Out_Effect :: class : Effect_Base {
+    original_size: float;
+    zoomed_size: float;
+
+    effect_start :: method() {
+        // Save original camera size
+        original_size = player.camera.size;
+        if original_size <= 0.01 {
+            original_size = 7.0;
+        }
+        zoomed_size = original_size * ZOOM_OUT_MULT;
+        if zoomed_size > ZOOM_OUT_MAX_SIZE {
+            zoomed_size = ZOOM_OUT_MAX_SIZE;
+        }
+        // Also ensure we actually zoom out (if somehow already larger, keep)
+        if zoomed_size < original_size + 1.0 {
+            zoomed_size = original_size + 4.5;
+            if zoomed_size > ZOOM_OUT_MAX_SIZE {
+                zoomed_size = ZOOM_OUT_MAX_SIZE;
+            }
+        }
+        player.camera.size = zoomed_size;
+        set_duration(ZOOM_OUT_DURATION);
+
+        if player.is_local() {
+            sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+            desc := SFX.default_sfx_desc();
+            desc.volume = 0.5;
+            desc.speed_perturb = 0.12;
+            SFX.play(sfx, desc);
+        }
+    }
+
+    effect_end :: method(interrupt: bool) {
+        // Restore camera size — use saved original if still valid
+        // If player died or camera was changed elsewhere, still restore to normal 7 if needed
+        if player != null {
+            // Only restore if we're still zoomed close to zoomed_size, otherwise don't overwrite another zoom
+            // But for interrupt we always restore to original or default
+            if player.camera.size >= original_size - 0.01 {
+                player.camera.size = original_size;
+                // Safety: clamp to sane default if original was garbage
+                if player.camera.size < 3.0 || player.camera.size > ZOOM_OUT_MAX_SIZE {
+                    player.camera.size = 7.0;
+                }
+            } else {
+                // If some other system lowered it, just ensure not stuck zoomed
+                if player.camera.size > original_size + 0.1 {
+                    player.camera.size = original_size;
+                }
+            }
+        }
+
+        if player != null && player.is_local() && !interrupt {
+            sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+            desc := SFX.default_sfx_desc();
+            desc.volume = 0.35;
+            desc.speed = 1.25;
+            SFX.play(sfx, desc);
+        }
+    }
+}
+
+Zoom_Out_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Zoom Out";
+        icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/_misc/binoculars_icon.png");
+    }
+
+    can_use :: method() -> bool {
+        p := player.(Player);
+        if !p.has_zoom_out return false;
+        // Don't allow stacking while already zoomed
+        if p.entity.has_effect(Zoom_Out_Effect) return false;
+        return true;
+    }
+
+    on_update :: method(params: ref Ability_Update_Params) {
+        if params.clicked && params.can_use {
+            current_cooldown = ZOOM_OUT_COOLDOWN;
+            player.entity.add_passive_effect(new(Zoom_Out_Effect));
+
+            p := player.(Player);
+            p.play_reward_feedback("Zoom Out!");
+        }
+    }
+}
