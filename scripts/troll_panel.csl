@@ -286,13 +286,98 @@ troll_tick :: proc(player: Player, dt: float) {
     }
 }
 
+troll_save_morph_original :: proc(player: Player) {
+    if player == null || player.troll_morph_saved_valid {
+        return;
+    }
+    player.troll_morph_saved_valid = true;
+    player.troll_morph_saved_name_override = player.get_name_override();
+    player.troll_morph_saved_do_name_color_override = player.do_name_color_override;
+    player.troll_morph_saved_name_color_override = player.name_color_override;
+    if #alive(player.animator) {
+        player.troll_morph_saved_anim_tint = player.animator.get_tint();
+        player.troll_morph_saved_skins = player.animator.get_skins();
+    } else {
+        player.troll_morph_saved_anim_tint = {1, 1, 1, 1};
+    }
+}
+
+troll_do_morph_verity :: proc(admin: Player) -> bool {
+    if admin == null return false;
+    if !can_access_admin_panel(admin) return false;
+    if admin.troll_morph_active {
+        admin.play_reward_feedback("Already morphed");
+        return false;
+    }
+    troll_save_morph_original(admin);
+    admin.set_name_override("Verity");
+    admin.do_name_color_override = true;
+    admin.name_color_override = {1.0, 0.92, 0.2, 1.0};
+    if #alive(admin.animator) {
+        admin.animator.set_tint({1.0, 0.92, 0.35, 1.0});
+    }
+    admin.troll_morph_active = true;
+    admin.play_reward_feedback("Morphed to Verity");
+    Save.set_int(admin, "ui_test_troll_morph", 1);
+    Save.set_string(admin, "ui_test_troll_morph_name", "Verity");
+    if admin.is_local() {
+        sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+        desc := SFX.default_sfx_desc();
+        desc.entity_to_follow = admin.entity.id;
+        desc.volume = 0.6;
+        SFX.play(sfx, desc);
+    }
+    return true;
+}
+
+troll_do_unmorph :: proc(admin: Player) -> bool {
+    if admin == null return false;
+    if !admin.troll_morph_active {
+        admin.play_reward_feedback("Not morphed");
+        return false;
+    }
+    if admin.troll_morph_saved_valid {
+        admin.set_name_override(admin.troll_morph_saved_name_override);
+        admin.do_name_color_override = admin.troll_morph_saved_do_name_color_override;
+        admin.name_color_override = admin.troll_morph_saved_name_color_override;
+        if #alive(admin.animator) {
+            admin.animator.set_tint(admin.troll_morph_saved_anim_tint);
+            admin.animator.disable_all_skins();
+            for skin: admin.troll_morph_saved_skins {
+                if skin != "" {
+                    admin.animator.enable_skin(skin);
+                }
+            }
+            admin.animator.refresh_skins();
+        }
+        admin.troll_morph_saved_valid = false;
+    } else {
+        admin.set_name_override("");
+        if admin.is_admin_user {
+            admin.do_name_color_override = true;
+            admin.name_color_override = {1.0, 0.84, 0.18, 1.0};
+            if #alive(admin.animator) {
+                admin.animator.set_tint({1, 1, 1, 1});
+            }
+        } else {
+            admin.do_name_color_override = false;
+        }
+    }
+    admin.troll_morph_active = false;
+    admin.play_reward_feedback("Unmorphed");
+    Save.set_int(admin, "ui_test_troll_morph", 0);
+    Save.set_string(admin, "ui_test_troll_morph_name", "");
+    return true;
+}
+
 draw_troll_status_overlays :: proc(viewer: Player) {
     now := get_time();
     // World-space indicators for victims (visible to everyone nearby)
     for player: component_iterator(Player) {
         is_frozen := now < player.troll_frozen_until;
         is_controlled := now < player.troll_control_until;
-        if !is_frozen && !is_controlled continue;
+        is_morphed := player.troll_morph_active;
+        if !is_frozen && !is_controlled && !is_morphed continue;
         UI.begin_world_space_ui(player.entity);
         defer UI.end_world_space_ui();
         rect := UI.get_screen_rect().top_center_rect().offset(0, 28).grow(0, 12, 0, 10);
@@ -319,6 +404,19 @@ draw_troll_status_overlays :: proc(viewer: Player) {
             if remain2 < 0 { remain2 = 0; }
             ts.color = {1.0, 0.35, 0.85, 1};
             UI.text(rect, ts, format_string("CONTROLLED:% %s", {troll_mc_mode_name(player.troll_control_mode), format_float(remain2, decimals=1)}));
+        } else if is_morphed {
+            ts.color = {1.0, 0.92, 0.2, 1};
+            UI.text(rect, ts, "VERITY MORPH");
+        }
+        if is_morphed && (is_frozen || is_controlled) {
+            mrect := rect.offset(0, -18);
+            mts := UI.default_text_settings();
+            mts.size = 12;
+            mts.do_outline = true;
+            mts.outline_thickness = 2;
+            mts.outline_color = {0, 0, 0, 1};
+            mts.color = {1.0, 0.92, 0.2, 1};
+            UI.text(mrect, mts, "VERITY");
         }
     }
 }
@@ -574,6 +672,26 @@ draw_troll_panel :: proc(admin: Player) {
     }
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    UIK.text("Morphs (become only one thing: Verity)", UIK.text_title());
+    UIK.text("From Admin Shop: Verity", UIK.text_body());
+    if admin.troll_morph_active {
+        UIK.text("Currently morphed as Verity", UIK.text_body());
+    } else {
+        UIK.text("Not morphed", UIK.text_body());
+    }
+    morph_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+    UIK.panel_begin(morph_row);
+    morph_verity_desc := UIK.widget_desc_button_auto_default(!admin.troll_morph_active ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_GREY);
+    morph_verity_desc.panel.width = UIK.flex(1);
+    morph_verity_desc.panel.height = UIK.pixels(54);
+    morph_verity_btn := UIK.button("troll/morph_verity", "MORPH: VERITY", morph_verity_desc);
+    unmorph_desc := UIK.widget_desc_button_auto_default(admin.troll_morph_active ? .BUTTON_BASIC_RED : .BUTTON_BASIC_GREY);
+    unmorph_desc.panel.width = UIK.flex(1);
+    unmorph_desc.panel.height = UIK.pixels(54);
+    unmorph_btn := UIK.button("troll/unmorph", "UNMORPH", unmorph_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     close_desc.panel.width = UIK.flex(1);
     close_desc.panel.height = UIK.pixels(52);
@@ -638,6 +756,13 @@ draw_troll_panel :: proc(admin: Player) {
         } else {
             admin.play_reward_feedback("Select a target");
         }
+    }
+
+    if UIK.clicked(morph_verity_btn) {
+        troll_do_morph_verity(admin);
+    }
+    if UIK.clicked(unmorph_btn) {
+        troll_do_unmorph(admin);
     }
 }
 
