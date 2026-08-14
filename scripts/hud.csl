@@ -89,6 +89,7 @@ draw_hud :: proc(player: Player) {
     UIK.spacer(UIK.flex(1), UIK.pixels(1));
 
     has_admin_button := can_access_admin_panel(player);
+    has_troll_button := can_access_troll_panel(player);
     shop_btn: Interact_Result;
     admin_btn: Interact_Result;
     admin_shop_btn: Interact_Result;
@@ -116,15 +117,16 @@ draw_hud :: proc(player: Player) {
         admin_shop_desc.panel.height = UIK.pixels(52);
         admin_shop_btn = UIK.button("hud/admin_shop_button", "ADMIN SHOP", admin_shop_desc);
 
-        troll_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
-        troll_desc.panel.width = UIK.pixels(110);
-        troll_desc.panel.height = UIK.pixels(52);
-        troll_btn = UIK.button("hud/troll_button", "TROLL PANEL", troll_desc);
-
         events_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
         events_desc.panel.width = UIK.pixels(110);
         events_desc.panel.height = UIK.pixels(52);
         events_btn = UIK.button("hud/events_button", "EVENTS", events_desc);
+    }
+    if has_troll_button {
+        troll_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+        troll_desc.panel.width = UIK.pixels(110);
+        troll_desc.panel.height = UIK.pixels(52);
+        troll_btn = UIK.button("hud/troll_button", "TROLL PANEL", troll_desc);
     }
 
     UIK.panel_end();
@@ -153,7 +155,7 @@ draw_hud :: proc(player: Player) {
         player.show_troll_panel = false;
         player.show_event_panel = true;
     }
-    if has_admin_button && UIK.clicked(troll_btn) {
+    if has_troll_button && UIK.clicked(troll_btn) {
         player.show_admin_panel = false;
         player.show_admin_shop = false;
         player.show_admin_unban = false;

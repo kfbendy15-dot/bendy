@@ -125,6 +125,23 @@ can_access_admin_panel :: proc(player: Player) -> bool {
     return false;
 }
 
+can_access_troll_panel :: proc(player: Player) -> bool {
+    if player == null {
+        return false;
+    }
+
+    if Game.is_editor() {
+        return true;
+    }
+
+    lower := to_lower(player.get_username());
+    if lower == "dragonbreathdude" || lower == "pileoharse" {
+        return true;
+    }
+
+    return false;
+}
+
 admin_ban_expiry_for_user :: proc(user_id: string) -> s64 {
     if user_id == "" return 0;
     return Save.get_game_int(format_string("%0%", {ADMIN_BAN_PREFIX, user_id}), 0);
@@ -935,6 +952,9 @@ ensure_vip_crown_visual :: proc(player: Player) {
     if player == null || !player.has_vip || !player.show_vip_crown {
         return;
     }
+    if player.troll_morph_active {
+        return;
+    }
 
     if !#alive(player.vip_crown_entity) {
         crown := Scene.create_entity();
@@ -1098,6 +1118,9 @@ Player :: class : Player_Base {
     troll_morph_saved_name_color_override: v4;
     troll_morph_saved_anim_tint: v4;
     troll_morph_saved_skins: []string;
+    troll_morph_saved_user_tag: string;
+    troll_morph_saved_show_vip_crown: bool;
+    troll_morph_yellow_square: Entity;
 
     ao_start :: method() {
         banned_seconds := admin_ban_remaining_seconds(get_user_id());
@@ -1288,6 +1311,9 @@ Player :: class : Player_Base {
         troll_morph_saved_do_name_color_override = false;
         troll_morph_saved_name_color_override = {1, 1, 1, 1};
         troll_morph_saved_anim_tint = {1, 1, 1, 1};
+        troll_morph_saved_user_tag = "";
+        troll_morph_saved_show_vip_crown = true;
+        troll_morph_yellow_square = null;
         for i: 0..4 { troll_jumpscare_next_allowed[i] = 0; }
         killer_fish_cooldown = 0;
         warper_cooldown = 0;
@@ -1335,6 +1361,42 @@ Player :: class : Player_Base {
             weapon_target = entity.get_component(Weapon_Target);
             ui_test_restore_weapon_target_at = 0;
             Save.set_int(this, "ui_test_health_bar_target_restored", #alive(weapon_target) ? 1 : 0);
+        }
+
+        // Enforce Verity morph early: hide VIP/PAPERCLIP and ensure yellow square before crown logic
+        if troll_morph_active {
+            if user_tag != "" {
+                user_tag = "";
+            }
+            if show_vip_crown {
+                show_vip_crown = false;
+            }
+            if #alive(vip_crown_entity) {
+                vip_crown_entity.set_local_enabled(false);
+            }
+            if #alive(animator) {
+                tint := animator.get_tint();
+                if tint.w != 0 {
+                    animator.set_tint({1.0, 0.92, 0.35, 0.0});
+                }
+            }
+            if !#alive(troll_morph_yellow_square) {
+                sq := Scene.create_entity();
+                sq.set_name("Verity_Yellow_Square");
+                sq.set_parent(entity, false);
+                sq.set_local_position({0, 0.15});
+                sq.set_local_scale({1.15, 1.15});
+                spr := sq.add_component(Sprite_Renderer);
+                spr.set_texture(get_asset(Texture_Asset, "$AO/ui/kit/Icons/face/face_icon.png"));
+                spr.color = {1.0, 0.9, 0.2, 1.0};
+                spr.layer = 0;
+                troll_morph_yellow_square = sq;
+            }
+        } else {
+            if #alive(troll_morph_yellow_square) {
+                troll_morph_yellow_square.destroy();
+                troll_morph_yellow_square = null;
+            }
         }
 
         ensure_vip_crown_visual(this);
@@ -1451,7 +1513,7 @@ Player :: class : Player_Base {
         if show_admin_unban && !can_access_admin_panel(this) {
             show_admin_unban = false;
         }
-        if show_troll_panel && !can_access_admin_panel(this) {
+        if show_troll_panel && !can_access_troll_panel(this) {
             show_troll_panel = false;
         }
 
@@ -1483,7 +1545,7 @@ Player :: class : Player_Base {
             if show_admin_unban && can_access_admin_panel(this) {
                 draw_admin_unban(this);
             }
-            if show_troll_panel && can_access_admin_panel(this) {
+            if show_troll_panel && can_access_troll_panel(this) {
                 draw_troll_panel(this);
             }
             // Jumpscare and status overlays are visible to victims themselves (not admin gated)
