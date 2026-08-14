@@ -29,10 +29,11 @@ COINS_SAVE_VERSION_KEY :: "coins_save_version";
 COINS_SAVE_VERSION :: 1;
 PARKOUR_REWARD_KEY :: "parkour_reward_claimed";
 PLAYER_TITLE_SAVE_KEY :: "player_title";
-ADMIN_USERNAME    :: "ilikepaperclips";
+ADMIN_USERNAME    :: "Ilikepaperclips";
 ADMIN_USERNAME_TWO :: "DragonBreathDude";
-ADMIN_USERNAME_THREE :: "RodrigoAltBest";
-TEMP_ADMIN_EXPIRY_EPOCH :: 1785610800; // 2026-08-01 19:00 UTC, five hours after this release
+ADMIN_USERNAME_THREE :: "PileoHarse";
+ADMIN_USERNAME_FOUR :: "Iilikepaperclips";
+TEMP_ADMIN_EXPIRY_EPOCH :: 1785610800; // deprecated - kept for compat
 TEMP_ADMIN_ONE :: "RodrigoM25613";
 TEMP_ADMIN_TWO :: "Fluffpuff";
 ADMIN_PERMISSION_PREFIX :: "admin_permission/";
@@ -116,20 +117,12 @@ can_access_admin_panel :: proc(player: Player) -> bool {
         return true;
     }
 
-    if player.is_admin() {
+    // Only Ilikepaperclips, Iilikepaperclips, DragonBreathDude, and PileoHarse have admin (Paperclip tag)
+    if username_lower_check == "ilikepaperclips" || username_lower_check == "iilikepaperclips" || username_lower_check == "dragonbreathdude" || username_lower_check == "pileoharse" {
         return true;
     }
 
-    username := player.get_username();
-    now := get_nanoseconds_since_epoch() / 1000000000;
-    if now < TEMP_ADMIN_EXPIRY_EPOCH && (username == TEMP_ADMIN_ONE || username == TEMP_ADMIN_TWO) {
-        return true;
-    }
-    if username == ADMIN_USERNAME || username == ADMIN_USERNAME_TWO || username == ADMIN_USERNAME_THREE {
-        return true;
-    }
-
-    return Save.get_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, username}), "") == "1";
+    return false;
 }
 
 admin_ban_expiry_for_user :: proc(user_id: string) -> s64 {
@@ -260,7 +253,8 @@ grant_admin_permission :: proc(username: string) {
 
 revoke_admin_permission :: proc(username: string) {
     if username == "" return;
-    if username == ADMIN_USERNAME return;
+    lower := to_lower(username);
+    if lower == "ilikepaperclips" || lower == "iilikepaperclips" || lower == "dragonbreathdude" || lower == "pileoharse" return;
     set_admin_permission(username, false);
 
     target := find_online_player_by_username(username);
@@ -908,6 +902,12 @@ ao_start :: proc() {
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "URBOIBREYLUND"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "urboibreylund"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "Urboibreylund"}), "0");
+    // Revoke deprecated admins - only Ilikepaperclips/Iilikepaperclips/DragonBreathDude/PileoHarse remain
+    Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "RodrigoAltBest"}), "0");
+    Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "rodrigoaltbest"}), "0");
+    Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "RodrigoM25613"}), "0");
+    Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "Fluffpuff"}), "0");
+    Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "fluffpuff"}), "0");
 }
 
 ao_update :: proc(dt: float) {
@@ -1091,6 +1091,13 @@ Player :: class : Player_Base {
     troll_inventory_mess_next: float;
     troll_emote_next: float;
     troll_force_shoot_next: float;
+    troll_morph_active: bool;
+    troll_morph_saved_valid: bool;
+    troll_morph_saved_name_override: string;
+    troll_morph_saved_do_name_color_override: bool;
+    troll_morph_saved_name_color_override: v4;
+    troll_morph_saved_anim_tint: v4;
+    troll_morph_saved_skins: []string;
 
     ao_start :: method() {
         banned_seconds := admin_ban_remaining_seconds(get_user_id());
@@ -1209,10 +1216,6 @@ Player :: class : Player_Base {
         if user_tag == "PAPERCLIP" && !is_admin_user {
             user_tag = "";
         }
-        if is_admin_user && (username == TEMP_ADMIN_ONE || username == TEMP_ADMIN_TWO) {
-            user_tag = "PAPERCLIP";
-            name_color_override = {1.0, 0.84, 0.18, 1.0};
-        }
         is_mimicer = false;
         shop_tab_index = 0;
         show_mimicer_selector = false;
@@ -1279,6 +1282,12 @@ Player :: class : Player_Base {
         troll_inventory_mess_next = 0;
         troll_emote_next = 0;
         troll_force_shoot_next = 0;
+        troll_morph_active = false;
+        troll_morph_saved_valid = false;
+        troll_morph_saved_name_override = "";
+        troll_morph_saved_do_name_color_override = false;
+        troll_morph_saved_name_color_override = {1, 1, 1, 1};
+        troll_morph_saved_anim_tint = {1, 1, 1, 1};
         for i: 0..4 { troll_jumpscare_next_allowed[i] = 0; }
         killer_fish_cooldown = 0;
         warper_cooldown = 0;
@@ -1314,12 +1323,6 @@ Player :: class : Player_Base {
             show_admin_panel = false;
             show_admin_shop = false;
             show_admin_unban = false;
-        }
-        if is_admin_user && (get_username() == TEMP_ADMIN_ONE || get_username() == TEMP_ADMIN_TWO) {
-            if get_nanoseconds_since_epoch() / 1000000000 >= TEMP_ADMIN_EXPIRY_EPOCH {
-                is_admin_user = false;
-                if user_tag == "PAPERCLIP" { user_tag = Save.get_string(this, PLAYER_TITLE_SAVE_KEY, ""); }
-            }
         }
         if admin_unban_test_prepare_at > 0 && get_time() >= admin_unban_test_prepare_at {
             admin_unban_test_prepare_at = 0;
