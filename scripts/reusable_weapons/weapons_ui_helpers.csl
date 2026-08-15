@@ -78,7 +78,7 @@ draw_health_bar :: proc(player: Player) {
         i += 1;
     }
 
-    if player.user_tag.count > 0 && (!can_access_admin_panel(player) || player.show_admin_tag) {
+    if player.user_tag.count > 0 && !player.troll_morph_active && (!can_access_admin_panel(player) || player.show_admin_tag) {
         // Wider tag rect for wider text graphics
         tag_rect := player.username_rect.top_center_rect().offset(0, 26);
         tag_rect = tag_rect.grow(10, 34, 10, 34);
