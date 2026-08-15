@@ -8,18 +8,25 @@ Weapon_Target :: class : Component {
 }
 
 weapon_element :: proc(wt: Weapon_Type) -> s64 {
-    if wt == .FIRE_RAY || wt == .FIREBALL || wt == .METEORITE || wt == .SOLAR_SIPHONER || wt == .SUN_SHOOTER_SAND return 1; // fire
-    if wt == .WATER_GUN || wt == .WATER_BALLOON_RPG || wt == .HYDRO_CANNON || wt == .BUBBLE_GUN || wt == .SUN_SHOOTER_TSUNAMI return 2; // water
+    if wt == .FIRE_RAY || wt == .FIREBALL || wt == .METEORITE || wt == .SOLAR_SIPHONER return 1; // fire
+    if wt == .WATER_GUN || wt == .WATER_BALLOON_RPG || wt == .HYDRO_CANNON || wt == .BUBBLE_GUN return 2; // water
     if wt == .POISON_GRENADE || wt == .KILLER_FISH || wt == .SHURIKEN return 3; // leaf
     if wt == .ICE_LAUNCHER || wt == .GLACIATOR return 4; // ice
     if wt == .WARPER return 5; // void - black hole
     if wt == .RAY_GUN || wt == .STORMS_EYE return 6; // lightning
+    if wt == .SUN_SHOOTER_TSUNAMI || wt == .SUN_SHOOTER_SAND return 7; // sun
     return 0; // normal
 }
 
 elemental_damage_multiplier :: proc(attacker: s64, defender: s64) -> float {
     if attacker == 0 || defender == 0 return 1.0;
     if attacker == defender return 1.0;
+    // Sun element interactions - symmetric
+    // Sun does x0.5 to Fire, Water, Void and x2 to Leaf, Ice, Lightning (vice versa)
+    if (attacker == 7 && (defender == 3 || defender == 4 || defender == 6)) return 2.0;
+    if ((attacker == 3 || attacker == 4 || attacker == 6) && defender == 7) return 2.0;
+    if (attacker == 7 && (defender == 1 || defender == 2 || defender == 5)) return 0.5;
+    if ((attacker == 1 || attacker == 2 || attacker == 5) && defender == 7) return 0.5;
     if (attacker == 2 && defender == 1) || (attacker == 1 && defender == 3) || (attacker == 3 && defender == 2) return 2.0;
     if (attacker == 5 && (defender == 1 || defender == 2 || defender == 3)) return 2.0;
     if attacker == 1 && defender == 5 return 2.0;
