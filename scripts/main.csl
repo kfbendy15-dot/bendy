@@ -1253,6 +1253,15 @@ Player :: class : Player_Base {
             }
         }
 
+        // Remove Grenade Gun from all players - weapon has been removed from the game
+        destroy_all_weapon_items(this, .GRENADE_GUN);
+        if equipped_weapon_type == .GRENADE_GUN {
+            weapon_unequip(this, .GRENADE_GUN);
+            equipped_weapon_type = .NONE;
+            equipped_item_def = null;
+            handle_equipped_item_changing(-1);
+        }
+
         // Assign random spawn point
         rng := rng_root_seed();
         idx := rng_range_int(ref rng, 0, 3);
