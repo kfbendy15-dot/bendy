@@ -47,6 +47,8 @@ Weapon_Type :: enum {
     BUILDING_TOOLS;
     LASER_GUN;
     WARPER;
+    SUN_SHOOTER_TSUNAMI;
+    SUN_SHOOTER_SAND;
 }
 
 Fire_Mode :: enum {

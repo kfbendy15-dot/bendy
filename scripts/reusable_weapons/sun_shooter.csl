@@ -1,0 +1,114 @@
+Sun_Shooter_Variant :: enum {
+    TSUNAMI;
+    SAND;
+}
+
+SUN_TSUNAMI_DAMAGE_CHANCE :: 0.10;
+SUN_SAND_DAMAGE_CHANCE :: 0.05;
+SUN_SHOOTER_DAMAGE :: 20.0;
+
+Sun_Knockback_Effect :: class : Effect_Base {
+    direction: v2;
+    strength: float;
+    original_friction: float;
+
+    effect_start :: method() {
+        player_specific.disable_movement_inputs = true;
+        original_friction = player.agent.friction;
+        player.agent.friction = 0;
+        set_duration(0.35);
+    }
+
+    effect_update :: method(dt: float) {
+        if !#alive(player) return;
+        player.agent.velocity = direction * strength;
+    }
+
+    effect_end :: method(interrupt: bool) {
+        if !#alive(player) return;
+        player.agent.friction = original_friction;
+        player.agent.velocity = {0, 0};
+    }
+}
+
+apply_sun_shooter_damage_chance :: proc(victim: Player, owner_id: u64, chance: float) {
+    if victim == null || victim.is_dead || victim.weapon_target == null return;
+
+    rng: u64 = rng_root_seed();
+    if rng_range_float(ref rng, 0, 1) < chance {
+        weapon_target_apply_damage(victim.weapon_target, SUN_SHOOTER_DAMAGE, owner_id);
+    }
+}
+
+Sun_Shooter_Projectile :: class : Component {
+    variant: Sun_Shooter_Variant;
+    direction: v2;
+    owner_id: u64;
+    speed: float;
+    lifetime: float;
+    max_lifetime: float;
+
+    ao_update :: method(dt: float) {
+        lifetime += dt;
+        if lifetime >= max_lifetime {
+            entity.destroy();
+            return;
+        }
+
+        entity.add_local_position(direction * speed * dt);
+
+        hit_target, found := Scene.get_closest_component_in_range(entity.world_position, 0.9, Weapon_Target);
+        if !found || hit_target == null || hit_target.entity.id == owner_id return;
+
+        victim := hit_target.entity.get_component(Player);
+        if victim == null || victim.is_dead {
+            entity.destroy();
+            return;
+        }
+
+        if variant == .TSUNAMI {
+            knockback := new(Sun_Knockback_Effect);
+            knockback.direction = direction;
+            knockback.strength = 18.0;
+            victim.entity.add_passive_effect(knockback);
+            apply_sun_shooter_damage_chance(victim, owner_id, SUN_TSUNAMI_DAMAGE_CHANCE);
+        } else {
+            apply_weapon_stun(victim, 1.1, "sun_sand");
+            apply_sun_shooter_damage_chance(victim, owner_id, SUN_SAND_DAMAGE_CHANCE);
+        }
+
+        hit_sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/bullet_hit.wav");
+        hit_desc := SFX.default_sfx_desc();
+        hit_desc.set_position(entity.world_position);
+        hit_desc.range_multiplier = 2.0;
+        SFX.play(hit_sfx, hit_desc);
+
+        entity.destroy();
+    }
+}
+
+spawn_sun_shooter_projectile :: proc(player: Player, direction: v2, variant: Sun_Shooter_Variant) {
+    dir := normalize(direction);
+    if length(dir) < 0.1 dir = v2{1, 0};
+
+    projectile := Scene.create_entity();
+    projectile.set_local_position(get_projectile_spawn_pos(player, dir));
+    projectile.set_local_rotation(to_degrees(atan2(dir.y, dir.x)));
+    projectile.set_local_scale({1.8, 1.8});
+
+    sprite := projectile.add_component(Sprite_Renderer);
+    if variant == .TSUNAMI {
+        sprite.set_texture(get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/projectiles/WaterBullet.png"));
+        sprite.color = {0.7, 0.9, 1.0, 1.0};
+    } else {
+        sprite.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+        sprite.color = {0.9, 0.62, 0.2, 1.0};
+    }
+
+    shot := projectile.add_component(Sun_Shooter_Projectile);
+    shot.variant = variant;
+    shot.direction = dir;
+    shot.owner_id = player.entity.id;
+    shot.speed = variant == .TSUNAMI ? 13.0 : 11.0;
+    shot.max_lifetime = 2.5;
+}

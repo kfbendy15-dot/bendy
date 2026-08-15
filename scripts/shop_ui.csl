@@ -40,6 +40,7 @@ elemental_shop_name :: proc(event: s64) -> string {
     if event == 3 return "Leaf";
     if event == 4 return "Ice";
     if event == 5 return "Void";
+    if event == 7 return "Sun";
     return "Lightning";
 }
 
@@ -354,6 +355,9 @@ draw_shop :: proc(player: Player) {
 
     shop_close_btn: Interact_Result;
     armor_handle: Interact_Result;
+    sun_armor_handle: Interact_Result;
+    sun_tsunami_handle: Interact_Result;
+    sun_sand_handle: Interact_Result;
     fire_shop_handle: Interact_Result;
     water_shop_handle: Interact_Result;
     leaf_shop_handle: Interact_Result;
@@ -408,7 +412,11 @@ draw_shop :: proc(player: Player) {
 
     UIK.text("Featured Shop", UIK.text_title());
     event := elemental_shop_event();
-    UIK.text(format_string(g_event_elemental ? ((event == 5 || event == 6) ? "% Shop open" : "Element event: % Shop open") : "Element event: Closed", {elemental_shop_name(event)}), UIK.text_body());
+    if g_event_sun {
+        UIK.text("Sun event: Sun Shop open", UIK.text_body());
+    } else {
+        UIK.text(format_string(g_event_elemental ? ((event == 5 || event == 6) ? "% Shop open" : "Element event: % Shop open") : "Element event: Closed", {elemental_shop_name(event)}), UIK.text_body());
+    }
     elemental_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(elemental_row);
     if event == 1 { fire_shop_handle = draw_shop_card("shop/fire_shop", "Fireball", 50, get_asset(Texture_Asset, get_weapon_config(.FIREBALL).weapon_icon_path), {0.95, 0.3, 0.15, 1}, player_has_weapon(player, .FIREBALL)); }
@@ -417,6 +425,11 @@ draw_shop :: proc(player: Player) {
     if event == 4 { ice_shop_handle = draw_shop_card("shop/ice_shop", "Ice Launcher", 85, get_asset(Texture_Asset, get_weapon_config(.ICE_LAUNCHER).weapon_icon_path), {0.55, 0.85, 1.0, 1}, player_has_weapon(player, .ICE_LAUNCHER)); }
     if event == 5 { warper_shop_handle = draw_shop_card("shop/void_special_warper", "Black Hole Gun", 1000, get_asset(Texture_Asset, get_weapon_config(.WARPER).weapon_icon_path), {0.7, 0.25, 1.0, 1}, player_has_weapon(player, .WARPER)); }
     if event == 6 { lightning_shop_handle = draw_shop_card("shop/lightning_gun", "Ray Gun", 90, get_asset(Texture_Asset, get_weapon_config(.RAY_GUN).weapon_icon_path), {0.25, 0.75, 1.0, 1}, player_has_weapon(player, .RAY_GUN)); }
+    if event == 7 {
+        sun_armor_handle = draw_shop_card("shop/sun_armor", "Sun Armor", 1000, get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png"), {1.0, 0.58, 0.08, 1.0}, player.sun_armor_active || player.armor_tier >= 8);
+        sun_tsunami_handle = draw_shop_card("shop/sun_shooter_tsunami", "Sun Shooter", 120, get_asset(Texture_Asset, get_weapon_config(.SUN_SHOOTER_TSUNAMI).weapon_icon_path), {0.15, 0.65, 1.0, 1.0}, player_has_weapon(player, .SUN_SHOOTER_TSUNAMI));
+        sun_sand_handle = draw_shop_card("shop/sun_shooter_sand", "Sun Shooter", 120, get_asset(Texture_Asset, get_weapon_config(.SUN_SHOOTER_SAND).weapon_icon_path), {1.0, 0.35, 0.08, 1.0}, player_has_weapon(player, .SUN_SHOOTER_SAND));
+    }
     UIK.panel_end();
     starter_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
     starter_handle = draw_shop_card("shop/starter_pack", "Starter Pack (199 Sparks)", SPARKS_STARTER_COST, starter_icon, {0.25, 0.75, 1.0, 1}, Save.get_int(player, STARTER_PACK_CLAIMED_KEY, 0) != 0);
@@ -585,6 +598,9 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(ice_shop_handle) && event == 4 { buy_weapon_offer(player, .ICE_LAUNCHER, 85, "+Ice Launcher"); }
     if UIK.clicked(warper_shop_handle) && event == 5 { buy_weapon_offer(player, .WARPER, 1000, "+Black Hole Gun"); }
     if UIK.clicked(lightning_shop_handle) && event == 6 { buy_weapon_offer(player, .RAY_GUN, 90, "+Ray Gun"); }
+    if UIK.clicked(sun_armor_handle) && event == 7 { buy_sun_armor(player); }
+    if UIK.clicked(sun_tsunami_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_TSUNAMI, 120, "+Sun Shooter"); }
+    if UIK.clicked(sun_sand_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_SAND, 120, "+Sun Shooter"); }
     if UIK.clicked(starter_handle) {
         buy_starter_pack(player);
     }
@@ -1606,6 +1622,9 @@ draw_event_panel :: proc(player: Player) {
         }
     }
 
+    sun_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    sun_desc.panel.width = UIK.flex(1); sun_desc.panel.height = UIK.pixels(52);
+    sun_btn := UIK.button("events/start_sun", "Start Sun Event", sun_desc);
     fire_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     fire_desc.panel.width = UIK.flex(1); fire_desc.panel.height = UIK.pixels(52);
     fire_btn := UIK.button("events/start_fire", "Start Fire Event", fire_desc);
@@ -1651,15 +1670,18 @@ draw_event_panel :: proc(player: Player) {
     ice_clicked := UIK.clicked(ice_btn);
     void_clicked := UIK.clicked(void_btn);
     lightning_clicked := UIK.clicked(lightning_btn);
-    any_event_clicked := fire_clicked || water_clicked || leaf_clicked || ice_clicked || void_clicked || lightning_clicked;
+    sun_clicked := UIK.clicked(sun_btn);
+    any_event_clicked := fire_clicked || water_clicked || leaf_clicked || ice_clicked || void_clicked || lightning_clicked || sun_clicked;
     if any_event_clicked {
         g_event_elemental = true;
         g_event_ice = ice_clicked;
+        g_event_sun = sun_clicked;
         if fire_clicked { g_active_element_event = 1; }
         else if water_clicked { g_active_element_event = 2; }
         else if leaf_clicked { g_active_element_event = 3; }
         else if ice_clicked { g_active_element_event = 4; }
         else if void_clicked { g_active_element_event = 5; }
+        else if sun_clicked { g_active_element_event = 7; }
         else { g_active_element_event = 6; }
         g_event_ends_at = get_time() + 600.0;
         cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
@@ -1667,6 +1689,9 @@ draw_event_panel :: proc(player: Player) {
         cur_ice := Save.get_game_int(EVENT_ICE_KEY, 0);
         if g_event_ice && cur_ice == 0 { Save.increment_game_int(EVENT_ICE_KEY, 1); }
         if !g_event_ice && cur_ice != 0 { Save.increment_game_int(EVENT_ICE_KEY, -cur_ice); }
+        cur_sun := Save.get_game_int(EVENT_SUN_KEY, 0);
+        if g_event_sun && cur_sun == 0 { Save.increment_game_int(EVENT_SUN_KEY, 1); }
+        if !g_event_sun && cur_sun != 0 { Save.increment_game_int(EVENT_SUN_KEY, -cur_sun); }
         player.show_event_panel = false;
         player.show_admin_panel = false;
         player.show_admin_shop = false;

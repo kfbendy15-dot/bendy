@@ -274,6 +274,14 @@ Special_Ability :: class : Ability_Base {
                     };
                     spawn_black_hole_trap(hole_pos, p.entity.id);
                 }
+                case .SUN_SHOOTER_TSUNAMI: {
+                    weapon_shoot(p, wt);
+                    spawn_sun_shooter_projectile(p, aiming.aim_direction, .TSUNAMI);
+                }
+                case .SUN_SHOOTER_SAND: {
+                    weapon_shoot(p, wt);
+                    spawn_sun_shooter_projectile(p, aiming.aim_direction, .SAND);
+                }
                 case .SUBSPACE_TRIPMINE: {
                     weapon_shoot(p, wt);
                     dir := aiming.aim_direction;

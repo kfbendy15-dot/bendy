@@ -5,6 +5,7 @@ import "core:global_leaderboard"
 
 PLAYER_MAX_HEALTH :: 100.0;
 ARMOR_BONUS_HP    :: 50.0;
+SUN_ARMOR_BONUS_HP :: 75.0;
 STARTING_BULLETS  :: 100;
 KILL_COINS        :: 20;
 DOUBLE_COIN_KILL_COINS :: 20;
@@ -68,6 +69,8 @@ ARMOR_TIER_KEY :: "armor_tier";
 EVENT_DOUBLE_COINS_KEY :: "event_double_coins";
 EVENT_ELEMENTAL_KEY :: "event_elemental";
 EVENT_ICE_KEY :: "event_ice";
+EVENT_SUN_KEY :: "event_sun";
+SUN_ARMOR_KEY :: "sun_armor";
 
 
 coin_pass_amount_for_product :: proc(product_id: string) -> s64 {
@@ -829,6 +832,12 @@ armor_tier_name :: proc(tier: s64) -> string {
     return "None";
 }
 
+armor_display_name :: proc(player: Player) -> string {
+    if player != null && player.sun_armor_active return "Sun";
+    if player == null return "None";
+    return armor_tier_name(player.armor_tier);
+}
+
 refresh_armor_visual :: proc(player: Player) {
     if player == null || player.armor_tier <= 0 return;
     if player.armor_visual_entity == null {
@@ -841,7 +850,11 @@ refresh_armor_visual :: proc(player: Player) {
         player.armor_visual_entity = visual;
     }
     armor_sprite := player.armor_visual_entity.get_component(Sprite_Renderer);
-    armor_sprite.color = armor_tier_color(player.armor_tier);
+    if player.sun_armor_active {
+        armor_sprite.color = {1.0, 0.62, 0.08, 1.0};
+    } else {
+        armor_sprite.color = armor_tier_color(player.armor_tier);
+    }
 }
 
 armor_tier_color :: proc(tier: s64) -> v4 {
@@ -851,6 +864,10 @@ armor_tier_color :: proc(tier: s64) -> v4 {
 
 buy_armor_progression :: proc(player: Player) {
     if player == null return;
+    if player.sun_armor_active {
+        player.sun_armor_active = false;
+        Save.set_int(player, SUN_ARMOR_KEY, 0);
+    }
     purchases := Save.get_int(player, ARMOR_PURCHASES_KEY, 0) + 1;
     Save.set_int(player, ARMOR_PURCHASES_KEY, purchases);
     tier := armor_tier_for_purchases(purchases);
@@ -861,8 +878,23 @@ buy_armor_progression :: proc(player: Player) {
     player.play_reward_feedback(format_string("% armor", {armor_tier_name(tier)}));
 }
 
+buy_sun_armor :: proc(player: Player) {
+    if player == null || player.sun_armor_active || player.armor_tier >= 8 return;
+    if !spend_coins(player, 1000) return;
+
+    player.sun_armor_active = true;
+    Save.set_int(player, SUN_ARMOR_KEY, 1);
+    if player.armor_bonus_health < SUN_ARMOR_BONUS_HP {
+        apply_armor_bonus(player, SUN_ARMOR_BONUS_HP - player.armor_bonus_health);
+    }
+    refresh_armor_visual(player);
+    player.play_reward_feedback("Sun Armor");
+}
+
 give_armor_to_player :: proc(target: Player) {
     if target == null return;
+    target.sun_armor_active = false;
+    Save.set_int(target, SUN_ARMOR_KEY, 0);
     Save.set_int(target, ARMOR_PURCHASES_KEY, 7210);
     Save.set_int(target, ARMOR_TIER_KEY, 8);
     target.armor_tier = 8;
@@ -873,6 +905,8 @@ give_armor_to_player :: proc(target: Player) {
 
 set_armor_tier_for_admin :: proc(target: Player, tier: s64) {
     if target == null || tier < 1 || tier > 8 return;
+    target.sun_armor_active = false;
+    Save.set_int(target, SUN_ARMOR_KEY, 0);
     target.armor_tier = tier;
     Save.set_int(target, ARMOR_TIER_KEY, tier);
     refresh_armor_visual(target);
@@ -913,7 +947,8 @@ ao_start :: proc() {
     g_event_double_coins = Save.get_game_int(EVENT_DOUBLE_COINS_KEY, 0) > 0;
     g_event_elemental = Save.get_game_int(EVENT_ELEMENTAL_KEY, 0) > 0;
     g_event_ice = Save.get_game_int(EVENT_ICE_KEY, 0) > 0;
-    g_active_element_event = g_event_ice ? 4 : 0;
+    g_event_sun = Save.get_game_int(EVENT_SUN_KEY, 0) > 0;
+    g_active_element_event = g_event_sun ? 7 : (g_event_ice ? 4 : 0);
     g_event_ends_at = 0;
     // Ensure URBOIBREYLUND never retains admin permission in shared save
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "URBOIBREYLUND"}), "0");
@@ -937,12 +972,15 @@ ao_update :: proc(dt: float) {
 stop_active_event :: proc() {
     g_event_elemental = false;
     g_event_ice = false;
+    g_event_sun = false;
     g_active_element_event = 0;
     g_event_ends_at = 0;
     cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
     if cur_elem != 0 { Save.increment_game_int(EVENT_ELEMENTAL_KEY, -cur_elem); }
     cur_ice := Save.get_game_int(EVENT_ICE_KEY, 0);
     if cur_ice != 0 { Save.increment_game_int(EVENT_ICE_KEY, -cur_ice); }
+    cur_sun := Save.get_game_int(EVENT_SUN_KEY, 0);
+    if cur_sun != 0 { Save.increment_game_int(EVENT_SUN_KEY, -cur_sun); }
 }
 
 ao_late_update :: proc(dt: float) {
@@ -1019,6 +1057,7 @@ Player :: class : Player_Base {
     paperclip_active: bool;
     armor_bonus_health: float;
     armor_tier: s64;
+    sun_armor_active: bool;
     armor_visual_entity: Entity;
     purchased_finger_gun: bool;
     purchased_paper_gun: bool;
@@ -1245,7 +1284,11 @@ Player :: class : Player_Base {
         show_minigames = false;
         armor_bonus_health = 0;
         armor_tier = Save.get_int(this, ARMOR_TIER_KEY, 0);
+        sun_armor_active = Save.get_int(this, SUN_ARMOR_KEY, 0) != 0;
         refresh_armor_visual(this);
+        if sun_armor_active && armor_bonus_health < SUN_ARMOR_BONUS_HP {
+            apply_armor_bonus(this, SUN_ARMOR_BONUS_HP - armor_bonus_health);
+        }
         admin_target_username = "";
         admin_grant_amount = 25;
         admin_armor_tier = 1;
@@ -1671,6 +1714,7 @@ Player :: class : Player_Base {
 
 
 g_event_ice: bool;
+g_event_sun: bool;
 g_event_double_coins: bool;
 g_event_elemental: bool;
 g_active_element_event: s64;
