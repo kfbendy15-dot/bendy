@@ -1,4 +1,4 @@
-WEAPON_COUNT :: 47;
+WEAPON_COUNT :: 49;
 AMMO_TYPE_COUNT :: 10;
 
 g_weapon_item_defs: [WEAPON_COUNT]Item_Definition;
@@ -60,6 +60,8 @@ weapon_type_to_index :: proc(wt: Weapon_Type) -> s64 {
         case .BUILDING_TOOLS:         return 44;
         case .LASER_GUN:              return 45;
         case .WARPER:                 return 46;
+        case .SUN_SHOOTER_TSUNAMI:    return 47;
+        case .SUN_SHOOTER_SAND:       return 48;
     }
     return -1;
 }
@@ -207,6 +209,8 @@ init_weapon_items :: proc() {
     register_weapon(.BUILDING_TOOLS);
     register_weapon(.LASER_GUN);
     register_weapon(.WARPER);
+    register_weapon(.SUN_SHOOTER_TSUNAMI);
+    register_weapon(.SUN_SHOOTER_SAND);
 
     // Load fire sounds for each weapon
     load_fire_sounds();
@@ -361,6 +365,10 @@ load_fire_sounds :: proc() {
     load_single_sound(.ADMIN_NUKE_GUN, "reusable_weapons/sounds/reusable-weapons/cannon_explode.wav");
     load_single_sound(.BUILDING_TOOLS, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
     load_single_sound(.WARPER, "reusable_weapons/sounds/reusable-weapons/void_splitter_shoot_start.wav");
+
+    // Sun Shooters
+    load_single_sound(.SUN_SHOOTER_TSUNAMI, "reusable_weapons/sounds/reusable-weapons/waterballoon_rpg_shoot.wav");
+    load_single_sound(.SUN_SHOOTER_SAND, "reusable_weapons/sounds/reusable-weapons/player_throw_grenade.wav");
 }
 
 load_sound_range :: proc(wt: Weapon_Type, prefix: string, count: s64) {
@@ -434,6 +442,8 @@ get_weapon_type_for_item :: proc(item_def: Item_Definition) -> Weapon_Type {
                 case 44: return .BUILDING_TOOLS;
                 case 45: return .LASER_GUN;
                 case 46: return .WARPER;
+                case 47: return .SUN_SHOOTER_TSUNAMI;
+                case 48: return .SUN_SHOOTER_SAND;
             }
         }
         i += 1;
