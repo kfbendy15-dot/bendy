@@ -201,7 +201,6 @@ init_weapon_items :: proc() {
     register_weapon(.GIANT_GUN);
     register_weapon(.BUBBLE_GUN);
     register_weapon(.FLASHBANG);
-    register_weapon(.GRENADE_GUN);
     register_weapon(.INVISIBLE_GUN_ADMIN);
     register_weapon(.BATTLEPASS_GUN);
     register_weapon(.ADMIN_GUN);
@@ -350,9 +349,6 @@ load_fire_sounds :: proc() {
 
     // Flashbang (1 sound)
     load_single_sound(.FLASHBANG, "reusable_weapons/sounds/reusable-weapons/player_throw_grenade.wav");
-
-    // Grenade Gun (1 sound)
-    load_single_sound(.GRENADE_GUN, "reusable_weapons/sounds/reusable-weapons/player_throw_grenade.wav");
 
     // Invisible Gun (1 sound)
     load_single_sound(.INVISIBLE_GUN_ADMIN, "reusable_weapons/sounds/reusable-weapons/ray_gun_shoot.wav");

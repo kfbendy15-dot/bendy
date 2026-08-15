@@ -376,7 +376,6 @@ draw_shop :: proc(player: Player) {
     shop_blunder_handle: Interact_Result;
     shop_revolver_handle: Interact_Result;
     flashbang_handle: Interact_Result;
-    grenade_gun_handle: Interact_Result;
     sword_handle: Interact_Result;
     stun_handle: Interact_Result;
     mine_handle: Interact_Result;
@@ -493,9 +492,7 @@ draw_shop :: proc(player: Player) {
     shop_gun_row_4 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(shop_gun_row_4);
     flashbang_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/grenade.png");
-    grenade_gun_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/grenade.png");
     flashbang_handle = draw_shop_card("shop/flashbang", "Flashbang", 85, flashbang_icon, {0.9, 0.9, 0.6, 1}, player_has_weapon(player, .FLASHBANG));
-    grenade_gun_handle = draw_shop_card("shop/grenade_gun", "Grenade Gun", 110, grenade_gun_icon, {0.8, 0.6, 0.35, 1}, player_has_weapon(player, .GRENADE_GUN));
     revolver_icon := get_asset(Texture_Asset, get_weapon_config(.AKIMBO_PISTOLS).weapon_icon_path);
     shop_revolver_handle = draw_shop_card("shop/revolver", "Revolver", 80, revolver_icon, {0.75, 0.55, 0.35, 1}, player_has_weapon(player, .AKIMBO_PISTOLS));
     UIK.panel_end();
@@ -648,9 +645,6 @@ draw_shop :: proc(player: Player) {
     }
     if UIK.clicked(flashbang_handle) {
         buy_weapon_offer(player, .FLASHBANG, 85, "+Flashbang");
-    }
-    if UIK.clicked(grenade_gun_handle) {
-        buy_weapon_offer(player, .GRENADE_GUN, 110, "+Grenade Gun");
     }
     if UIK.clicked(shop_revolver_handle) {
         buy_weapon_offer(player, .AKIMBO_PISTOLS, 80, "+Revolver");
@@ -1622,9 +1616,6 @@ draw_event_panel :: proc(player: Player) {
         }
     }
 
-    sun_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
-    sun_desc.panel.width = UIK.flex(1); sun_desc.panel.height = UIK.pixels(52);
-    sun_btn := UIK.button("events/start_sun", "Start Sun Event", sun_desc);
     fire_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     fire_desc.panel.width = UIK.flex(1); fire_desc.panel.height = UIK.pixels(52);
     fire_btn := UIK.button("events/start_fire", "Start Fire Event", fire_desc);
@@ -1645,6 +1636,9 @@ draw_event_panel :: proc(player: Player) {
     lightning_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     lightning_desc.panel.width = UIK.flex(1); lightning_desc.panel.height = UIK.pixels(52);
     lightning_btn := UIK.button("events/start_lightning", "Start Lightning Event", lightning_desc);
+    sun_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    sun_desc.panel.width = UIK.flex(1); sun_desc.panel.height = UIK.pixels(52);
+    sun_btn := UIK.button("events/start_sun", "Start Sun Event", sun_desc);
     stop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     stop_desc.panel.width = UIK.flex(1); stop_desc.panel.height = UIK.pixels(52);
     stop_btn := UIK.button("events/stop", "Stop Event", stop_desc);

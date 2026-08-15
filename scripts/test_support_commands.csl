@@ -198,7 +198,6 @@ admin_shop_test_buy_new_items :: proc(player: Player) {
 
     buy_weapon_offer(player, .BUBBLE_GUN, 95, "+Bubble Gun");
     buy_weapon_offer(player, .FLASHBANG, 85, "+Flashbang");
-    buy_weapon_offer(player, .GRENADE_GUN, 110, "+Grenade Gun");
     buy_weapon_offer(player, .SHURIKEN, 250, "+Shuriken");
     buy_weapon_offer(player, .FIREBALL, 350, "+Fireball");
     buy_weapon_offer(player, .METEORITE, 500, "+Meteorite");
@@ -251,7 +250,6 @@ admin_shop_test_grant_new_items :: proc(player: Player) {
     }
 
     grant_weapon_with_ammo(player, .FLASHBANG, 0);
-    grant_weapon_with_ammo(player, .GRENADE_GUN, 0);
     grant_weapon_with_ammo(player, .INVISIBLE_GUN_ADMIN, 0);
     grant_weapon_with_ammo(player, .BATTLEPASS_GUN, 0);
     grant_weapon_with_ammo(player, .SHURIKEN, get_weapon_config(.SHURIKEN).ammo_first_pickup);
