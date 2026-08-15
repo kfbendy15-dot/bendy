@@ -91,6 +91,9 @@ Single_Shot_Ability :: class : Ability_Base {
                 case .GIANT_GUN: {
                     giant_gun_attack(p, aiming.aim_direction);
                 }
+                case .SNIPER: {
+                    spawn_sniper_projectile(p, aiming.aim_direction, wt);
+                }
             }
 
             p.weapon_cooldowns[wt.(int)] = config.fire_rate;

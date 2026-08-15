@@ -454,6 +454,7 @@ is_admin_only_weapon :: proc(wt: Weapon_Type) -> bool {
     if wt == .BUILDING_TOOLS { return true; }
     if wt == .INVISIBLE_GUN_ADMIN { return true; }
     if wt == .BATTLEPASS_GUN { return true; }
+    if wt == .SNIPER { return true; }
     return false;
 }
 
@@ -488,6 +489,7 @@ strip_admin_weapons :: proc(player: Player) {
     destroy_all_weapon_items(player, .BATTLEPASS_GUN);
     destroy_all_weapon_items(player, .ADMIN_NUKE_GUN);
     destroy_all_weapon_items(player, .BUILDING_TOOLS);
+    destroy_all_weapon_items(player, .SNIPER);
 
     if is_admin_only_weapon(player.equipped_weapon_type) {
         weapon_unequip(player, player.equipped_weapon_type);
@@ -1604,6 +1606,7 @@ Player :: class : Player_Base {
             if is_local_or_server() {
                 draw_troll_jumpscare(this);
                 draw_troll_status_overlays(this);
+                draw_sniper_overlays(this);
             }
             if show_mimicer_selector {
                 draw_mimicer_selector(this);

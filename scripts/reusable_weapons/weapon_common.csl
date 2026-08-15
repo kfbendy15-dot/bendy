@@ -68,6 +68,10 @@ weapon_equip :: proc(player: Player, wt: Weapon_Type) {
         player.animator.state_machine.set_trigger("hands_out_start");
     }
 
+    if wt == .SNIPER {
+        sniper_apply_mode(player);
+    }
+
     // Play equip sound
     if player.is_local() {
         desc := SFX.default_sfx_desc();
@@ -93,6 +97,10 @@ weapon_unequip :: proc(player: Player, wt: Weapon_Type) {
             player.boomwheel_cannon = null;
         }
         player.animator.state_machine.set_trigger("hands_out_end");
+    }
+
+    if wt == .SNIPER {
+        sniper_remove_mode(player);
     }
 
     // Disable IK variable
