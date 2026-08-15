@@ -6,6 +6,9 @@ Player_Leaderboard_Row :: struct {
 
 build_player_display_name :: proc(player: Player) -> string {
     username := player.get_username();
+    if player.troll_morph_active {
+        return username;
+    }
     if player.user_tag.count > 0 {
         return format_string("% [%]", {username, player.user_tag});
     }
