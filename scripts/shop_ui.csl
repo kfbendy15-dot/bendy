@@ -457,10 +457,8 @@ draw_shop :: proc(player: Player) {
     shop_gun_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(shop_gun_row_1);
     shop_gun_cutter_icon := get_asset(Texture_Asset, get_weapon_config(.MEGA_BLADE).weapon_icon_path);
-    shop_ar_icon := get_asset(Texture_Asset, get_weapon_config(.ASSAULT_RIFLE).weapon_icon_path);
     shop_smg_icon := get_asset(Texture_Asset, get_weapon_config(.SUBMACHINE_GUN).weapon_icon_path);
     shop_gun_cutter_handle = draw_shop_card("shop/gun_cutter", "Gun Cutter", shop_price(player, SWORD_COST), shop_gun_cutter_icon, {0.9, 0.75, 0.25, 1}, player_has_weapon(player, .MEGA_BLADE));
-    shop_ar_handle = draw_shop_card("shop/assault_rifle", "Assault Rifle", shop_price(player, 60), shop_ar_icon, {0.5, 0.5, 0.6, 1}, player_has_weapon(player, .ASSAULT_RIFLE));
     shop_smg_handle = draw_shop_card("shop/submachine_gun", "Submachine Gun", shop_price(player, 70), shop_smg_icon, {0.5, 0.65, 0.85, 1}, player_has_weapon(player, .SUBMACHINE_GUN));
     UIK.panel_end();
 
@@ -479,13 +477,9 @@ draw_shop :: proc(player: Player) {
     shop_gun_row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(shop_gun_row_3);
     shop_beam_icon := get_asset(Texture_Asset, get_weapon_config(.BEAM_MACHINE).weapon_icon_path);
-    shop_hydro_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
     shop_blunder_icon := get_asset(Texture_Asset, get_weapon_config(.BLUNDERBUSS).weapon_icon_path);
     shop_beam_handle = draw_shop_card("shop/beam_machine", "Beam Machine", 100, shop_beam_icon, {0.55, 0.7, 0.85, 1}, player_has_weapon(player, .BEAM_MACHINE));
-    shop_hydro_handle = draw_shop_card("shop/hydro_cannon", "Hydro Cannon", 110, shop_hydro_icon, {0.35, 0.75, 0.9, 1}, player_has_weapon(player, .HYDRO_CANNON));
     shop_blunder_handle = draw_shop_card("shop/blunderbuss", "Blunderbuss", 75, shop_blunder_icon, {0.8, 0.55, 0.35, 1}, player_has_weapon(player, .BLUNDERBUSS));
-    laser_icon := get_asset(Texture_Asset, get_weapon_config(.LASER_GUN).weapon_icon_path);
-    shop_laser_handle = draw_shop_card("shop/laser_gun", "Laser Gun", 140, laser_icon, {0.25, 0.9, 1.0, 1}, player_has_weapon(player, .LASER_GUN));
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
@@ -616,9 +610,6 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(shop_gun_cutter_handle) && !player_has_weapon(player, .MEGA_BLADE) {
         buy_weapon_offer(player, .MEGA_BLADE, GUN_CUTTER_COST, "+Gun Cutter");
     }
-    if UIK.clicked(shop_ar_handle) {
-        buy_weapon_offer(player, .ASSAULT_RIFLE, 60, "+Assault Rifle");
-    }
     if UIK.clicked(shop_smg_handle) {
         buy_weapon_offer(player, .SUBMACHINE_GUN, 70, "+SMG");
     }
@@ -633,12 +624,6 @@ draw_shop :: proc(player: Player) {
     }
     if UIK.clicked(shop_beam_handle) {
         buy_weapon_offer(player, .BEAM_MACHINE, 100, "+Beam Machine");
-    }
-    if UIK.clicked(shop_laser_handle) {
-        buy_weapon_offer(player, .LASER_GUN, 140, "+Laser Gun");
-    }
-    if UIK.clicked(shop_hydro_handle) {
-        buy_weapon_offer(player, .HYDRO_CANNON, 110, "+Hydro Cannon");
     }
     if UIK.clicked(shop_blunder_handle) {
         buy_weapon_offer(player, .BLUNDERBUSS, 75, "+Blunderbuss");
@@ -894,6 +879,13 @@ draw_admin_shop :: proc(player: Player) {
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    sniper_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(sniper_row);
+    sniper_icon := get_asset(Texture_Asset, get_weapon_config(.SNIPER).weapon_icon_path);
+    sniper_btn := draw_shop_card("admin_shop/sniper", "Sniper", ADMIN_SHOP_GUN_COST, sniper_icon, {0.15, 0.2, 0.35, 1}, player_has_weapon(player, .SNIPER));
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
     close_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(close_row);
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
@@ -972,6 +964,9 @@ draw_admin_shop :: proc(player: Player) {
     }
     if UIK.clicked(battlepass_btn) {
         buy_weapon_offer(player, .BATTLEPASS_GUN, ADMIN_SHOP_GUN_COST, "+Battlepass Gun");
+    }
+    if UIK.clicked(sniper_btn) {
+        buy_weapon_offer(player, .SNIPER, ADMIN_SHOP_GUN_COST, "+Sniper");
     }
 }
 
@@ -1164,11 +1159,6 @@ draw_admin_panel :: proc(player: Player) {
     grant_coins_desc.panel.width = UIK.flex(1);
     grant_coins_desc.panel.height = UIK.pixels(52);
     grant_coins_btn := UIK.button("admin/grant_coins", "Give Coins", grant_coins_desc);
-
-    kick_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
-    kick_desc.panel.width = UIK.flex(1);
-    kick_desc.panel.height = UIK.pixels(52);
-    kick_btn := UIK.button("admin/kick", "Kick", kick_desc);
 
     ban_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     ban_desc.panel.width = UIK.flex(1);
@@ -1419,18 +1409,9 @@ draw_admin_panel :: proc(player: Player) {
         }
     }
 
-    if UIK.clicked(kick_btn) {
-        if admin_target == null || admin_target == player {
-            player.play_reward_feedback("Choose another player");
-        } else {
-            moderation_kick(player, admin_target, "Admin panel action");
-            player.play_reward_feedback(format_string("Kicked %", {admin_target.get_username()}));
-        }
-    }
-
     if UIK.clicked(ban_btn) {
-        if admin_target == null || admin_target == player {
-            player.play_reward_feedback("Choose another player");
+        if admin_target == null {
+            player.play_reward_feedback("Choose a player");
         } else if player.admin_grant_amount <= 0 {
             player.play_reward_feedback("Choose a ban duration");
         } else {

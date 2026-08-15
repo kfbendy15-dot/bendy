@@ -1,4 +1,4 @@
-WEAPON_COUNT :: 49;
+WEAPON_COUNT :: 50;
 AMMO_TYPE_COUNT :: 10;
 
 g_weapon_item_defs: [WEAPON_COUNT]Item_Definition;
@@ -62,6 +62,7 @@ weapon_type_to_index :: proc(wt: Weapon_Type) -> s64 {
         case .WARPER:                 return 46;
         case .SUN_SHOOTER_TSUNAMI:    return 47;
         case .SUN_SHOOTER_SAND:       return 48;
+        case .SNIPER:                 return 49;
     }
     return -1;
 }
@@ -210,6 +211,7 @@ init_weapon_items :: proc() {
     register_weapon(.WARPER);
     register_weapon(.SUN_SHOOTER_TSUNAMI);
     register_weapon(.SUN_SHOOTER_SAND);
+    register_weapon(.SNIPER);
 
     // Load fire sounds for each weapon
     load_fire_sounds();
@@ -365,6 +367,7 @@ load_fire_sounds :: proc() {
     // Sun Shooters
     load_single_sound(.SUN_SHOOTER_TSUNAMI, "reusable_weapons/sounds/reusable-weapons/waterballoon_rpg_shoot.wav");
     load_single_sound(.SUN_SHOOTER_SAND, "reusable_weapons/sounds/reusable-weapons/player_throw_grenade.wav");
+    load_sound_range(.SNIPER, "reusable_weapons/sounds/reusable-weapons/assault_rifle_0", 7);
 }
 
 load_sound_range :: proc(wt: Weapon_Type, prefix: string, count: s64) {
@@ -440,6 +443,7 @@ get_weapon_type_for_item :: proc(item_def: Item_Definition) -> Weapon_Type {
                 case 46: return .WARPER;
                 case 47: return .SUN_SHOOTER_TSUNAMI;
                 case 48: return .SUN_SHOOTER_SAND;
+                case 49: return .SNIPER;
             }
         }
         i += 1;

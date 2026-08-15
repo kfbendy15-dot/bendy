@@ -1,0 +1,256 @@
+SNIPER_LEGLESS_DURATION :: 60.0;
+SNIPER_MODE_ZOOM_MULT :: 2.0;
+SNIPER_MODE_SPEED_MULT :: 1.6;
+SNIPER_SLOW_MULT :: 0.35;
+
+Sniper_Legless_Effect :: class : Effect_Base {
+    slowed_reason: string;
+    original_speed: float;
+    duration: float;
+
+    effect_start :: method() {
+        p := player.(Player);
+        if slowed_reason == "" {
+            slowed_reason = format_string("sniper_legless/%/%", {p.get_user_id(), get_frame_number()});
+        }
+        if duration <= 0 { duration = SNIPER_LEGLESS_DURATION; }
+        // slow movement speed
+        original_speed = p.agent.movement_speed;
+        if original_speed < 0.01 { original_speed = 300.0; }
+        p.agent.movement_speed = original_speed * SNIPER_SLOW_MULT;
+        set_duration(duration);
+        if p.is_local() {
+            p.play_reward_feedback("LEGLESS 60s");
+        }
+        Save.set_int(p, "ui_test_sniper_legless", 1);
+    }
+
+    effect_update :: method(dt: float) {
+        // keep slowed even if something tries to reset, but allow stacking check
+        if #alive(player) {
+            // keep applying? just ensure not overwritten
+        }
+    }
+
+    effect_end :: method(interrupt: bool) {
+        if #alive(player) {
+            p := player.(Player);
+            // restore speed by dividing or resetting to default 300 if weird
+            // compute expected slowed value
+            expected_slowed := original_speed * SNIPER_SLOW_MULT;
+            if p.agent.movement_speed <= expected_slowed + 1.0 && p.agent.movement_speed >= expected_slowed - 1.0 {
+                p.agent.movement_speed = original_speed;
+            } else {
+                // if external changed, try to divide
+                if p.agent.movement_speed > 0.01 {
+                    p.agent.movement_speed /= SNIPER_SLOW_MULT;
+                    if p.agent.movement_speed > 600 { p.agent.movement_speed = original_speed; }
+                }
+            }
+            if p.agent.movement_speed < 50 { p.agent.movement_speed = 300.0; }
+            Save.set_int(p, "ui_test_sniper_legless_end", 1);
+        }
+    }
+}
+
+apply_sniper_legless :: proc(target: Player, duration: float) {
+    if target == null || duration <= 0 return;
+    if target.is_dead return;
+    if target.entity.has_effect(Sniper_Legless_Effect) {
+        remove_effect(target.entity, Sniper_Legless_Effect, true);
+    }
+    eff := new(Sniper_Legless_Effect);
+    eff.duration = duration;
+    target.entity.add_passive_effect(eff);
+}
+
+// Sniper mode: invisible + zoom + fly (noclip)
+Sniper_Mode_Effect :: class : Effect_Base {
+    invis_reason: string;
+    noclip_reason: string;
+    original_size: float;
+    original_speed: float;
+    saved_speed_valid: bool;
+
+    effect_start :: method() {
+        p := player.(Player);
+        if invis_reason == "" {
+            invis_reason = format_string("sniper_invis/%/%", {p.get_user_id(), get_frame_number()});
+        }
+        if noclip_reason == "" {
+            noclip_reason = format_string("sniper_fly/%/%", {p.get_user_id(), get_frame_number()});
+        }
+        // Invisibility
+        p.add_invisibility_reason(invis_reason);
+        p.add_name_invisibility_reason(invis_reason);
+        // Noclip / fly through sky
+        p.add_ghost_reason(noclip_reason);
+        p.is_admin_noclip = true; // reuse flag for noclip visual? but keep
+        // Zoom vision (sniper zoom)
+        original_size = p.camera.size;
+        if original_size <= 0.01 { original_size = 7.0; }
+        zoomed := original_size * SNIPER_MODE_ZOOM_MULT;
+        if zoomed > 16.0 { zoomed = 16.0; }
+        if zoomed < original_size + 3.0 { zoomed = original_size + 5.0; }
+        p.camera.size = zoomed;
+        // Speed boost for flying through sky
+        original_speed = p.agent.movement_speed;
+        saved_speed_valid = true;
+        p.agent.movement_speed = original_speed * SNIPER_MODE_SPEED_MULT;
+        if p.agent.movement_speed > 500 { p.agent.movement_speed = 500; }
+        set_duration(9999.0);
+        Save.set_int(p, "ui_test_sniper_mode", 1);
+        if p.is_local() {
+            p.play_reward_feedback("Sniper Mode - Flying");
+        }
+    }
+
+    effect_update :: method(dt: float) {
+        if #alive(player) {
+            p := player.(Player);
+            // keep zoom if something resets it, reapply
+            // allow movement in sky - noclip already handles collisions
+        }
+    }
+
+    effect_end :: method(interrupt: bool) {
+        if #alive(player) {
+            p := player.(Player);
+            p.remove_invisibility_reason(invis_reason);
+            p.remove_name_invisibility_reason(invis_reason);
+            p.remove_ghost_reason(noclip_reason);
+            // restore noclip flag if not otherwise enabled
+            // don't force false if player had noclip via admin elsewhere, check admin_invisible_active? but keep simple
+            p.is_admin_noclip = false;
+            Save.set_int(p, "ui_test_is_admin_noclip", 0);
+            if saved_speed_valid {
+                // restore speed
+                expected := original_speed * SNIPER_MODE_SPEED_MULT;
+                if p.agent.movement_speed <= expected + 2.0 && p.agent.movement_speed >= expected - 2.0 {
+                    p.agent.movement_speed = original_speed;
+                } else {
+                    if p.agent.movement_speed > 0.01 {
+                        p.agent.movement_speed /= SNIPER_MODE_SPEED_MULT;
+                    }
+                    if p.agent.movement_speed < 50 { p.agent.movement_speed = 300.0; }
+                }
+            }
+            // restore camera
+            if p.camera.size >= original_size - 0.01 {
+                p.camera.size = original_size;
+                if p.camera.size < 3.0 || p.camera.size > 16.0 { p.camera.size = 7.0; }
+            }
+            Save.set_int(p, "ui_test_sniper_mode_end", 1);
+        }
+    }
+}
+
+sniper_apply_mode :: proc(player: Player) {
+    if player == null return;
+    if player.entity.has_effect(Sniper_Mode_Effect) return;
+    eff := new(Sniper_Mode_Effect);
+    player.entity.add_passive_effect(eff);
+}
+
+sniper_remove_mode :: proc(player: Player) {
+    if player == null return;
+    remove_effect(player.entity, Sniper_Mode_Effect, true);
+}
+
+// Sniper projectile
+Sniper_Projectile :: class : Component {
+    damage: float;
+    lifetime: float;
+    direction: v2;
+    owner_id: u64;
+    weapon_type: Weapon_Type;
+    speed: float;
+    max_lifetime: float;
+
+    ao_update :: method(dt: float) {
+        lifetime += dt;
+        if max_lifetime <= 0 { max_lifetime = 2.2; }
+        if lifetime > max_lifetime {
+            entity.destroy();
+            return;
+        }
+        move := v2{direction.x * speed * dt, direction.y * speed * dt};
+        entity.add_local_position(move);
+        pos := entity.world_position + v2{0, -0.5};
+        hit_target, found := Scene.get_closest_component_in_range(pos, 0.9, Weapon_Target);
+        if found && hit_target != null {
+            if hit_target.entity.id != owner_id {
+                weapon_target_apply_damage(hit_target, damage, owner_id);
+                target_player := hit_target.entity.get_component(Player);
+                if target_player != null && !target_player.is_dead {
+                    apply_sniper_legless(target_player, SNIPER_LEGLESS_DURATION);
+                    target_player.play_reward_feedback("LEGLESS!");
+                }
+                hit_sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/bullet_hit.wav");
+                sfx_desc := SFX.default_sfx_desc();
+                sfx_desc.set_position(pos);
+                sfx_desc.range_multiplier = 2.0;
+                SFX.play(hit_sfx, sfx_desc);
+                // VFX
+                spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/electric_burst/014ANT_Electric_Shockwave.spine", "default", pos, {0.8, 0.8}, "Shockwave_Burst", 0.6);
+                entity.destroy();
+                return;
+            }
+        }
+    }
+}
+
+spawn_sniper_projectile :: proc(player: Player, direction: v2, wt: Weapon_Type) {
+    config := get_weapon_config(wt);
+    spawn_pos := get_projectile_spawn_pos(player, direction);
+    proj_entity := Scene.create_entity();
+    proj_entity.set_local_position(spawn_pos);
+    proj_entity.set_local_rotation(to_degrees(atan2(direction.y, direction.x)));
+    proj_entity.set_local_scale({2.2, 2.2});
+    // Use standard bullet sprite but tinted for sniper
+    sprite := proj_entity.add_component(Sprite_Renderer);
+    sprite.set_texture(get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/projectiles/MachineGunBullet.png"));
+    sprite.color = {1.0, 0.85, 0.25, 1.0};
+    sprite.layer = 1;
+    proj := proj_entity.add_component(Sniper_Projectile);
+    proj.damage = config.base_damage;
+    proj.direction = normalize(direction);
+    proj.owner_id = player.entity.id;
+    proj.weapon_type = wt;
+    proj.speed = config.projectile_speed;
+    proj.max_lifetime = config.projectile_lifetime;
+}
+
+draw_sniper_overlays :: proc(viewer: Player) {
+    now := get_time();
+    for player: component_iterator(Player) {
+        if !player.entity.has_effect(Sniper_Legless_Effect) && !player.entity.has_effect(Sniper_Mode_Effect) continue;
+        has_legless := player.entity.has_effect(Sniper_Legless_Effect);
+        has_sniper_mode := player.entity.has_effect(Sniper_Mode_Effect);
+        UI.begin_world_space_ui(player.entity);
+        defer UI.end_world_space_ui();
+        rect := UI.get_screen_rect().top_center_rect().offset(0, 32).grow(0, 12, 0, 10);
+        ts := UI.default_text_settings();
+        ts.size = 14;
+        ts.do_outline = true;
+        ts.outline_thickness = 2;
+        ts.outline_color = {0, 0, 0, 1};
+        if has_legless {
+            ts.color = {1.0, 0.55, 0.15, 1};
+            // Find remaining time from effect
+            remain := 0.0;
+            // approximate via Save? show generic
+            UI.text(rect, ts, "LEGLESS");
+            if has_sniper_mode {
+                rect2 := rect.offset(0, -16);
+                ts2 := ts;
+                ts2.color = {0.35, 0.75, 1.0, 1};
+                ts2.size = 12;
+                UI.text(rect2, ts2, "SNIPER MODE - FLYING");
+            }
+        } else if has_sniper_mode {
+            ts.color = {0.35, 0.75, 1.0, 1};
+            UI.text(rect, ts, "SNIPER MODE - FLYING");
+        }
+    }
+}

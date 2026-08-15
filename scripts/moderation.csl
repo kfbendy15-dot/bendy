@@ -45,7 +45,7 @@ moderation_apply_false_reason_penalty :: proc(accuser_user_id: string) {
 }
 
 moderation_kick :: proc(player: Player, target: Player, reason: string) {
-    if !can_access_admin_panel(player) || target == null || target == player return;
+    if !can_access_admin_panel(player) || target == null return;
     if reason.count < MODERATION_MIN_REASON_LENGTH {
         Notifier.notify("A specific reason is required.");
         return;
@@ -56,7 +56,7 @@ moderation_kick :: proc(player: Player, target: Player, reason: string) {
 } @chat_command @any
 
 moderation_ban :: proc(player: Player, target: Player, duration_seconds: s64, reason: string) {
-    if !can_access_admin_panel(player) || target == null || target == player return;
+    if !can_access_admin_panel(player) || target == null return;
     if duration_seconds <= 0 || reason.count < MODERATION_MIN_REASON_LENGTH {
         Notifier.notify("A duration and specific reason are required.");
         return;
