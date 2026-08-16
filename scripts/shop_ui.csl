@@ -373,7 +373,6 @@ draw_shop :: proc(player: Player) {
     shop_laser_handle: Interact_Result;
     shop_hydro_handle: Interact_Result;
     shop_blunder_handle: Interact_Result;
-    sword_handle: Interact_Result;
     stun_handle: Interact_Result;
     mine_handle: Interact_Result;
     bullets_handle: Interact_Result;
@@ -482,10 +481,8 @@ draw_shop :: proc(player: Player) {
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     utility_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(utility_row);
-    sword_icon := get_asset(Texture_Asset, get_weapon_config(.SWORD).weapon_icon_path);
     stun_icon := get_asset(Texture_Asset, get_weapon_config(.STUN_GRENADE).weapon_icon_path);
     mine_icon := get_asset(Texture_Asset, get_weapon_config(.LANDMINE).weapon_icon_path);
-    sword_handle = draw_shop_card("shop/sword", "Sword", SWORD_COST, sword_icon, {0.9, 0.8, 0.35, 1}, player_has_weapon(player, .SWORD));
     stun_handle = draw_shop_card("shop/stun_grenade", "Stun Grenade", STUN_GRENADE_COST, stun_icon, {0.4, 0.75, 0.95, 1}, player_has_weapon(player, .STUN_GRENADE));
     mine_handle = draw_shop_card("shop/landmine", "Landmine", LANDMINE_COST, mine_icon, {0.55, 0.75, 0.45, 1}, player_has_weapon(player, .LANDMINE));
     UIK.panel_end();
@@ -610,9 +607,6 @@ draw_shop :: proc(player: Player) {
     }
     if UIK.clicked(shop_blunder_handle) {
         buy_weapon_offer(player, .BLUNDERBUSS, 75, "+Blunderbuss");
-    }
-    if UIK.clicked(sword_handle) {
-        buy_weapon_offer(player, .SWORD, SWORD_COST, "+Sword");
     }
     if UIK.clicked(stun_handle) {
         buy_weapon_offer(player, .STUN_GRENADE, STUN_GRENADE_COST, "+Stun Grenade");
