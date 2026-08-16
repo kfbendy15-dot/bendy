@@ -363,13 +363,10 @@ draw_shop :: proc(player: Player) {
     leaf_shop_handle: Interact_Result;
     ice_shop_handle: Interact_Result;
     warper_shop_handle: Interact_Result;
-    lightning_shop_handle: Interact_Result;
     shop_gun_cutter_handle: Interact_Result;
     shop_ar_handle: Interact_Result;
     shop_smg_handle: Interact_Result;
-    shop_ray_handle: Interact_Result;
     shop_shotgun_handle: Interact_Result;
-    shop_beam_handle: Interact_Result;
     shop_laser_handle: Interact_Result;
     shop_hydro_handle: Interact_Result;
     shop_blunder_handle: Interact_Result;
@@ -419,7 +416,6 @@ draw_shop :: proc(player: Player) {
     if event == 3 { leaf_shop_handle = draw_shop_card("shop/leaf_shop", "Tree Trap", 60, get_asset(Texture_Asset, get_weapon_config(.KILLER_FISH).weapon_icon_path), {0.2, 0.8, 0.25, 1}, player_has_weapon(player, .KILLER_FISH)); }
     if event == 4 { ice_shop_handle = draw_shop_card("shop/ice_shop", "Ice Launcher", 85, get_asset(Texture_Asset, get_weapon_config(.ICE_LAUNCHER).weapon_icon_path), {0.55, 0.85, 1.0, 1}, player_has_weapon(player, .ICE_LAUNCHER)); }
     if event == 5 { warper_shop_handle = draw_shop_card("shop/void_special_warper", "Black Hole Gun", 1000, get_asset(Texture_Asset, get_weapon_config(.WARPER).weapon_icon_path), {0.7, 0.25, 1.0, 1}, player_has_weapon(player, .WARPER)); }
-    if event == 6 { lightning_shop_handle = draw_shop_card("shop/lightning_gun", "Ray Gun", 90, get_asset(Texture_Asset, get_weapon_config(.RAY_GUN).weapon_icon_path), {0.25, 0.75, 1.0, 1}, player_has_weapon(player, .RAY_GUN)); }
     if event == 7 {
         sun_armor_handle = draw_shop_card("shop/sun_armor", "Sun Armor", 1000, get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png"), {1.0, 0.58, 0.08, 1.0}, player.sun_armor_active || player.armor_tier >= 8);
         sun_tsunami_handle = draw_shop_card("shop/sun_shooter_tsunami", "Sun Shooter", 120, get_asset(Texture_Asset, get_weapon_config(.SUN_SHOOTER_TSUNAMI).weapon_icon_path), {0.15, 0.65, 1.0, 1.0}, player_has_weapon(player, .SUN_SHOOTER_TSUNAMI));
@@ -461,18 +457,14 @@ draw_shop :: proc(player: Player) {
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
     shop_gun_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(shop_gun_row_2);
-    shop_ray_icon := get_asset(Texture_Asset, get_weapon_config(.RAY_GUN).weapon_icon_path);
     shop_shotgun_icon := get_asset(Texture_Asset, get_weapon_config(.EXPLOSIVE_SHOTGUN).weapon_icon_path);
-    shop_ray_handle = draw_shop_card("shop/ray_gun", "Ray Gun", shop_price(player, 90), shop_ray_icon, {0.35, 0.75, 1.0, 1}, player_has_weapon(player, .RAY_GUN));
     shop_shotgun_handle = draw_shop_card("shop/explosive_shotgun", "Explosive Shotgun", shop_price(player, 85), shop_shotgun_icon, {0.85, 0.6, 0.35, 1}, player_has_weapon(player, .EXPLOSIVE_SHOTGUN));
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
     shop_gun_row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(shop_gun_row_3);
-    shop_beam_icon := get_asset(Texture_Asset, get_weapon_config(.BEAM_MACHINE).weapon_icon_path);
     shop_blunder_icon := get_asset(Texture_Asset, get_weapon_config(.BLUNDERBUSS).weapon_icon_path);
-    shop_beam_handle = draw_shop_card("shop/beam_machine", "Beam Machine", 100, shop_beam_icon, {0.55, 0.7, 0.85, 1}, player_has_weapon(player, .BEAM_MACHINE));
     shop_blunder_handle = draw_shop_card("shop/blunderbuss", "Blunderbuss", 75, shop_blunder_icon, {0.8, 0.55, 0.35, 1}, player_has_weapon(player, .BLUNDERBUSS));
     UIK.panel_end();
 
@@ -571,7 +563,6 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(leaf_shop_handle) && event == 3 { buy_weapon_offer(player, .KILLER_FISH, 60, "+Tree Trap"); }
     if UIK.clicked(ice_shop_handle) && event == 4 { buy_weapon_offer(player, .ICE_LAUNCHER, 85, "+Ice Launcher"); }
     if UIK.clicked(warper_shop_handle) && event == 5 { buy_weapon_offer(player, .WARPER, 1000, "+Black Hole Gun"); }
-    if UIK.clicked(lightning_shop_handle) && event == 6 { buy_weapon_offer(player, .RAY_GUN, 90, "+Ray Gun"); }
     if UIK.clicked(sun_armor_handle) && event == 7 { buy_sun_armor(player); }
     if UIK.clicked(sun_tsunami_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_TSUNAMI, 120, "+Sun Shooter"); }
     if UIK.clicked(sun_sand_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_SAND, 120, "+Sun Shooter"); }
@@ -596,14 +587,8 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(shop_smg_handle) {
         buy_weapon_offer(player, .SUBMACHINE_GUN, 70, "+SMG");
     }
-    if UIK.clicked(shop_ray_handle) {
-        buy_weapon_offer(player, .RAY_GUN, 90, "+Ray Gun");
-    }
     if UIK.clicked(shop_shotgun_handle) {
         buy_weapon_offer(player, .EXPLOSIVE_SHOTGUN, 85, "+Explosive Shotgun");
-    }
-    if UIK.clicked(shop_beam_handle) {
-        buy_weapon_offer(player, .BEAM_MACHINE, 100, "+Beam Machine");
     }
     if UIK.clicked(shop_blunder_handle) {
         buy_weapon_offer(player, .BLUNDERBUSS, 75, "+Blunderbuss");
@@ -781,7 +766,9 @@ draw_admin_shop :: proc(player: Player) {
     weapon_row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(weapon_row_3);
     minigun_icon := get_asset(Texture_Asset, get_weapon_config(.GATLING_GUN).weapon_icon_path);
+    missile_icon := get_asset(Texture_Asset, get_weapon_config(.MISSILE_BARRAGE).weapon_icon_path);
     minigun_btn := draw_shop_card("admin_shop/minigun", "Minigun", ADMIN_SHOP_GUN_COST, minigun_icon, {0.6, 0.6, 0.7, 1}, player_has_weapon(player, .GATLING_GUN));
+    missile_btn := draw_shop_card("admin_shop/missile_gun", "Missile Gun", ADMIN_SHOP_GUN_COST, missile_icon, {0.85, 0.55, 0.25, 1}, player_has_weapon(player, .MISSILE_BARRAGE));
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
@@ -858,6 +845,9 @@ draw_admin_shop :: proc(player: Player) {
     }
     if UIK.clicked(minigun_btn) {
         buy_weapon_offer(player, .GATLING_GUN, ADMIN_SHOP_GUN_COST, "+Minigun");
+    }
+    if UIK.clicked(missile_btn) {
+        buy_weapon_offer(player, .MISSILE_BARRAGE, ADMIN_SHOP_GUN_COST, "+Missile Gun");
     }
 }
 
@@ -1090,88 +1080,6 @@ draw_admin_panel :: proc(player: Player) {
     noclip_btn := UIK.button("admin/toggle_noclip", "Toggle Noclip", noclip_desc);
     UIK.panel_end();
 
-    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
-    UIK.text("Guns", UIK.text_title());
-    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
-    gun_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(gun_row_1);
-    ar_icon := get_asset(Texture_Asset, get_weapon_config(.ASSAULT_RIFLE).weapon_icon_path);
-    smg_icon := get_asset(Texture_Asset, get_weapon_config(.SUBMACHINE_GUN).weapon_icon_path);
-    gatling_icon := get_asset(Texture_Asset, get_weapon_config(.GATLING_GUN).weapon_icon_path);
-    ar_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    ar_desc.panel.width = UIK.flex(1);
-    ar_desc.panel.height = UIK.pixels(54);
-    ar_btn := UIK.icon_button_label("admin/grant_weapon_ar", ar_icon, "AR", ar_desc);
-    smg_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    smg_desc.panel.width = UIK.flex(1);
-    smg_desc.panel.height = UIK.pixels(54);
-    smg_btn := UIK.icon_button_label("admin/grant_weapon_smg", smg_icon, "SMG", smg_desc);
-    gatling_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    gatling_desc.panel.width = UIK.flex(1);
-    gatling_desc.panel.height = UIK.pixels(54);
-    gatling_btn := UIK.icon_button_label("admin/grant_weapon_gatling", gatling_icon, "Gatling", gatling_desc);
-    UIK.panel_end();
-
-    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
-    gun_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(gun_row_2);
-    shotgun_icon := get_asset(Texture_Asset, get_weapon_config(.EXPLOSIVE_SHOTGUN).weapon_icon_path);
-    ray_icon := get_asset(Texture_Asset, get_weapon_config(.RAY_GUN).weapon_icon_path);
-    hydro_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
-    shotgun_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    shotgun_desc.panel.width = UIK.flex(1);
-    shotgun_desc.panel.height = UIK.pixels(54);
-    shotgun_btn := UIK.icon_button_label("admin/grant_weapon_shotgun", shotgun_icon, "Shotgun", shotgun_desc);
-    ray_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    ray_desc.panel.width = UIK.flex(1);
-    ray_desc.panel.height = UIK.pixels(54);
-    ray_btn := UIK.icon_button_label("admin/grant_weapon_ray", ray_icon, "Ray", ray_desc);
-    hydro_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    hydro_desc.panel.width = UIK.flex(1);
-    hydro_desc.panel.height = UIK.pixels(54);
-    hydro_btn := UIK.icon_button_label("admin/grant_weapon_hydro", hydro_icon, "Hydro", hydro_desc);
-    UIK.panel_end();
-
-    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
-    gun_row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(gun_row_3);
-    beam_icon := get_asset(Texture_Asset, get_weapon_config(.BEAM_MACHINE).weapon_icon_path);
-    water_icon := get_asset(Texture_Asset, get_weapon_config(.WATER_GUN).weapon_icon_path);
-    missile_icon := get_asset(Texture_Asset, get_weapon_config(.MISSILE_BARRAGE).weapon_icon_path);
-    beam_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    beam_desc.panel.width = UIK.flex(1);
-    beam_desc.panel.height = UIK.pixels(54);
-    beam_btn := UIK.icon_button_label("admin/grant_weapon_beam", beam_icon, "Beam", beam_desc);
-    water_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    water_desc.panel.width = UIK.flex(1);
-    water_desc.panel.height = UIK.pixels(54);
-    water_btn := UIK.icon_button_label("admin/grant_weapon_water", water_icon, "Water", water_desc);
-    missile_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    missile_desc.panel.width = UIK.flex(1);
-    missile_desc.panel.height = UIK.pixels(54);
-    missile_btn := UIK.icon_button_label("admin/grant_weapon_missile", missile_icon, "Missile", missile_desc);
-    UIK.panel_end();
-
-    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
-    gun_row_4 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(gun_row_4);
-    blunder_icon := get_asset(Texture_Asset, get_weapon_config(.BLUNDERBUSS).weapon_icon_path);
-    plasma_icon := get_asset(Texture_Asset, get_weapon_config(.PLASMA_BURST).weapon_icon_path);
-    boom_icon := get_asset(Texture_Asset, get_weapon_config(.BOOMWHEEL).weapon_icon_path);
-    blunder_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    blunder_desc.panel.width = UIK.flex(1);
-    blunder_desc.panel.height = UIK.pixels(54);
-    blunder_btn := UIK.icon_button_label("admin/grant_weapon_blunder", blunder_icon, "Blunder", blunder_desc);
-    plasma_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    plasma_desc.panel.width = UIK.flex(1);
-    plasma_desc.panel.height = UIK.pixels(54);
-    plasma_btn := UIK.icon_button_label("admin/grant_weapon_plasma", plasma_icon, "Plasma", plasma_desc);
-    boom_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    boom_desc.panel.width = UIK.flex(1);
-    boom_desc.panel.height = UIK.pixels(54);
-    boom_btn := UIK.icon_button_label("admin/grant_weapon_boom", boom_icon, "Boomwheel", boom_desc);
-    UIK.panel_end();
-
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     special_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
     UIK.panel_begin(special_row);
@@ -1386,43 +1294,6 @@ draw_admin_panel :: proc(player: Player) {
     }
     if UIK.clicked(normal_map_btn) {
         return_player_from_backrooms(admin_target);
-    }
-
-    if UIK.clicked(ar_btn) {
-        grant_weapon_with_ammo(admin_target, .ASSAULT_RIFLE, get_weapon_config(.ASSAULT_RIFLE).ammo_first_pickup);
-    }
-    if UIK.clicked(smg_btn) {
-        grant_weapon_with_ammo(admin_target, .SUBMACHINE_GUN, get_weapon_config(.SUBMACHINE_GUN).ammo_first_pickup);
-    }
-    if UIK.clicked(gatling_btn) {
-        grant_weapon_with_ammo(admin_target, .GATLING_GUN, get_weapon_config(.GATLING_GUN).ammo_first_pickup);
-    }
-    if UIK.clicked(shotgun_btn) {
-        grant_weapon_with_ammo(admin_target, .EXPLOSIVE_SHOTGUN, get_weapon_config(.EXPLOSIVE_SHOTGUN).ammo_first_pickup);
-    }
-    if UIK.clicked(ray_btn) {
-        grant_weapon_with_ammo(admin_target, .RAY_GUN, get_weapon_config(.RAY_GUN).ammo_first_pickup);
-    }
-    if UIK.clicked(hydro_btn) {
-        grant_weapon_with_ammo(admin_target, .HYDRO_CANNON, get_weapon_config(.HYDRO_CANNON).ammo_first_pickup);
-    }
-    if UIK.clicked(beam_btn) {
-        grant_weapon_with_ammo(admin_target, .BEAM_MACHINE, get_weapon_config(.BEAM_MACHINE).ammo_first_pickup);
-    }
-    if UIK.clicked(water_btn) {
-        grant_weapon_with_ammo(admin_target, .WATER_GUN, get_weapon_config(.WATER_GUN).ammo_first_pickup);
-    }
-    if UIK.clicked(missile_btn) {
-        grant_weapon_with_ammo(admin_target, .MISSILE_BARRAGE, get_weapon_config(.MISSILE_BARRAGE).ammo_first_pickup);
-    }
-    if UIK.clicked(blunder_btn) {
-        grant_weapon_with_ammo(admin_target, .BLUNDERBUSS, get_weapon_config(.BLUNDERBUSS).ammo_first_pickup);
-    }
-    if UIK.clicked(plasma_btn) {
-        grant_weapon_with_ammo(admin_target, .PLASMA_BURST, get_weapon_config(.PLASMA_BURST).ammo_first_pickup);
-    }
-    if UIK.clicked(boom_btn) {
-        grant_weapon_with_ammo(admin_target, .BOOMWHEEL, get_weapon_config(.BOOMWHEEL).ammo_first_pickup);
     }
 
     if UIK.clicked(test_tripmine_spawn_btn) {
