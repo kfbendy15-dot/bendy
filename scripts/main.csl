@@ -1,7 +1,6 @@
 import "core:ao"
 import "reusable_weapons"
 import "core:dropped_items"
-import "core:global_leaderboard"
 
 PLAYER_MAX_HEALTH :: 100.0;
 ARMOR_BONUS_HP    :: 50.0;
@@ -1580,7 +1579,6 @@ Player :: class : Player_Base {
             }
             draw_hud(this);
             draw_player_statuses();
-            draw_leaderboard(this);
             if show_shop {
                 draw_shop(this);
             }
