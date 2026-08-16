@@ -1,0 +1,118 @@
+import "core:ao"
+
+LEADERBOARD_COINS :: "most_coins";
+LEADERBOARD_KILLS :: "most_kills";
+LEADERBOARD_TIME  :: "most_time_played";
+
+Top_Leaderboards_Manager :: class : Component {
+    coin_kill_next_push: float;
+    time_next_push: float;
+    initialized: bool;
+
+    ao_start :: method() {
+        now := get_time();
+        // First push shortly after start so boards populate quickly, then every 30s thereafter
+        coin_kill_next_push = now + 2.0;
+        time_next_push = now + 1.0;
+        initialized = true;
+
+        // Ensure visual boards exist (create if missing in editor prediction)
+        // They are also placed via scene entities; this is fallback for missing scene data
+        ensure_leaderboard_boards();
+
+        // Immediate initial sync for existing players (server only will actually write)
+        if Game.is_server() {
+            for p: component_iterator(Player) {
+                uid := p.get_user_id();
+                if uid == "" { continue; }
+                coins := Economy.get_balance(p, "Coins").(f64);
+                Save.ordered_set(LEADERBOARD_COINS, uid, coins);
+                Save.ordered_set(LEADERBOARD_KILLS, uid, p.leaderboard_total_kills.(f64));
+                Save.ordered_set(LEADERBOARD_TIME, uid, p.leaderboard_time_played.(f64));
+            }
+        }
+    }
+
+    ao_update :: method(dt: float) {
+        if !Game.is_server() {
+            return;
+        }
+
+        // Always accumulate time played for every player each frame (server authoritative)
+        for p: component_iterator(Player) {
+            p.leaderboard_time_played += dt;
+        }
+
+        now := get_time();
+
+        // Time played: push every 1 second
+        if now >= time_next_push {
+            time_next_push = now + 1.0;
+            for p: component_iterator(Player) {
+                uid := p.get_user_id();
+                if uid == "" {
+                    continue;
+                }
+                // Push total seconds as score
+                Save.ordered_set(LEADERBOARD_TIME, uid, p.leaderboard_time_played.(f64));
+                // Also persist for rejoins (int seconds)
+                Save.set_int(p, "total_time_played", p.leaderboard_time_played.(s64));
+            }
+        }
+
+        // Coins and Kills: push every 30 seconds
+        if now >= coin_kill_next_push {
+            coin_kill_next_push = now + 30.0;
+            for p: component_iterator(Player) {
+                uid := p.get_user_id();
+                if uid == "" {
+                    continue;
+                }
+                coins := Economy.get_balance(p, "Coins").(f64);
+                Save.ordered_set(LEADERBOARD_COINS, uid, coins);
+                Save.ordered_set(LEADERBOARD_KILLS, uid, p.leaderboard_total_kills.(f64));
+            }
+        }
+    }
+
+    ensure_leaderboard_boards :: method() {
+        // If boards already exist (placed via modify_scene), do nothing.
+        has_coins := false;
+        has_kills := false;
+        has_time := false;
+        for lb: component_iterator(Global_Leaderboard) {
+            if lb.leaderboard_id == LEADERBOARD_COINS { has_coins = true; }
+            if lb.leaderboard_id == LEADERBOARD_KILLS { has_kills = true; }
+            if lb.leaderboard_id == LEADERBOARD_TIME { has_time = true; }
+        }
+        if has_coins && has_kills && has_time {
+            return;
+        }
+
+        // Top of map positions - spread horizontally at y ~ 18 (just south of north fence at y=19)
+        if !has_coins {
+            e := Scene.create_entity();
+            e.set_name("Leaderboard_Most_Coins");
+            e.set_local_position({-14, 18});
+            lb := e.add_component(Global_Leaderboard);
+            lb.leaderboard_id = LEADERBOARD_COINS;
+            lb.optional_title = "Most Coins";
+        }
+        if !has_kills {
+            e := Scene.create_entity();
+            e.set_name("Leaderboard_Most_Kills");
+            e.set_local_position({0, 18});
+            lb := e.add_component(Global_Leaderboard);
+            lb.leaderboard_id = LEADERBOARD_KILLS;
+            lb.optional_title = "Most Kills";
+        }
+        if !has_time {
+            e := Scene.create_entity();
+            e.set_name("Leaderboard_Most_Time_Played");
+            e.set_local_position({14, 18});
+            lb := e.add_component(Global_Leaderboard);
+            lb.leaderboard_id = LEADERBOARD_TIME;
+            lb.optional_title = "Most Time Played";
+        }
+    }
+}

@@ -1133,6 +1133,10 @@ Player :: class : Player_Base {
     murder_round_active: bool;
     murder_permadead: bool;
 
+    // Leaderboard tracking: top of map boards
+    leaderboard_total_kills: s64;
+    leaderboard_time_played: float;
+
     // Troll panel (admin only)
     show_troll_panel: bool;
     troll_target_username: string;
@@ -1206,6 +1210,9 @@ Player :: class : Player_Base {
                             reward *= 2;
                         }
                         award_coins(attacker, reward);
+                        // Track for Most Kills leaderboard (pushed every 30s by manager)
+                        attacker.leaderboard_total_kills += 1;
+                        Save.set_int(attacker, "total_kills", attacker.leaderboard_total_kills);
                         if attacker.is_local() {
                             sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
                             desc := SFX.default_sfx_desc();
@@ -1297,6 +1304,9 @@ Player :: class : Player_Base {
         armor_tier = Save.get_int(this, ARMOR_TIER_KEY, 0);
         sun_armor_active = Save.get_int(this, SUN_ARMOR_KEY, 0) != 0;
         refresh_armor_visual(this);
+        // Leaderboard persistence: restore kills and time played
+        leaderboard_total_kills = Save.get_int(this, "total_kills", 0);
+        leaderboard_time_played = Save.get_int(this, "total_time_played", 0).(float);
         if sun_armor_active && armor_bonus_health < SUN_ARMOR_BONUS_HP {
             apply_armor_bonus(this, SUN_ARMOR_BONUS_HP - armor_bonus_health);
         }
