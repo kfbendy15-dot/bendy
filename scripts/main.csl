@@ -1226,6 +1226,7 @@ Player :: class : Player_Base {
 
         Items.set_capacity(default_inventory, 20);
         give_weapon(.ASSAULT_RIFLE, default_inventory);
+        give_weapon(.SWORD, default_inventory);
         load_saved_coins(this);
         has_claimed_parkour_reward = Save.get_int(this, PARKOUR_REWARD_KEY, 0) != 0;
         has_vip = Save.get_int(this, VIP_SAVE_KEY, 0) != 0;
