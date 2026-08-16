@@ -1580,7 +1580,6 @@ Player :: class : Player_Base {
             }
             draw_hud(this);
             draw_player_statuses();
-            draw_leaderboard(this);
             if show_shop {
                 draw_shop(this);
             }

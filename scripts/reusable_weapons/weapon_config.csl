@@ -459,7 +459,7 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.item_id = "explosive_shotgun";
             config.item_name = "Explosive Shotgun";
             config.ammo_type_index = 2;
-            config.ammo_first_pickup = 18;
+            config.ammo_first_pickup = 30;
             config.shoot_trigger = "shoot_2h_weapon";
             config.use_ik_var = "use_2h_ik";
         }
