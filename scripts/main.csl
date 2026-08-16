@@ -1,7 +1,6 @@
 import "core:ao"
 import "reusable_weapons"
 import "core:dropped_items"
-import "core:global_leaderboard"
 
 PLAYER_MAX_HEALTH :: 100.0;
 ARMOR_BONUS_HP    :: 50.0;

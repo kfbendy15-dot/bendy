@@ -98,7 +98,7 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/gatlinggun.png";
             config.item_id = "gatling_gun";
             config.item_name = "Gatling Gun";
-            config.ammo_type_index = 8;
+            config.ammo_type_index = 0;
             config.ammo_first_pickup = 360;
             config.shoot_start_trigger = "shoot_gatling_start";
             config.shoot_end_trigger = "shoot_gatling_end";
@@ -511,7 +511,7 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/waterballoonrpg.png";
             config.item_id = "water_balloon_rpg";
             config.item_name = "Water Balloon RPG";
-            config.ammo_type_index = 9;
+            config.ammo_type_index = 1;
             config.ammo_first_pickup = 18;
             config.shoot_trigger = "shoot_2h_weapon";
             config.use_ik_var = "use_2h_ik";
