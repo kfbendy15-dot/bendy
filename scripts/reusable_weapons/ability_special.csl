@@ -128,7 +128,7 @@ Special_Ability :: class : Ability_Base {
         }
 
         // Per-weapon cooldown - nothing shares cooldown
-        if wt != .NONE {
+        if wt != .NONE && wt.(int) >= 0 && wt.(int) < 64 {
             ability.current_cooldown = p.weapon_cooldowns[wt.(int)];
         }
 
@@ -302,8 +302,12 @@ Special_Ability :: class : Ability_Base {
                     spawn_subspace_tripmine(mine_pos, p.entity.id, config.aoe_damage);
                 }
             }
-            p.weapon_cooldowns[wt.(int)] = config.fire_rate;
-            ability.current_cooldown = p.weapon_cooldowns[wt.(int)];
+            if wt.(int) >= 0 && wt.(int) < 64 {
+                p.weapon_cooldowns[wt.(int)] = config.fire_rate;
+                ability.current_cooldown = p.weapon_cooldowns[wt.(int)];
+            } else {
+                ability.current_cooldown = config.fire_rate;
+            }
             // Legacy sync
             if wt == .KILLER_FISH { p.killer_fish_cooldown = config.fire_rate; }
             else if wt == .WARPER { p.warper_cooldown = config.fire_rate; }

@@ -26,7 +26,7 @@ Lobbed_Shot_Ability :: class : Ability_Base {
             return;
         }
 
-        if wt != .NONE {
+        if wt != .NONE && wt.(int) >= 0 && wt.(int) < 64 {
             ability.current_cooldown = p.weapon_cooldowns[wt.(int)];
         }
 
@@ -58,8 +58,12 @@ Lobbed_Shot_Ability :: class : Ability_Base {
 
             spawn_lobbed_projectile(p, aiming.aim_direction, wt);
 
-            p.weapon_cooldowns[wt.(int)] = config.fire_rate;
-            ability.current_cooldown = p.weapon_cooldowns[wt.(int)];
+            if wt.(int) >= 0 && wt.(int) < 64 {
+                p.weapon_cooldowns[wt.(int)] = config.fire_rate;
+                ability.current_cooldown = p.weapon_cooldowns[wt.(int)];
+            } else {
+                ability.current_cooldown = config.fire_rate;
+            }
         }
 
         if should_fire && !weapon_has_ammo(p, wt) {

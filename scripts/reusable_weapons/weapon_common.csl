@@ -11,16 +11,17 @@ give_weapon :: proc(wt: Weapon_Type, inventory: Inventory) {
 }
 
 weapon_equip :: proc(player: Player, wt: Weapon_Type) {
+    if player == null return;
     config := get_weapon_config(wt);
 
     // Enable weapon skin (skip if empty, e.g. Boomwheel)
-    if config.weapon_skin != "" {
+    if config.weapon_skin != "" && player.animator != null {
         player.animator.enable_skin(config.weapon_skin);
         player.animator.refresh_skins();
     }
 
     // Set IK variable
-    if config.use_ik_var != "" {
+    if config.use_ik_var != "" && player.animator != null && player.animator.state_machine != null {
         player.animator.state_machine.set_bool(config.use_ik_var, true);
     }
 
@@ -65,7 +66,9 @@ weapon_equip :: proc(player: Player, wt: Weapon_Type) {
         cannon.initialized = true;
         player.boomwheel_cannon = cannon;
 
-        player.animator.state_machine.set_trigger("hands_out_start");
+        if player.animator != null && player.animator.state_machine != null {
+            player.animator.state_machine.set_trigger("hands_out_start");
+        }
     }
 
     if wt == .SNIPER {
@@ -84,6 +87,7 @@ weapon_equip :: proc(player: Player, wt: Weapon_Type) {
 }
 
 weapon_unequip :: proc(player: Player, wt: Weapon_Type) {
+    if player == null return;
     config := get_weapon_config(wt);
 
     // Boomwheel: stop cannon roll sound and destroy cannon entity
@@ -93,10 +97,14 @@ weapon_unequip :: proc(player: Player, wt: Weapon_Type) {
                 SFX.stop(player.boomwheel_cannon.roll_sound_id);
                 player.boomwheel_cannon.roll_sound_id = 0;
             }
-            player.boomwheel_cannon.entity.destroy();
+            if #alive(player.boomwheel_cannon.entity) {
+                player.boomwheel_cannon.entity.destroy();
+            }
             player.boomwheel_cannon = null;
         }
-        player.animator.state_machine.set_trigger("hands_out_end");
+        if player.animator != null && player.animator.state_machine != null {
+            player.animator.state_machine.set_trigger("hands_out_end");
+        }
     }
 
     if wt == .SNIPER {
@@ -104,12 +112,12 @@ weapon_unequip :: proc(player: Player, wt: Weapon_Type) {
     }
 
     // Disable IK variable
-    if config.use_ik_var != "" {
+    if config.use_ik_var != "" && player.animator != null && player.animator.state_machine != null {
         player.animator.state_machine.set_bool(config.use_ik_var, false);
     }
 
     // Disable weapon skin
-    if config.weapon_skin != "" {
+    if config.weapon_skin != "" && player.animator != null {
         player.animator.disable_skin(config.weapon_skin);
         player.animator.refresh_skins();
     }
@@ -275,9 +283,13 @@ TRAVEL_LOOP_SPINNING :: "013RED/Travel_Loop_Spinning";
 
 // Helper: compute projectile spawn position from PROJECTILE bone
 get_projectile_spawn_pos :: proc(player: Player, direction: v2) -> v2 {
+    if player == null return v2{0, 0};
+    if player.animator == null return player.entity.world_position;
     bone_local := player.animator.get_bone_local_position("PROJECTILE");
     barrel_dist := length(bone_local);
     dir := normalize(direction);
+    if length(dir) < 0.001 { dir = v2{1, 0}; }
+    if player.animator.entity == null return player.entity.world_position;
     return v2{player.animator.entity.world_position.x + dir.x * barrel_dist, player.animator.entity.world_position.y + dir.y * barrel_dist};
 }
 

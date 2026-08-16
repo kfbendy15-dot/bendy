@@ -31,7 +31,7 @@ Beam_Ability :: class : Ability_Base {
         config := get_weapon_config(wt);
 
         // Per-weapon cooldown - sync display
-        if wt != .NONE {
+        if wt != .NONE && wt.(int) >= 0 && wt.(int) < 64 {
             ability.current_cooldown = p.weapon_cooldowns[wt.(int)];
         }
 
@@ -170,8 +170,12 @@ Beam_Ability :: class : Ability_Base {
                 }
             }
 
-            p.weapon_cooldowns[wt.(int)] = config.fire_rate;
-            ability.current_cooldown = p.weapon_cooldowns[wt.(int)];
+            if wt.(int) >= 0 && wt.(int) < 64 {
+                p.weapon_cooldowns[wt.(int)] = config.fire_rate;
+                ability.current_cooldown = p.weapon_cooldowns[wt.(int)];
+            } else {
+                ability.current_cooldown = config.fire_rate;
+            }
         }
 
         // Animation-based beams: position BEAM_TARGET bone each frame for beam aiming

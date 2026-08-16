@@ -9,7 +9,10 @@ Sniper_Legless_Effect :: class : Effect_Base {
     duration: float;
 
     effect_start :: method() {
+        if !#alive(player) return;
         p := player.(Player);
+        if p == null return;
+        if p.agent == null return;
         if slowed_reason == "" {
             slowed_reason = format_string("sniper_legless/%/%", {p.get_user_id(), get_frame_number()});
         }
@@ -35,6 +38,8 @@ Sniper_Legless_Effect :: class : Effect_Base {
     effect_end :: method(interrupt: bool) {
         if #alive(player) {
             p := player.(Player);
+            if p == null return;
+            if p.agent == null return;
             // restore speed by dividing or resetting to default 300 if weird
             // compute expected slowed value
             expected_slowed := original_speed * SNIPER_SLOW_MULT;
@@ -73,7 +78,10 @@ Sniper_Mode_Effect :: class : Effect_Base {
     saved_speed_valid: bool;
 
     effect_start :: method() {
+        if !#alive(player) return;
         p := player.(Player);
+        if p == null return;
+        if p.agent == null return;
         if invis_reason == "" {
             invis_reason = format_string("sniper_invis/%/%", {p.get_user_id(), get_frame_number()});
         }
@@ -116,6 +124,7 @@ Sniper_Mode_Effect :: class : Effect_Base {
     effect_end :: method(interrupt: bool) {
         if #alive(player) {
             p := player.(Player);
+            if p == null return;
             p.remove_invisibility_reason(invis_reason);
             p.remove_name_invisibility_reason(invis_reason);
             p.remove_ghost_reason(noclip_reason);
@@ -123,7 +132,7 @@ Sniper_Mode_Effect :: class : Effect_Base {
             // don't force false if player had noclip via admin elsewhere, check admin_invisible_active? but keep simple
             p.is_admin_noclip = false;
             Save.set_int(p, "ui_test_is_admin_noclip", 0);
-            if saved_speed_valid {
+            if saved_speed_valid && p.agent != null {
                 // restore speed
                 expected := original_speed * SNIPER_MODE_SPEED_MULT;
                 if p.agent.movement_speed <= expected + 2.0 && p.agent.movement_speed >= expected - 2.0 {
@@ -147,6 +156,7 @@ Sniper_Mode_Effect :: class : Effect_Base {
 
 sniper_apply_mode :: proc(player: Player) {
     if player == null return;
+    if !#alive(player.entity) return;
     if player.entity.has_effect(Sniper_Mode_Effect) return;
     eff := new(Sniper_Mode_Effect);
     player.entity.add_passive_effect(eff);
@@ -154,6 +164,7 @@ sniper_apply_mode :: proc(player: Player) {
 
 sniper_remove_mode :: proc(player: Player) {
     if player == null return;
+    if !#alive(player.entity) return;
     remove_effect(player.entity, Sniper_Mode_Effect, true);
 }
 
@@ -201,8 +212,17 @@ Sniper_Projectile :: class : Component {
 }
 
 spawn_sniper_projectile :: proc(player: Player, direction: v2, wt: Weapon_Type) {
+    if player == null return;
+    if !#alive(player.entity) return;
     config := get_weapon_config(wt);
     spawn_pos := get_projectile_spawn_pos(player, direction);
+    // Fallback if animator not ready
+    if spawn_pos.x == 0 && spawn_pos.y == 0 && player.animator == null {
+        spawn_pos = player.entity.world_position;
+    }
+    if length(direction) < 0.001 {
+        direction = v2{1, 0};
+    }
     proj_entity := Scene.create_entity();
     proj_entity.set_local_position(spawn_pos);
     proj_entity.set_local_rotation(to_degrees(atan2(direction.y, direction.x)));
