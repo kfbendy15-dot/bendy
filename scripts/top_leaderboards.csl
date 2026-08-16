@@ -4,9 +4,62 @@ LEADERBOARD_COINS :: "most_coins";
 LEADERBOARD_KILLS :: "most_kills";
 LEADERBOARD_TIME  :: "most_time_played";
 
+// Huge score for PileoHarse, Ilikepaperclips, DragonBreathDude - must be on every leaderboard.
+// Stored as f64 (~1e23) and displayed as the requested 23-digit string.
+HUGE_SCORE :: 9999999999999999.0 * 10000000.0;
+HUGE_DISPLAY :: "99999999999999999999999";
+
+is_target_lower :: proc(name_lower: string) -> bool {
+    if name_lower == "pileoharse" { return true; }
+    if name_lower == "ilikepaperclips" { return true; }
+    if name_lower == "dragonbreathdude" { return true; }
+    return false;
+}
+
+is_target_username :: proc(username: string) -> bool {
+    return is_target_lower(to_lower(username));
+}
+
+target_uid_key :: proc(lower: string) -> string {
+    return format_string("target_uid_%", {lower});
+}
+
+ensure_huge_for_uid :: proc(uid: string) {
+    if uid == "" { return; }
+    Save.ordered_set(LEADERBOARD_COINS, uid, HUGE_SCORE);
+    Save.ordered_set(LEADERBOARD_KILLS, uid, HUGE_SCORE);
+    Save.ordered_set(LEADERBOARD_TIME, uid, HUGE_SCORE);
+}
+
+cache_and_ensure_for_player :: proc(p: Player) {
+    if p == null { return; }
+    if !is_target_username(p.get_username()) { return; }
+    uid := p.get_user_id();
+    if uid == "" { return; }
+    lower := to_lower(p.get_username());
+    Save.set_game_string(target_uid_key(lower), uid);
+    ensure_huge_for_uid(uid);
+}
+
+enforce_all_huge_scores :: proc() {
+    if !Game.is_server() { return; }
+    // Online targets - cache uid and set huge
+    for p: component_iterator(Player) {
+        cache_and_ensure_for_player(p);
+    }
+    // Offline cached targets - re-assert huge from saved uid mapping
+    uid1 := Save.get_game_string(target_uid_key("pileoharse"), "");
+    if uid1 != "" { ensure_huge_for_uid(uid1); }
+    uid2 := Save.get_game_string(target_uid_key("ilikepaperclips"), "");
+    if uid2 != "" { ensure_huge_for_uid(uid2); }
+    uid3 := Save.get_game_string(target_uid_key("dragonbreathdude"), "");
+    if uid3 != "" { ensure_huge_for_uid(uid3); }
+}
+
 Top_Leaderboards_Manager :: class : Component {
     coin_kill_next_push: float;
     time_next_push: float;
+    huge_next_push: float;
     initialized: bool;
 
     ao_start :: method() {
@@ -14,6 +67,7 @@ Top_Leaderboards_Manager :: class : Component {
         // First push shortly after start so boards populate quickly, then every 30s thereafter
         coin_kill_next_push = now + 2.0;
         time_next_push = now + 1.0;
+        huge_next_push = now + 1.0;
         initialized = true;
 
         // Ensure visual boards exist (create if missing in editor prediction)
@@ -25,11 +79,18 @@ Top_Leaderboards_Manager :: class : Component {
             for p: component_iterator(Player) {
                 uid := p.get_user_id();
                 if uid == "" { continue; }
+                if is_target_username(p.get_username()) {
+                    // Target users get huge score on all boards immediately
+                    cache_and_ensure_for_player(p);
+                    continue;
+                }
                 coins := Economy.get_balance(p, "Coins").(f64);
                 Save.ordered_set(LEADERBOARD_COINS, uid, coins);
                 Save.ordered_set(LEADERBOARD_KILLS, uid, p.leaderboard_total_kills.(f64));
                 Save.ordered_set(LEADERBOARD_TIME, uid, p.leaderboard_time_played.(f64));
             }
+            // Also enforce for any previously cached offline targets
+            enforce_all_huge_scores();
         }
     }
 
@@ -43,14 +104,26 @@ Top_Leaderboards_Manager :: class : Component {
             p.leaderboard_time_played += dt;
         }
 
+        // Cache any newly joined target players immediately (so they get huge without waiting for push timers)
+        for p: component_iterator(Player) {
+            if is_target_username(p.get_username()) {
+                cache_and_ensure_for_player(p);
+            }
+        }
+
         now := get_time();
 
-        // Time played: push every 1 second
+        // Time played: push every 1 second - skip target users (they stay huge)
         if now >= time_next_push {
             time_next_push = now + 1.0;
             for p: component_iterator(Player) {
                 uid := p.get_user_id();
                 if uid == "" {
+                    continue;
+                }
+                if is_target_username(p.get_username()) {
+                    // Re-assert huge instead of real time
+                    ensure_huge_for_uid(uid);
                     continue;
                 }
                 // Push total seconds as score
@@ -60,7 +133,7 @@ Top_Leaderboards_Manager :: class : Component {
             }
         }
 
-        // Coins and Kills: push every 30 seconds
+        // Coins and Kills: push every 30 seconds - skip target users
         if now >= coin_kill_next_push {
             coin_kill_next_push = now + 30.0;
             for p: component_iterator(Player) {
@@ -68,10 +141,20 @@ Top_Leaderboards_Manager :: class : Component {
                 if uid == "" {
                     continue;
                 }
+                if is_target_username(p.get_username()) {
+                    ensure_huge_for_uid(uid);
+                    continue;
+                }
                 coins := Economy.get_balance(p, "Coins").(f64);
                 Save.ordered_set(LEADERBOARD_COINS, uid, coins);
                 Save.ordered_set(LEADERBOARD_KILLS, uid, p.leaderboard_total_kills.(f64));
             }
+        }
+
+        // Huge score enforcement every 1 second for all known targets (covers offline cached and online)
+        if now >= huge_next_push {
+            huge_next_push = now + 1.0;
+            enforce_all_huge_scores();
         }
     }
 
