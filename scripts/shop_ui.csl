@@ -440,6 +440,7 @@ draw_shop :: proc(player: Player) {
         ender_featured_handle = draw_shop_card("shop/void2_ender_feat", "Ender Pearl", 90, get_asset(Texture_Asset, "$AO/circle.png"), {0.6, 0.25, 1.0, 1}, player.has_ender_pearl);
         UIK.panel_end();
     }
+    UIK.panel_end();
     if player.has_vip {
         UIK.text(UIK.text_body(), "VIP: 50% off shop prices");
     }
