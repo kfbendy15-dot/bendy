@@ -14,6 +14,12 @@ g_fight_rng_active: bool;
 g_rng_rolls_remaining: s64;
 g_rng_max_rolls: s64;
 
+Dice_Item_Definition :: class : Item_Definition {
+}
+
+g_dice_item_def: Dice_Item_Definition;
+g_dice_initialized: bool;
+
 // Medkit
 Medkit_Effect :: class : Effect_Base {
     heal_reason: string;
@@ -402,34 +408,63 @@ check_fight_winner :: proc() {
     }
 }
 
-// RNG Fight - dice rolls
+// RNG Fight - dice rolls - now inventory based
 g_rng_active: bool;
 g_rng_owner_id: string;
 g_rng_rolls_left: s64;
 g_rng_total_rolls: s64;
 
-start_fight_rng :: proc(admin: Player) {
-    g_rng_active = true;
-    g_rng_owner_id = admin.get_user_id();
-    rng: u64 = rng_root_seed();
-    rolls := rng_range_int(ref rng, 1, 10);
-    g_rng_total_rolls = rolls;
-    g_rng_rolls_left = rolls;
-    admin.play_reward_feedback(format_string("RNG: % rolls", {rolls}));
-    Save.set_int(admin, "ui_test_rng_rolls", rolls);
+init_dice_item :: proc() {
+    if g_dice_initialized {
+        return;
+    }
+    g_dice_initialized = true;
+    icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/dice/dice_icon.png");
+    desc: Item_Definition_Desc;
+    desc.id = "rng_dice";
+    desc.name = "RNG Dice";
+    desc.icon = icon;
+    desc.stack_size = 10;
+    g_dice_item_def = Items.register_item_definition(desc, Dice_Item_Definition);
 }
 
-do_rng_roll :: proc(player: Player) -> string {
-    if !g_rng_active return "";
-    if player.get_user_id() != g_rng_owner_id return "";
-    if g_rng_rolls_left <= 0 return "";
-    g_rng_rolls_left -= 1;
-    rng: u64 = rng_root_seed() ^ cast(u64)(get_frame_number() * 9973);
-    // pool: guns and power-ups
+grant_rng_dice :: proc(player: Player, count: s64) -> bool {
+    if player == null || g_dice_item_def == null {
+        return false;
+    }
+    if count <= 0 {
+        return false;
+    }
+    remaining := count;
+    granted: s64 = 0;
+    while remaining > 0 {
+        chunk := remaining;
+        if chunk > 10 {
+            chunk = 10;
+        }
+        item := Items.create_item_instance(g_dice_item_def, chunk);
+        will_destroy: bool;
+        if Items.can_move_item_to_inventory(item, player.default_inventory, ref will_destroy) {
+            Items.move_item_to_inventory(item, player.default_inventory);
+            granted += chunk;
+            remaining -= chunk;
+        } else {
+            Items.destroy_item_instance(item);
+            break;
+        }
+    }
+    return granted > 0;
+}
+
+rng_reward_pool :: proc(idx: s64) -> string {
     pool: [11]string = {"Assault Rifle", "SMG", "Blunderbuss", "Flamethrower", "Molotov", "Battle Axe", "Distortion", "Warper", "Medkit", "Ender Pearl", "Glass Cannon"};
-    idx := rng_range_int(ref rng, 0, 10);
-    reward := pool[idx];
-    // grant actual item
+    if idx < 0 || idx >= 11 {
+        return pool[0];
+    }
+    return pool[idx];
+}
+
+grant_rng_reward :: proc(player: Player, reward: string) {
     if reward == "Assault Rifle" { give_weapon(.ASSAULT_RIFLE, player.default_inventory); }
     else if reward == "SMG" { give_weapon(.SUBMACHINE_GUN, player.default_inventory); }
     else if reward == "Blunderbuss" { give_weapon(.BLUNDERBUSS, player.default_inventory); }
@@ -441,6 +476,101 @@ do_rng_roll :: proc(player: Player) -> string {
     else if reward == "Medkit" { player.has_medkit = true; }
     else if reward == "Ender Pearl" { player.has_ender_pearl = true; }
     else if reward == "Glass Cannon" { give_weapon(.GLASS_CANNON, player.default_inventory); }
+}
+
+use_rng_dice_item :: proc(player: Player, item: Item_Instance) -> bool {
+    if player == null || item == null {
+        return false;
+    }
+    defn := item.get_definition();
+    if defn == null || defn != g_dice_item_def {
+        return false;
+    }
+    rng: u64 = rng_root_seed() ^ cast(u64)(get_frame_number() * 9973) ^ cast(u64)(player.entity.id * 131);
+    idx := rng_range_int(ref rng, 0, 10);
+    reward := rng_reward_pool(idx);
+    grant_rng_reward(player, reward);
+    player.play_reward_feedback(format_string("RNG: %", {reward}));
+    Save.set_string(player, "ui_test_rng_last", reward);
+    Items.destroy_item_instance(item, 1);
+    if player.is_local() {
+        sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+        desc := SFX.default_sfx_desc();
+        desc.entity_to_follow = player.entity.id;
+        desc.volume = 0.6;
+        SFX.play(sfx, desc);
+    }
+    return true;
+}
+
+start_fight_rng :: proc(admin: Player) {
+    if admin == null {
+        return;
+    }
+    if g_dice_item_def == null {
+        init_dice_item();
+    }
+    rng: u64 = rng_root_seed();
+    rolls := rng_range_int(ref rng, 1, 10);
+    if grant_rng_dice(admin, rolls) {
+        admin.play_reward_feedback(format_string("RNG: % dice in inventory", {rolls}));
+        Save.set_int(admin, "ui_test_rng_rolls", rolls);
+        // keep legacy globals for UI compat but not used for rolling
+        g_rng_active = true;
+        g_rng_owner_id = admin.get_user_id();
+        g_rng_total_rolls = rolls;
+        g_rng_rolls_left = rolls;
+    } else {
+        admin.play_reward_feedback("No room for dice");
+    }
+}
+
+do_rng_roll :: proc(player: Player) -> string {
+    if player == null {
+        return "";
+    }
+    // Prefer inventory dice if available
+    if g_dice_item_def != null {
+        for i: 0..player.default_inventory.capacity - 1 {
+            it := player.default_inventory.get_item(i);
+            if it == null {
+                continue;
+            }
+            if it.get_definition() == g_dice_item_def {
+                rng: u64 = rng_root_seed() ^ cast(u64)(get_frame_number() * 9973) ^ cast(u64)(player.entity.id * 131);
+                idx := rng_range_int(ref rng, 0, 10);
+                reward := rng_reward_pool(idx);
+                grant_rng_reward(player, reward);
+                player.play_reward_feedback(format_string("RNG: %", {reward}));
+                Save.set_string(player, "ui_test_rng_last", reward);
+                Items.destroy_item_instance(it, 1);
+                if player.is_local() {
+                    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+                    desc := SFX.default_sfx_desc();
+                    desc.entity_to_follow = player.entity.id;
+                    desc.volume = 0.6;
+                    SFX.play(sfx, desc);
+                }
+                return reward;
+            }
+        }
+    }
+    // fallback to legacy global rolls if no dice item
+    if !g_rng_active {
+        return "";
+    }
+    if player.get_user_id() != g_rng_owner_id {
+        return "";
+    }
+    if g_rng_rolls_left <= 0 {
+        return "";
+    }
+    g_rng_rolls_left -= 1;
+    rng: u64 = rng_root_seed() ^ cast(u64)(get_frame_number() * 9973);
+    pool: [11]string = {"Assault Rifle", "SMG", "Blunderbuss", "Flamethrower", "Molotov", "Battle Axe", "Distortion", "Warper", "Medkit", "Ender Pearl", "Glass Cannon"};
+    idx := rng_range_int(ref rng, 0, 10);
+    reward := pool[idx];
+    grant_rng_reward(player, reward);
     player.play_reward_feedback(format_string("RNG: % (% left)", {reward, g_rng_rolls_left}));
     Save.set_string(player, "ui_test_rng_last", reward);
     if g_rng_rolls_left <= 0 {

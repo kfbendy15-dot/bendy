@@ -814,6 +814,7 @@ ao_before_scene_load :: proc() {
     Economy.register_currency("Coins", coin_tex);
     Economy.register_currency("Sparks", get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png"));
     init_verity_admin_content();
+    init_dice_item();
     init_admin_chat();
 }
 
@@ -1671,11 +1672,19 @@ Player :: class : Player_Base {
             options.enable_selection = true;
             options.scroll_item_selection = true;
             options.keyboard_item_selection = true;
-            options.enable_use_from_hotbar = false;
+            options.enable_use_from_hotbar = true;
             hotbar := Items.draw_hotbar(this, default_inventory, options);
+            if #alive(hotbar.selected_item) {
+                defn := hotbar.selected_item.get_definition();
+                if defn != null && defn.#type == Dice_Item_Definition {
+                    use_rng_dice_item(this, hotbar.selected_item);
+                }
+            }
             if #alive(hotbar.dropped_item) {
                 defn := hotbar.dropped_item.get_definition();
-                if defn != null && defn.#type == Verity_Item_Definition {
+                if defn != null && defn.#type == Dice_Item_Definition {
+                    use_rng_dice_item(this, hotbar.dropped_item);
+                } else if defn != null && defn.#type == Verity_Item_Definition {
                     place_verity_item(this, hotbar.dropped_item);
                 } else {
                     dropped: Dropped_Item;
