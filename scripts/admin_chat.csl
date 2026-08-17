@@ -187,7 +187,8 @@ init_admin_chat :: proc() {
     }
 
     g_admin_chat_initialized = true;
-    g_admin_chat_next_poll_at = 0;
+    // The first poll must not compete with player-data loading during join.
+    g_admin_chat_next_poll_at = get_time() + 15.0;
     g_admin_chat_started_at_ms = get_nanoseconds_since_epoch() / 1000000;
     core_globals.server_on_chat_message_received = handle_game_chat_message;
 }

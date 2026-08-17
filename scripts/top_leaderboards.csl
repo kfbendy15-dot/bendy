@@ -37,6 +37,11 @@ cache_and_ensure_for_player :: proc(p: Player) {
     uid := p.get_user_id();
     if uid == "" { return; }
     lower := to_lower(p.get_username());
+    // This runs from the manager update loop. Avoid re-writing shared-save
+    // values every simulation frame for an online target player.
+    if Save.get_game_string(target_uid_key(lower), "") == uid {
+        return;
+    }
     Save.set_game_string(target_uid_key(lower), uid);
     ensure_huge_for_uid(uid);
 }
@@ -60,14 +65,17 @@ Top_Leaderboards_Manager :: class : Component {
     coin_kill_next_push: float;
     time_next_push: float;
     huge_next_push: float;
+    boards_create_at: float;
     initialized: bool;
 
     ao_start :: method() {
         now := get_time();
-        // First push shortly after start so boards populate quickly, then every 30s thereafter
-        coin_kill_next_push = now + 2.0;
-        time_next_push = now + 1.0;
-        huge_next_push = now + 1.0;
+        // Let player loading and the initial leaderboard reads settle before
+        // writing ordered-save data. These are display scores, not simulation state.
+        coin_kill_next_push = now + 30.0;
+        time_next_push = now + 30.0;
+        huge_next_push = now + 60.0;
+        boards_create_at = now + 15.0;
         initialized = true;
 
         // Ensure visual boards exist (create if missing in editor prediction)
@@ -96,8 +104,13 @@ Top_Leaderboards_Manager :: class : Component {
 
     ao_update :: method(dt: float) {
         if !Game.is_server() {
+            ensure_leaderboard_boards();
             return;
         }
+
+        // Create the optional leaderboard components after join-time engine
+        // requests have settled. Their component startup performs REST reads.
+        ensure_leaderboard_boards();
 
         // Always accumulate time played for every player each frame (server authoritative)
         for p: component_iterator(Player) {
@@ -113,9 +126,9 @@ Top_Leaderboards_Manager :: class : Component {
 
         now := get_time();
 
-        // Time played: push every 1 second - skip target users (they stay huge)
+        // Time played: push every 30 seconds - skip target users (they stay huge)
         if now >= time_next_push {
-            time_next_push = now + 1.0;
+            time_next_push = now + 30.0;
             for p: component_iterator(Player) {
                 uid := p.get_user_id();
                 if uid == "" {
@@ -153,12 +166,16 @@ Top_Leaderboards_Manager :: class : Component {
 
         // Huge score enforcement every 1 second for all known targets (covers offline cached and online)
         if now >= huge_next_push {
-            huge_next_push = now + 1.0;
+            huge_next_push = now + 60.0;
             enforce_all_huge_scores();
         }
     }
 
     ensure_leaderboard_boards :: method() {
+        if get_time() < boards_create_at {
+            return;
+        }
+
         // If boards already exist (placed via modify_scene), do nothing.
         has_coins := false;
         has_kills := false;
