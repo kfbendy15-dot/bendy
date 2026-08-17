@@ -1,4 +1,4 @@
-WEAPON_COUNT :: 50;
+WEAPON_COUNT :: 55;
 AMMO_TYPE_COUNT :: 10;
 
 g_weapon_item_defs: [WEAPON_COUNT]Item_Definition;
@@ -63,6 +63,11 @@ weapon_type_to_index :: proc(wt: Weapon_Type) -> s64 {
         case .SUN_SHOOTER_TSUNAMI:    return 47;
         case .SUN_SHOOTER_SAND:       return 48;
         case .SNIPER:                 return 49;
+        case .FLAMETHROWER:           return 50;
+        case .MOLOTOV:                return 51;
+        case .BATTLE_AXE:             return 52;
+        case .DISTORTION:             return 53;
+        case .GLASS_CANNON:           return 54;
     }
     return -1;
 }
@@ -212,6 +217,11 @@ init_weapon_items :: proc() {
     register_weapon(.SUN_SHOOTER_TSUNAMI);
     register_weapon(.SUN_SHOOTER_SAND);
     register_weapon(.SNIPER);
+    register_weapon(.FLAMETHROWER);
+    register_weapon(.MOLOTOV);
+    register_weapon(.BATTLE_AXE);
+    register_weapon(.DISTORTION);
+    register_weapon(.GLASS_CANNON);
 
     // Load fire sounds for each weapon
     load_fire_sounds();
@@ -368,6 +378,11 @@ load_fire_sounds :: proc() {
     load_single_sound(.SUN_SHOOTER_TSUNAMI, "reusable_weapons/sounds/reusable-weapons/waterballoon_rpg_shoot.wav");
     load_single_sound(.SUN_SHOOTER_SAND, "reusable_weapons/sounds/reusable-weapons/player_throw_grenade.wav");
     load_sound_range(.SNIPER, "reusable_weapons/sounds/reusable-weapons/assault_rifle_0", 7);
+    load_single_sound(.FLAMETHROWER, "reusable_weapons/sounds/reusable-weapons/shoot_flamethrower_start.wav");
+    load_single_sound(.MOLOTOV, "reusable_weapons/sounds/reusable-weapons/player_throw_grenade.wav");
+    load_single_sound(.BATTLE_AXE, "reusable_weapons/sounds/reusable-weapons/katana_slash.wav");
+    load_single_sound(.DISTORTION, "reusable_weapons/sounds/reusable-weapons/void_splitter_shoot_start.wav");
+    load_single_sound(.GLASS_CANNON, "reusable_weapons/sounds/reusable-weapons/plasma_gun_shoot_05.wav");
 }
 
 load_sound_range :: proc(wt: Weapon_Type, prefix: string, count: s64) {
@@ -444,6 +459,11 @@ get_weapon_type_for_item :: proc(item_def: Item_Definition) -> Weapon_Type {
                 case 47: return .SUN_SHOOTER_TSUNAMI;
                 case 48: return .SUN_SHOOTER_SAND;
                 case 49: return .SNIPER;
+                case 50: return .FLAMETHROWER;
+                case 51: return .MOLOTOV;
+                case 52: return .BATTLE_AXE;
+                case 53: return .DISTORTION;
+                case 54: return .GLASS_CANNON;
             }
         }
         i += 1;

@@ -94,6 +94,13 @@ Single_Shot_Ability :: class : Ability_Base {
                 case .SNIPER: {
                     spawn_sniper_projectile(p, aiming.aim_direction, wt);
                 }
+                case .DISTORTION: {
+                    weapon_spawn_standard_projectile(p, aiming.aim_direction, wt);
+                }
+                case .GLASS_CANNON: {
+                    weapon_spawn_standard_projectile(p, aiming.aim_direction, wt);
+                    // consume the weapon after one shot if needed? Glass Cannon one bullet one kill but we keep ammo logic
+                }
             }
 
             if wt.(int) >= 0 && wt.(int) < 64 {

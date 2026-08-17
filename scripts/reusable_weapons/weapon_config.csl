@@ -114,7 +114,7 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.weapon_skin = "weapons/beam_machine";
             config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/beammachine.png";
             config.item_id = "beam_machine";
-            config.item_name = "Beam Machine";
+            config.item_name = "Laser Gun";
             config.ammo_type_index = 5;
             config.ammo_first_pickup = 108;
             config.shoot_start_trigger = "shoot_fast_start";
@@ -714,14 +714,14 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.fire_mode = .SPECIAL;
             config.hand_type = .ONE_HAND;
             config.fire_rate = 32.0;
-            config.base_damage = 10.0;
-            config.aoe_radius = 4.5;
-            config.aoe_damage = 10.0;
+            config.base_damage = 0.0;
+            config.aoe_radius = 0.0;
+            config.aoe_damage = 0.0;
             config.ammo_per_shot = 0;
             config.weapon_skin = "weapons/void_spitter";
             config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/void_splitter.png";
             config.item_id = "warper";
-            config.item_name = "Black Hole Gun";
+            config.item_name = "Warper";
             config.ammo_type_index = -1;
             config.ammo_first_pickup = 0;
             config.shoot_trigger = "throw";
@@ -885,6 +885,86 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.item_name = "Sniper";
             config.ammo_type_index = 0;
             config.ammo_first_pickup = 30;
+            config.shoot_trigger = "shoot_2h_weapon";
+            config.use_ik_var = "use_2h_ik";
+        }
+        case .FLAMETHROWER: {
+            config.fire_mode = .BEAM;
+            config.hand_type = .TWO_HAND;
+            config.fire_rate = 0.12;
+            config.base_damage = 7.0;
+            config.beam_range = 6.5;
+            config.beam_width = 0.9;
+            config.weapon_skin = "weapons/fire_ray";
+            config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/fireray.png";
+            config.item_id = "flamethrower";
+            config.item_name = "Flamethrower";
+            config.ammo_type_index = 5;
+            config.ammo_first_pickup = 120;
+            config.shoot_start_trigger = "fire_ray_start";
+            config.shoot_end_trigger = "fire_ray_end";
+            config.use_ik_var = "use_2h_ik";
+        }
+        case .MOLOTOV: {
+            config.fire_mode = .LOBBED;
+            config.hand_type = .ONE_HAND;
+            config.fire_rate = 1.1;
+            config.base_damage = 35.0;
+            config.projectile_speed = 11.0;
+            config.aoe_radius = 3.2;
+            config.aoe_damage = 35.0;
+            config.weapon_skin = "weapons/grenade";
+            config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/grenade.png";
+            config.item_id = "molotov";
+            config.item_name = "Molotov";
+            config.ammo_type_index = -1;
+            config.ammo_first_pickup = 0;
+            config.shoot_trigger = "throw";
+            config.use_ik_var = "use_1h_ik";
+        }
+        case .BATTLE_AXE: {
+            config.fire_mode = .SPECIAL;
+            config.hand_type = .TWO_HAND;
+            config.fire_rate = 0.7;
+            config.base_damage = 35.0;
+            config.weapon_skin = "weapons/katana";
+            config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/katana.png";
+            config.item_id = "battle_axe";
+            config.item_name = "Battle Axe";
+            config.ammo_type_index = -1;
+            config.ammo_first_pickup = 0;
+            config.shoot_trigger = "melee_AL";
+            config.use_ik_var = "use_2h_ik";
+        }
+        case .DISTORTION: {
+            config.fire_mode = .SINGLE_SHOT;
+            config.hand_type = .ONE_HAND;
+            config.fire_rate = 0.6;
+            config.base_damage = 22.0;
+            config.projectile_speed = 18.0;
+            config.projectile_lifetime = 2.5;
+            config.weapon_skin = "weapons/void_spitter";
+            config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/void_splitter.png";
+            config.item_id = "distortion";
+            config.item_name = "Distortion";
+            config.ammo_type_index = 8;
+            config.ammo_first_pickup = 60;
+            config.shoot_trigger = "shoot_1h_weapon";
+            config.use_ik_var = "use_1h_ik";
+        }
+        case .GLASS_CANNON: {
+            config.fire_mode = .SINGLE_SHOT;
+            config.hand_type = .TWO_HAND;
+            config.fire_rate = 2.0;
+            config.base_damage = 999.0;
+            config.projectile_speed = 30.0;
+            config.projectile_lifetime = 3.0;
+            config.weapon_skin = "weapons/assault_rifle";
+            config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/assaultrifle.png";
+            config.item_id = "glass_cannon";
+            config.item_name = "Glass Cannon";
+            config.ammo_type_index = 0;
+            config.ammo_first_pickup = 1;
             config.shoot_trigger = "shoot_2h_weapon";
             config.use_ik_var = "use_2h_ik";
         }

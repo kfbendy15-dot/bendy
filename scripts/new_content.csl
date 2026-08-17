@@ -1,0 +1,452 @@
+// New content for requested features: Medkit, Ender Pearl, Battle Axe, Distortion, Warper, Void2, Fight modes
+MEDKIT_COST :: 50000;
+DISTORTION_COST :: 1000;
+WARPER_COST :: 200;
+ENDER_PEARL_COST :: 180;
+FLAMETHROWER_COST :: 45;
+MOLOTOV_COST :: 50;
+BATTLE_AXE_COST :: 75;
+LASER_GUN_COST :: 60;
+
+g_event_void2: bool;
+g_fight_active: bool;
+g_fight_rng_active: bool;
+g_rng_rolls_remaining: s64;
+g_rng_max_rolls: s64;
+
+// Medkit
+Medkit_Effect :: class : Effect_Base {
+    heal_reason: string;
+
+    effect_start :: method() {
+        if heal_reason == "" {
+            heal_reason = format_string("medkit_bandage/%/%", {player.get_user_id(), get_frame_number()});
+        }
+        player.add_freeze_reason(heal_reason);
+        player.add_disable_movement_input_reason(heal_reason);
+        set_duration(7.0);
+        spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/Heal_Effect/heal_effect.spine", "default", player.entity.world_position, {0.9, 0.9}, "Swirl", 7.0);
+        if player.is_local() {
+            sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/heal_oneshot.wav");
+            desc := SFX.default_sfx_desc();
+            desc.entity_to_follow = player.entity.id;
+            desc.volume = 0.5;
+            SFX.play(sfx, desc);
+        }
+    }
+    effect_update :: method(dt: float) {
+        if #alive(player) {
+            player.agent.velocity = {0, 0};
+            player.agent.input_this_frame = {0, 0};
+        }
+    }
+    effect_end :: method(interrupt: bool) {
+        player.remove_freeze_reason(heal_reason);
+        player.remove_disable_movement_input_reason(heal_reason);
+        if !interrupt && #alive(player) {
+            p := player.(Player);
+            if p.weapon_target != null {
+                p.weapon_target.health += 40;
+                if p.weapon_target.health > p.weapon_target.max_health { p.weapon_target.health = p.weapon_target.max_health; }
+                p.play_reward_feedback("+40 HP");
+                Save.set_int(p, "ui_test_medkit_healed", 1);
+            }
+        }
+    }
+}
+
+Medkit_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Medkit";
+        icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
+    }
+    can_use :: method() -> bool {
+        p := player.(Player);
+        if !p.has_medkit return false;
+        if p.entity.has_effect(Medkit_Effect) return false;
+        return true;
+    }
+    on_update :: method(params: ref Ability_Update_Params) {
+        if params.clicked && params.can_use {
+            current_cooldown = 67.0; // 7 + 60
+            player.entity.add_passive_effect(new(Medkit_Effect));
+            if player.is_local() {
+                p := player.(Player);
+                p.play_reward_feedback("Bandaging 7s");
+            }
+        }
+    }
+}
+
+// Ender Pearl
+Ender_Pearl_Projectile :: class : Component {
+    owner_id: u64;
+    direction: v2;
+    speed: float;
+    lifetime: float;
+    max_lifetime: float;
+
+    ao_update :: method(dt: float) {
+        lifetime += dt;
+        if max_lifetime <= 0 { max_lifetime = 5.0; }
+        // move
+        entity.add_local_position(v2{direction.x * speed * dt, direction.y * speed * dt});
+        if lifetime >= max_lifetime {
+            // teleport owner to this position if still alive
+            for owner: component_iterator(Player) {
+                if owner.entity.id == owner_id {
+                    if !owner.is_dead {
+                        owner.entity.set_local_position(entity.world_position);
+                        owner.entity.mark_teleported();
+                        owner.play_reward_feedback("Ender Pearl");
+                        spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/electric_burst/014ANT_Electric_Shockwave.spine", "default", entity.world_position, {1.0, 1.0}, "Shockwave_Burst", 0.5);
+                    }
+                    break;
+                }
+            }
+            entity.destroy();
+            return;
+        }
+        // hit ground early? just keep flying
+    }
+}
+
+Ender_Pearl_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Ender Pearl";
+        icon = get_asset(Texture_Asset, "$AO/circle.png");
+    }
+    can_use :: method() -> bool {
+        p := player.(Player);
+        if !p.has_ender_pearl return false;
+        return true;
+    }
+    on_update :: method(params: ref Ability_Update_Params) {
+        activation := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
+        if activation.activate {
+            if current_cooldown > 0 return;
+            current_cooldown = 45.0;
+            p := player.(Player);
+            dir := activation.direction;
+            if length(dir) < 0.1 { dir = v2{1,0}; }
+            dir = normalize(dir);
+            // spawn projectile
+            e := Scene.create_entity();
+            e.set_local_position(p.entity.world_position);
+            e.set_local_scale({0.8, 0.8});
+            spr := e.add_component(Sprite_Renderer);
+            spr.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+            spr.color = {0.6, 0.25, 1.0, 1};
+            proj := e.add_component(Ender_Pearl_Projectile);
+            proj.owner_id = p.entity.id;
+            proj.direction = dir;
+            proj.speed = 14.0;
+            proj.max_lifetime = 5.0;
+            if p.is_local() {
+                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/player_throw_grenade.wav");
+                desc := SFX.default_sfx_desc();
+                desc.entity_to_follow = p.entity.id;
+                SFX.play(sfx, desc);
+            }
+            p.play_reward_feedback("Ender Pearl thrown");
+        }
+    }
+}
+
+// Battle Axe leap
+Battle_Axe_Leap_Effect :: class : Effect_Base {
+    leap_direction: v2;
+    elapsed: float;
+    leap_speed: float;
+
+    effect_start :: method() {
+        leap_speed = 18.0;
+        elapsed = 0;
+        set_duration(0.35);
+        if leap_direction.x != 0 {
+            player.set_facing_right(leap_direction.x > 0);
+        }
+        player.animator.state_machine.set_trigger("dodge_roll");
+    }
+    effect_update :: method(dt: float) {
+        elapsed += dt;
+        player.agent.velocity = v2{leap_direction.x * leap_speed, leap_direction.y * leap_speed * 0.6};
+        // dampen over time
+        leap_speed = lerp(leap_speed, 0, dt * 3.0);
+    }
+    effect_end :: method(interrupt: bool) {
+        if interrupt return;
+        p := player.(Player);
+        // damage on landing area
+        pos := p.entity.world_position;
+        melee_swing_players_in_radius(p, pos, 2.5, 30.0, 0.4);
+        spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/electric_burst/014ANT_Electric_Shockwave.spine", "default", pos, {1.2, 1.2}, "Shockwave_Burst", 0.6);
+        sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/katana_slash.wav");
+        desc := SFX.default_sfx_desc();
+        desc.set_position(pos);
+        SFX.play(sfx, desc);
+    }
+}
+
+// Distortion vortex (big black hole that makes people circle)
+Distortion_Vortex :: class : Component {
+    owner_id: u64;
+    radius: float;
+    lifetime: float;
+    max_lifetime: float;
+    pull_strength: float;
+    orbit_speed: float;
+
+    ao_start :: method() {
+        entity.set_local_scale({2.8, 2.8});
+        s := entity.get_component(Sprite_Renderer);
+        if s == null {
+            s = entity.add_component(Sprite_Renderer);
+            s.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+        }
+        s.color = {0.02, 0.02, 0.08, 0.95};
+        s.layer = -6;
+        inner := Scene.create_entity();
+        inner.set_parent(entity, false);
+        inner.set_local_scale({0.6, 0.6});
+        isp := inner.add_component(Sprite_Renderer);
+        isp.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+        isp.color = {0.2, 0.05, 0.35, 0.9};
+    }
+    ao_update :: method(dt: float) {
+        lifetime += dt;
+        if lifetime >= max_lifetime {
+            entity.destroy();
+            return;
+        }
+        // pull and orbit
+        nearby: [..]Player;
+        Scene.get_all_components_in_range(entity.world_position, radius, ref nearby);
+        for victim: nearby {
+            if victim == null || victim.entity.id == owner_id || victim.is_dead { continue; }
+            if is_player_invisible_for_targeting(victim) { continue; }
+            to_center := entity.world_position - victim.entity.world_position;
+            dist := length(to_center);
+            if dist < 0.2 { continue; }
+            dir_to_center := normalize(to_center);
+            // perpendicular for orbit
+            orbit_dir := v2{-dir_to_center.y, dir_to_center.x};
+            // combine pull + orbit
+            pull := v2{dir_to_center.x * pull_strength, dir_to_center.y * pull_strength};
+            orbit := v2{orbit_dir.x * orbit_speed, orbit_dir.y * orbit_speed};
+            total := v2{pull.x * 0.4 + orbit.x, pull.y * 0.4 + orbit.y};
+            victim.agent.velocity = total;
+            victim.agent.input_this_frame = {0,0};
+            apply_weapon_stun(victim, 0.5, format_string("distortion/%/%", {owner_id, get_frame_number()}));
+        }
+        // pulse
+        pulse := 1.0 + sin(lifetime * 3.0) * 0.06;
+        entity.set_local_scale({2.8 * pulse, 2.8 * pulse});
+    }
+}
+
+spawn_distortion_vortex :: proc(pos: v2, owner_id: u64) {
+    e := Scene.create_entity();
+    e.set_local_position(pos);
+    e.set_local_scale({2.8, 2.8});
+    spr := e.add_component(Sprite_Renderer);
+    spr.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+    spr.color = {0.02, 0.02, 0.08, 0.95};
+    v := e.add_component(Distortion_Vortex);
+    v.owner_id = owner_id;
+    v.radius = 5.2;
+    v.max_lifetime = 20.0;
+    v.pull_strength = 6.0;
+    v.orbit_speed = 7.5;
+    // sound
+    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/void_splitter_shoot_start.wav");
+    desc := SFX.default_sfx_desc();
+    desc.entity_to_follow = e.id;
+    desc.loop = true;
+    desc.volume = 0.4;
+    SFX.play(sfx, desc);
+}
+
+Distortion_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Distortion Hole";
+        icon = get_asset(Texture_Asset, "$AO/circle.png");
+    }
+    can_use :: method() -> bool {
+        p := player.(Player);
+        if p.equipped_weapon_type != .DISTORTION return false;
+        return true;
+    }
+    on_update :: method(params: ref Ability_Update_Params) {
+        activation := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
+        // Use secondary activation: we treat any click as vortex if cooldown ready, but primary fire is handled by Single_Shot
+        // Here we check for hold activation separate from primary
+        if activation.activate && current_cooldown <= 0 {
+            p := player.(Player);
+            dir := activation.direction;
+            if length(dir) < 0.1 { dir = v2{1,0}; }
+            dir = normalize(dir);
+            pos := v2{p.entity.world_position.x + dir.x * 2.5, p.entity.world_position.y + dir.y * 0.5};
+            spawn_distortion_vortex(pos, p.entity.id);
+            current_cooldown = 25.0;
+            p.play_reward_feedback("Distortion Vortex 20s");
+            if p.is_local() {
+                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/void_splitter_shoot_start.wav");
+                desc := SFX.default_sfx_desc();
+                desc.entity_to_follow = p.entity.id;
+                SFX.play(sfx, desc);
+            }
+        }
+    }
+}
+
+// Warper portal fix - override place_warper_portal to actually place portals
+// Warper portals are already defined in admin_shop_extras, but we replace logic here via proc redeclaration? We'll define helper
+place_warper_portal :: proc(player: Player, direction: v2) {
+    if player == null || !#alive(player.entity) return;
+    dir := direction;
+    if length_squared(dir) < 0.001 { dir = v2{1,0}; }
+    dir = normalize(dir);
+    pos := player.entity.world_position + dir * 2.0;
+    // if first portal not exists, create first
+    if !#alive(player.warper_first_portal) {
+        e := Scene.create_entity();
+        e.set_local_position(pos);
+        wp := e.add_component(Warper_Portal);
+        wp.owner_user_id = player.get_user_id();
+        wp.is_first = true;
+        player.warper_first_portal = e;
+        player.play_reward_feedback("Portal A placed");
+        return;
+    }
+    if !#alive(player.warper_second_portal) {
+        e2 := Scene.create_entity();
+        e2.set_local_position(pos);
+        wp2 := e2.add_component(Warper_Portal);
+        wp2.owner_user_id = player.get_user_id();
+        wp2.is_first = false;
+        player.warper_second_portal = e2;
+        player.play_reward_feedback("Portal B placed - teleport!");
+        return;
+    }
+    // both exist - replace oldest (first)
+    player.warper_first_portal.destroy();
+    player.warper_first_portal = player.warper_second_portal;
+    // update is_first flag for first? keep as first
+    if #alive(player.warper_first_portal) {
+        comp := player.warper_first_portal.get_component(Warper_Portal);
+        if comp != null { comp.is_first = true; }
+    }
+    e3 := Scene.create_entity();
+    e3.set_local_position(pos);
+    wp3 := e3.add_component(Warper_Portal);
+    wp3.owner_user_id = player.get_user_id();
+    wp3.is_first = false;
+    player.warper_second_portal = e3;
+    player.play_reward_feedback("Portal replaced");
+}
+
+// Void2 event helpers
+void2_price :: proc(base: s64) -> s64 {
+    if g_event_void2 { return base / 2; }
+    return base;
+}
+
+start_void2_event :: proc(admin: Player) {
+    g_event_void2 = true;
+    cur_v2 := Save.get_game_int(EVENT_VOID2_KEY, 0);
+    if cur_v2 == 0 { Save.increment_game_int(EVENT_VOID2_KEY, 1); }
+    g_event_elemental = true;
+    g_active_element_event = 5;
+    g_event_ends_at = get_time() + 600.0;
+    cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
+    if cur_elem == 0 { Save.increment_game_int(EVENT_ELEMENTAL_KEY, 1); }
+    if admin != null { admin.play_reward_feedback("Void #2 Event started"); }
+    Chat.server_send_message("Void #2 Event started");
+}
+
+stop_void2_event :: proc() {
+    g_event_void2 = false;
+    cur_v2 := Save.get_game_int(EVENT_VOID2_KEY, 0);
+    if cur_v2 != 0 { Save.increment_game_int(EVENT_VOID2_KEY, -cur_v2); }
+}
+
+// Fight modes
+start_fight_event :: proc(admin: Player) {
+    g_fight_active = true;
+    // give everyone basic guns if needed and reset health
+    for p: component_iterator(Player) {
+        if p.is_dead { respawn_player(p); }
+        if p.weapon_target != null { p.weapon_target.health = p.weapon_target.max_health; }
+        p.play_reward_feedback("FIGHT STARTED!");
+    }
+    Chat.server_send_message("FIGHT started! Last alive wins 60200 Coins");
+    Save.set_int(admin, "ui_test_fight_started", 1);
+}
+
+check_fight_winner :: proc() {
+    if !g_fight_active return;
+    alive: [..]Player;
+    for p: component_iterator(Player) {
+        if !p.is_dead { alive.append(p); }
+    }
+    if alive.count == 1 {
+        winner := alive[0];
+        award_coins(winner, 60200);
+        winner.play_reward_feedback("Fight Winner +60200");
+        Chat.server_send_message(format_string("% won the Fight! +60200 Coins", {winner.get_username()}));
+        g_fight_active = false;
+        Save.set_int(winner, "ui_test_fight_winner", 1);
+    } else if alive.count == 0 {
+        g_fight_active = false;
+    }
+}
+
+// RNG Fight - dice rolls
+g_rng_active: bool;
+g_rng_owner_id: string;
+g_rng_rolls_left: s64;
+g_rng_total_rolls: s64;
+
+start_fight_rng :: proc(admin: Player) {
+    g_rng_active = true;
+    g_rng_owner_id = admin.get_user_id();
+    rng: u64 = rng_root_seed();
+    rolls := rng_range_int(ref rng, 1, 10);
+    g_rng_total_rolls = rolls;
+    g_rng_rolls_left = rolls;
+    admin.play_reward_feedback(format_string("RNG: % rolls", {rolls}));
+    Save.set_int(admin, "ui_test_rng_rolls", rolls);
+}
+
+do_rng_roll :: proc(player: Player) -> string {
+    if !g_rng_active return "";
+    if player.get_user_id() != g_rng_owner_id return "";
+    if g_rng_rolls_left <= 0 return "";
+    g_rng_rolls_left -= 1;
+    rng: u64 = rng_root_seed() ^ cast(u64)(get_frame_number() * 9973);
+    // pool: guns and power-ups
+    pool: [11]string = {"Assault Rifle", "SMG", "Blunderbuss", "Flamethrower", "Molotov", "Battle Axe", "Distortion", "Warper", "Medkit", "Ender Pearl", "Glass Cannon"};
+    idx := rng_range_int(ref rng, 0, 10);
+    reward := pool[idx];
+    // grant actual item
+    if reward == "Assault Rifle" { give_weapon(.ASSAULT_RIFLE, player.default_inventory); }
+    else if reward == "SMG" { give_weapon(.SUBMACHINE_GUN, player.default_inventory); }
+    else if reward == "Blunderbuss" { give_weapon(.BLUNDERBUSS, player.default_inventory); }
+    else if reward == "Flamethrower" { give_weapon(.FLAMETHROWER, player.default_inventory); }
+    else if reward == "Molotov" { give_weapon(.MOLOTOV, player.default_inventory); }
+    else if reward == "Battle Axe" { give_weapon(.BATTLE_AXE, player.default_inventory); }
+    else if reward == "Distortion" { give_weapon(.DISTORTION, player.default_inventory); }
+    else if reward == "Warper" { give_weapon(.WARPER, player.default_inventory); }
+    else if reward == "Medkit" { player.has_medkit = true; }
+    else if reward == "Ender Pearl" { player.has_ender_pearl = true; }
+    else if reward == "Glass Cannon" { give_weapon(.GLASS_CANNON, player.default_inventory); }
+    player.play_reward_feedback(format_string("RNG: % (% left)", {reward, g_rng_rolls_left}));
+    Save.set_string(player, "ui_test_rng_last", reward);
+    if g_rng_rolls_left <= 0 {
+        g_rng_active = false;
+        g_rng_owner_id = "";
+    }
+    return reward;
+}
+
