@@ -50,6 +50,11 @@ Weapon_Type :: enum {
     SUN_SHOOTER_TSUNAMI;
     SUN_SHOOTER_SAND;
     SNIPER;
+    FLAMETHROWER;
+    MOLOTOV;
+    BATTLE_AXE;
+    DISTORTION;
+    GLASS_CANNON;
 }
 
 Fire_Mode :: enum {

@@ -301,14 +301,4 @@ Warper_Portal :: class : Component {
     }
 }
 
-place_warper_portal :: proc(player: Player, direction: v2) {
-    if player == null || !#alive(player.entity) return;
-    dir := direction;
-    if length_squared(dir) < 0.001 {
-        dir = v2{1, 0};
-    }
-    dir = normalize(dir);
-    pos := player.entity.world_position + dir * 2.0;
-    spawn_black_hole_trap(pos, player.entity.id);
-    player.play_reward_feedback("Black Hole placed");
-}
+// place_warper_portal moved to new_content.csl for portal logic

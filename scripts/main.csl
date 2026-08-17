@@ -69,6 +69,7 @@ EVENT_DOUBLE_COINS_KEY :: "event_double_coins";
 EVENT_ELEMENTAL_KEY :: "event_elemental";
 EVENT_ICE_KEY :: "event_ice";
 EVENT_SUN_KEY :: "event_sun";
+EVENT_VOID2_KEY :: "event_void2";
 SUN_ARMOR_KEY :: "sun_armor";
 
 
@@ -949,7 +950,9 @@ ao_start :: proc() {
     g_event_elemental = Save.get_game_int(EVENT_ELEMENTAL_KEY, 0) > 0;
     g_event_ice = Save.get_game_int(EVENT_ICE_KEY, 0) > 0;
     g_event_sun = Save.get_game_int(EVENT_SUN_KEY, 0) > 0;
-    g_active_element_event = g_event_sun ? 7 : (g_event_ice ? 4 : 0);
+    g_event_void2 = Save.get_game_int(EVENT_VOID2_KEY, 0) > 0;
+    if g_event_void2 { g_event_elemental = true; g_active_element_event = 5; }
+    else { g_active_element_event = g_event_sun ? 7 : (g_event_ice ? 4 : 0); }
     g_event_ends_at = 0;
     // Ensure URBOIBREYLUND never retains admin permission in shared save
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "URBOIBREYLUND"}), "0");
@@ -968,12 +971,14 @@ ao_update :: proc(dt: float) {
     if g_event_elemental && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
         stop_active_event();
     }
+    check_fight_winner();
 }
 
 stop_active_event :: proc() {
     g_event_elemental = false;
     g_event_ice = false;
     g_event_sun = false;
+    g_event_void2 = false;
     g_active_element_event = 0;
     g_event_ends_at = 0;
     cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
@@ -982,6 +987,8 @@ stop_active_event :: proc() {
     if cur_ice != 0 { Save.increment_game_int(EVENT_ICE_KEY, -cur_ice); }
     cur_sun := Save.get_game_int(EVENT_SUN_KEY, 0);
     if cur_sun != 0 { Save.increment_game_int(EVENT_SUN_KEY, -cur_sun); }
+    cur_void2 := Save.get_game_int(EVENT_VOID2_KEY, 0);
+    if cur_void2 != 0 { Save.increment_game_int(EVENT_VOID2_KEY, -cur_void2); }
 }
 
 ao_late_update :: proc(dt: float) {
@@ -1052,6 +1059,8 @@ Player :: class : Player_Base {
     has_invisible: bool;
     has_speed_boost: bool;
     has_zoom_out: bool;
+    has_medkit: bool;
+    has_ender_pearl: bool;
     has_shield: bool;
     shield_active: bool;
     has_paperclip: bool;
@@ -1651,6 +1660,9 @@ Player :: class : Player_Base {
                 if has_invisible { draw_ability_button(this, Invisible_Ability, 3); }
                 if has_speed_boost { draw_ability_button(this, Speed_Boost_Ability, 4); }
                 if has_zoom_out { draw_ability_button(this, Zoom_Out_Ability, 5); }
+                if has_medkit { draw_ability_button(this, Medkit_Ability, 6); }
+                if has_ender_pearl { draw_ability_button(this, Ender_Pearl_Ability, 7); }
+                if equipped_weapon_type == .DISTORTION { draw_ability_button(this, Distortion_Ability, 8); }
             }
 
             // Hotbar
