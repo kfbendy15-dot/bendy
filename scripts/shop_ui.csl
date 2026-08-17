@@ -1190,18 +1190,21 @@ draw_admin_panel :: proc(player: Player) {
     fight_btn := UIK.button("admin/start_fight", "Start Fight", fight_desc);
     rng_init_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
     rng_init_desc.panel.width = UIK.flex(1); rng_init_desc.panel.height = UIK.pixels(52);
-    rng_init_btn := UIK.button("admin/rng_init", "Fight RNG: Roll Dice", rng_init_desc);
+    rng_init_btn := UIK.button("admin/rng_init", "Get RNG Dice (1-10)", rng_init_desc);
     UIK.panel_end();
-    if g_rng_active {
-        UIK.text(format_string("RNG Rolls left: %/%", {g_rng_rolls_left, g_rng_total_rolls}), UIK.text_body());
-        rng_roll_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
-        rng_roll_desc.panel.width = UIK.flex(1); rng_roll_desc.panel.height = UIK.pixels(52);
-        rng_roll_btn := UIK.button("admin/rng_roll", "Roll for Reward", rng_roll_desc);
-        if UIK.clicked(rng_roll_btn) {
-            do_rng_roll(player);
+    dice_count: s64 = 0;
+    if g_dice_item_def != null {
+        for i: 0..player.default_inventory.capacity - 1 {
+            it := player.default_inventory.get_item(i);
+            if it != null && it.get_definition() == g_dice_item_def {
+                dice_count += it.quantity;
+            }
         }
+    }
+    if dice_count > 0 {
+        UIK.text(format_string("Dice in inventory: % - tap dice in hotbar to roll", {dice_count}), UIK.text_body());
     } else {
-        UIK.text("RNG: Press dice to get 1-10 rolls", UIK.text_body());
+        UIK.text("RNG Dice go to inventory - tap to roll for reward", UIK.text_body());
     }
     if UIK.clicked(rng_init_btn) {
         start_fight_rng(player);
