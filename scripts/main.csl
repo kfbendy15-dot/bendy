@@ -1657,13 +1657,30 @@ Player :: class : Player_Base {
                     }
                 }
 
-                if has_dash      { draw_ability_button(this, Dash_Ability, 2); }
-                if has_invisible { draw_ability_button(this, Invisible_Ability, 3); }
-                if has_speed_boost { draw_ability_button(this, Speed_Boost_Ability, 4); }
-                if has_zoom_out { draw_ability_button(this, Zoom_Out_Ability, 5); }
-                if has_medkit { draw_ability_button(this, Medkit_Ability, 6); }
-                if has_ender_pearl { draw_ability_button(this, Ender_Pearl_Ability, 7); }
-                if equipped_weapon_type == .DISTORTION { draw_ability_button(this, Distortion_Ability, 8); }
+                // Dynamic ability slots: weapon is always 0, extras use 1..5 (engine limit is 6 total = 0..5)
+                // Prevents Index 7 out of bounds 0..<6 crash when medkit/ender/distortion overflow
+                ability_slot := 1;
+                if has_dash {
+                    if ability_slot <= 5 { draw_ability_button(this, Dash_Ability, ability_slot); ability_slot += 1; }
+                }
+                if has_invisible {
+                    if ability_slot <= 5 { draw_ability_button(this, Invisible_Ability, ability_slot); ability_slot += 1; }
+                }
+                if has_speed_boost {
+                    if ability_slot <= 5 { draw_ability_button(this, Speed_Boost_Ability, ability_slot); ability_slot += 1; }
+                }
+                if has_zoom_out {
+                    if ability_slot <= 5 { draw_ability_button(this, Zoom_Out_Ability, ability_slot); ability_slot += 1; }
+                }
+                if has_medkit {
+                    if ability_slot <= 5 { draw_ability_button(this, Medkit_Ability, ability_slot); ability_slot += 1; }
+                }
+                if has_ender_pearl {
+                    if ability_slot <= 5 { draw_ability_button(this, Ender_Pearl_Ability, ability_slot); ability_slot += 1; }
+                }
+                if equipped_weapon_type == .DISTORTION {
+                    if ability_slot <= 5 { draw_ability_button(this, Distortion_Ability, ability_slot); ability_slot += 1; }
+                }
             }
 
             // Hotbar
