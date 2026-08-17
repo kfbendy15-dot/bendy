@@ -1,4 +1,4 @@
-WEAPON_COUNT :: 55;
+WEAPON_COUNT :: 56;
 AMMO_TYPE_COUNT :: 10;
 
 g_weapon_item_defs: [WEAPON_COUNT]Item_Definition;
@@ -68,6 +68,7 @@ weapon_type_to_index :: proc(wt: Weapon_Type) -> s64 {
         case .BATTLE_AXE:             return 52;
         case .DISTORTION:             return 53;
         case .GLASS_CANNON:           return 54;
+        case .VERITY_GUN:             return 55;
     }
     return -1;
 }
@@ -222,6 +223,7 @@ init_weapon_items :: proc() {
     register_weapon(.BATTLE_AXE);
     register_weapon(.DISTORTION);
     register_weapon(.GLASS_CANNON);
+    register_weapon(.VERITY_GUN);
 
     // Load fire sounds for each weapon
     load_fire_sounds();
@@ -383,6 +385,7 @@ load_fire_sounds :: proc() {
     load_single_sound(.BATTLE_AXE, "reusable_weapons/sounds/reusable-weapons/katana_slash.wav");
     load_single_sound(.DISTORTION, "reusable_weapons/sounds/reusable-weapons/void_splitter_shoot_start.wav");
     load_single_sound(.GLASS_CANNON, "reusable_weapons/sounds/reusable-weapons/plasma_gun_shoot_05.wav");
+    load_single_sound(.VERITY_GUN, "reusable_weapons/sounds/reusable-weapons/player_throw_grenade.wav");
 }
 
 load_sound_range :: proc(wt: Weapon_Type, prefix: string, count: s64) {
@@ -464,6 +467,7 @@ get_weapon_type_for_item :: proc(item_def: Item_Definition) -> Weapon_Type {
                 case 52: return .BATTLE_AXE;
                 case 53: return .DISTORTION;
                 case 54: return .GLASS_CANNON;
+                case 55: return .VERITY_GUN;
             }
         }
         i += 1;

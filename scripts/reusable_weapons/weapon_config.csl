@@ -727,6 +727,23 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.shoot_trigger = "throw";
             config.use_ik_var = "use_1h_ik";
         }
+        case .VERITY_GUN: {
+            config.fire_mode = .SPECIAL;
+            config.hand_type = .TWO_HAND;
+            config.fire_rate = 1.0;
+            config.base_damage = 0.0;
+            config.projectile_speed = 11.0;
+            config.projectile_lifetime = 3.0;
+            config.ammo_per_shot = 0;
+            config.weapon_skin = "";
+            config.weapon_icon_path = "Crate Down_a40f12.png";
+            config.item_id = "verity_gun";
+            config.item_name = "Verity Gun";
+            config.ammo_type_index = -1;
+            config.ammo_first_pickup = 0;
+            config.shoot_trigger = "shoot_2h_weapon";
+            config.use_ik_var = "use_2h_ik";
+        }
         case .AKIMBO_PISTOLS: {
             config.fire_mode = .SPECIAL;
             config.hand_type = .CUSTOM;

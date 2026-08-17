@@ -269,36 +269,3 @@ spawn_meteor_boss :: proc() {
         break;
     }
 }
-Warper_Portal :: class : Component {
-    owner_user_id: string;
-    is_first: bool;
-    cooldown: float;
-
-    ao_start :: method() {
-        sprite := entity.add_component(Sprite_Renderer);
-        sprite.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
-        sprite.color = is_first ? {0.35, 0.7, 1.0, 0.8} : {0.75, 0.25, 1.0, 0.8};
-        sprite.layer = -4;
-        entity.set_local_scale({1.4, 1.4});
-    }
-
-    ao_update :: method(dt: float) {
-        if cooldown > 0 { cooldown -= dt; }
-        if cooldown > 0 { return; }
-        for player: component_iterator(Player) {
-            if player.get_user_id() != owner_user_id || player.is_dead { continue; }
-            if length(player.entity.world_position - entity.world_position) > 1.25 { continue; }
-            other: Warper_Portal;
-            for portal: component_iterator(Warper_Portal) {
-                if portal.owner_user_id == owner_user_id && portal.is_first != is_first { other = portal; break; }
-            }
-            if other == null { continue; }
-            player.entity.set_local_position(other.entity.world_position + v2{0, 1.0});
-            cooldown = 1.0;
-            other.cooldown = 1.0;
-            break;
-        }
-    }
-}
-
-// place_warper_portal moved to new_content.csl for portal logic

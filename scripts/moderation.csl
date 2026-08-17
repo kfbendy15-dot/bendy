@@ -62,7 +62,7 @@ moderation_ban :: proc(player: Player, target: Player, duration_seconds: s64, re
         return;
     }
     case_id := moderation_record_case(player, target, "ban", reason);
-    admin_ban_player(target, duration_seconds);
+    admin_ban_player(target, duration_seconds, reason);
     Notifier.notify(format_string("Ban recorded as case %.", {case_id}));
 } @chat_command @any
 

@@ -362,7 +362,6 @@ draw_shop :: proc(player: Player) {
     water_shop_handle: Interact_Result;
     leaf_shop_handle: Interact_Result;
     ice_shop_handle: Interact_Result;
-    warper_shop_handle: Interact_Result;
     shop_gun_cutter_handle: Interact_Result;
     shop_ar_handle: Interact_Result;
     shop_smg_handle: Interact_Result;
@@ -372,7 +371,6 @@ draw_shop :: proc(player: Player) {
     shop_molotov_handle: Interact_Result;
     shop_battle_axe_handle: Interact_Result;
     shop_distortion_handle: Interact_Result;
-    shop_warper_gun_handle: Interact_Result;
     shop_hydro_handle: Interact_Result;
     shop_blunder_handle: Interact_Result;
     stun_handle: Interact_Result;
@@ -390,7 +388,6 @@ draw_shop :: proc(player: Player) {
     speed_boost_handle: Interact_Result;
     zoom_out_handle: Interact_Result;
     medkit_handle: Interact_Result;
-    ender_pearl_handle: Interact_Result;
     normal_handle: Interact_Result;
     finger_handle: Interact_Result;
     paper_handle: Interact_Result;
@@ -399,8 +396,6 @@ draw_shop :: proc(player: Player) {
     detective_chance_handle: Interact_Result;
     mystery_bundle_handle: Interact_Result;
     distortion_featured_handle: Interact_Result;
-    warper_featured_handle: Interact_Result;
-    ender_featured_handle: Interact_Result;
     tabs := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(tabs);
     normal_tab := UIK.button("shop/tab_normal", "Shop", UIK.widget_desc_button_auto_default(player.shop_tab_index == 0 ? .BUTTON_BASIC_GREEN : .BUTTON_BASIC_GREY));
@@ -425,7 +420,6 @@ draw_shop :: proc(player: Player) {
     if event == 2 { water_shop_handle = draw_shop_card("shop/water_shop", "Water Gun", 30, get_asset(Texture_Asset, get_weapon_config(.WATER_GUN).weapon_icon_path), {0.2, 0.55, 0.95, 1}, player_has_weapon(player, .WATER_GUN)); }
     if event == 3 { leaf_shop_handle = draw_shop_card("shop/leaf_shop", "Tree Trap", 60, get_asset(Texture_Asset, get_weapon_config(.KILLER_FISH).weapon_icon_path), {0.2, 0.8, 0.25, 1}, player_has_weapon(player, .KILLER_FISH)); }
     if event == 4 { ice_shop_handle = draw_shop_card("shop/ice_shop", "Ice Launcher", 85, get_asset(Texture_Asset, get_weapon_config(.ICE_LAUNCHER).weapon_icon_path), {0.55, 0.85, 1.0, 1}, player_has_weapon(player, .ICE_LAUNCHER)); }
-    if event == 5 { warper_shop_handle = draw_shop_card("shop/void_special_warper", "Black Hole Gun", 1000, get_asset(Texture_Asset, get_weapon_config(.WARPER).weapon_icon_path), {0.7, 0.25, 1.0, 1}, player_has_weapon(player, .WARPER)); }
     if event == 7 {
         sun_armor_handle = draw_shop_card("shop/sun_armor", "Sun Armor", 1000, get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png"), {1.0, 0.58, 0.08, 1.0}, player.sun_armor_active || player.armor_tier >= 8);
         sun_tsunami_handle = draw_shop_card("shop/sun_shooter_tsunami", "Sun Shooter", 120, get_asset(Texture_Asset, get_weapon_config(.SUN_SHOOTER_TSUNAMI).weapon_icon_path), {0.15, 0.65, 1.0, 1.0}, player_has_weapon(player, .SUN_SHOOTER_TSUNAMI));
@@ -436,8 +430,6 @@ draw_shop :: proc(player: Player) {
         void2_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
         UIK.panel_begin(void2_row);
         distortion_featured_handle = draw_shop_card("shop/void2_distortion_feat", "Distortion", 500, get_asset(Texture_Asset, get_weapon_config(.DISTORTION).weapon_icon_path), {0.2, 0.05, 0.4, 1}, player_has_weapon(player, .DISTORTION));
-        warper_featured_handle = draw_shop_card("shop/void2_warper_feat", "Warper", 100, get_asset(Texture_Asset, get_weapon_config(.WARPER).weapon_icon_path), {0.25, 0.6, 1.0, 1}, player_has_weapon(player, .WARPER));
-        ender_featured_handle = draw_shop_card("shop/void2_ender_feat", "Ender Pearl", 90, get_asset(Texture_Asset, "$AO/circle.png"), {0.6, 0.25, 1.0, 1}, player.has_ender_pearl);
         UIK.panel_end();
     }
     UIK.panel_end();
@@ -492,10 +484,8 @@ draw_shop :: proc(player: Player) {
     UIK.panel_begin(shop_gun_row_5);
     shop_battle_axe_icon := get_asset(Texture_Asset, get_weapon_config(.BATTLE_AXE).weapon_icon_path);
     shop_distortion_icon := get_asset(Texture_Asset, get_weapon_config(.DISTORTION).weapon_icon_path);
-    shop_warper_gun_icon := get_asset(Texture_Asset, get_weapon_config(.WARPER).weapon_icon_path);
     shop_battle_axe_handle = draw_shop_card("shop/battle_axe", "Battle Axe", shop_price(player, BATTLE_AXE_COST), shop_battle_axe_icon, {0.75, 0.55, 0.25, 1}, player_has_weapon(player, .BATTLE_AXE));
     shop_distortion_handle = draw_shop_card("shop/distortion", "Distortion", void2_price(DISTORTION_COST), shop_distortion_icon, {0.12, 0.05, 0.35, 1}, player_has_weapon(player, .DISTORTION));
-    shop_warper_gun_handle = draw_shop_card("shop/warper_gun", "Warper", void2_price(WARPER_COST), shop_warper_gun_icon, {0.25, 0.6, 1.0, 1}, player_has_weapon(player, .WARPER));
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
@@ -560,9 +550,7 @@ draw_shop :: proc(player: Player) {
     powerup_row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(powerup_row_3);
     medkit_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
-    ender_icon := get_asset(Texture_Asset, "$AO/circle.png");
     medkit_handle = draw_shop_card("shop/medkit", "Medkit", MEDKIT_COST, medkit_icon, {0.9, 0.25, 0.25, 1}, player.has_medkit);
-    ender_pearl_handle = draw_shop_card("shop/ender_pearl", "Ender Pearl", void2_price(ENDER_PEARL_COST), ender_icon, {0.6, 0.25, 1.0, 1}, player.has_ender_pearl);
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
@@ -599,7 +587,6 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(water_shop_handle) && event == 2 { buy_weapon_offer(player, .WATER_GUN, 30, "+Water Gun"); }
     if UIK.clicked(leaf_shop_handle) && event == 3 { buy_weapon_offer(player, .KILLER_FISH, 60, "+Tree Trap"); }
     if UIK.clicked(ice_shop_handle) && event == 4 { buy_weapon_offer(player, .ICE_LAUNCHER, 85, "+Ice Launcher"); }
-    if UIK.clicked(warper_shop_handle) && event == 5 { buy_weapon_offer(player, .WARPER, 1000, "+Black Hole Gun"); }
     if UIK.clicked(sun_armor_handle) && event == 7 { buy_sun_armor(player); }
     if UIK.clicked(sun_tsunami_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_TSUNAMI, 120, "+Sun Shooter"); }
     if UIK.clicked(sun_sand_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_SAND, 120, "+Sun Shooter"); }
@@ -634,28 +621,10 @@ draw_shop :: proc(player: Player) {
             player.play_reward_feedback("+Distortion");
         }
     }
-    if UIK.clicked(shop_warper_gun_handle) {
-        if spend_coins(player, void2_price(WARPER_COST)) {
-            grant_weapon_with_ammo(player, .WARPER, 0);
-            player.play_reward_feedback("+Warper");
-        }
-    }
     if UIK.clicked(distortion_featured_handle) {
         if spend_coins(player, 500) {
             grant_weapon_with_ammo(player, .DISTORTION, get_weapon_config(.DISTORTION).ammo_first_pickup);
             player.play_reward_feedback("+Distortion");
-        }
-    }
-    if UIK.clicked(warper_featured_handle) {
-        if spend_coins(player, 100) {
-            grant_weapon_with_ammo(player, .WARPER, 0);
-            player.play_reward_feedback("+Warper");
-        }
-    }
-    if UIK.clicked(ender_featured_handle) {
-        if spend_coins(player, 90) {
-            player.has_ender_pearl = true;
-            player.play_reward_feedback("+Ender Pearl");
         }
     }
     if UIK.clicked(stun_handle) {
@@ -760,18 +729,6 @@ draw_shop :: proc(player: Player) {
             }
         }
     }
-    if UIK.clicked(ender_pearl_handle) && !player.has_ender_pearl {
-        if spend_coins(player, void2_price(ENDER_PEARL_COST)) {
-            player.has_ender_pearl = true;
-            play_pickup_feedback(player, "+Ender Pearl");
-            if player.is_local() {
-                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
-                d := SFX.default_sfx_desc();
-                d.volume = 0.6;
-                SFX.play(sfx, d);
-            }
-        }
-    }
 
     if UIK.clicked(finger_handle) && !player.purchased_finger_gun {
         if spend_coins(player, SKIN_COST) {
@@ -854,8 +811,10 @@ draw_admin_shop :: proc(player: Player) {
     UIK.panel_begin(weapon_row_3);
     minigun_icon := get_asset(Texture_Asset, get_weapon_config(.GATLING_GUN).weapon_icon_path);
     missile_icon := get_asset(Texture_Asset, get_weapon_config(.MISSILE_BARRAGE).weapon_icon_path);
+    verity_gun_icon := get_asset(Texture_Asset, get_weapon_config(.VERITY_GUN).weapon_icon_path);
     minigun_btn := draw_shop_card("admin_shop/minigun", "Minigun", ADMIN_SHOP_GUN_COST, minigun_icon, {0.6, 0.6, 0.7, 1}, player_has_weapon(player, .GATLING_GUN));
     missile_btn := draw_shop_card("admin_shop/missile_gun", "Missile Gun", ADMIN_SHOP_GUN_COST, missile_icon, {0.85, 0.55, 0.25, 1}, player_has_weapon(player, .MISSILE_BARRAGE));
+    verity_gun_btn := draw_shop_card("admin_shop/verity_gun", "Verity Gun", 0, verity_gun_icon, {1.0, 0.86, 0.2, 1}, player_has_weapon(player, .VERITY_GUN));
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
@@ -933,6 +892,10 @@ draw_admin_shop :: proc(player: Player) {
     if UIK.clicked(missile_btn) {
         buy_weapon_offer(player, .MISSILE_BARRAGE, ADMIN_SHOP_GUN_COST, "+Missile Gun");
     }
+    if UIK.clicked(verity_gun_btn) {
+        grant_weapon_with_ammo(player, .VERITY_GUN, 0);
+        player.play_reward_feedback("+Verity Gun");
+    }
 }
 
 admin_spawn_tripmine_test_only :: proc(player: Player) {
@@ -1002,6 +965,8 @@ draw_admin_panel :: proc(player: Player) {
     UIK.text(format_string("Target: %", {player.admin_target_username}), UIK.text_body());
     UIK.text(format_string("Coins: %", {player.admin_grant_amount}), UIK.text_body());
     UIK.text(format_string("Ban duration: % seconds", {player.admin_grant_amount}), UIK.text_body());
+    UIK.text("Reason For Ban", UIK.text_title());
+    UIK.text(player.admin_ban_reason, UIK.text_body());
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
     minigames_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
@@ -1116,6 +1081,18 @@ draw_admin_panel :: proc(player: Player) {
     amt250_btn := UIK.button("admin/amt_250", "250", amt250_desc);
     UIK.panel_end();
 
+    amount_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
+    UIK.panel_begin(amount_row_2);
+    amt500_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    amt500_desc.panel.width = UIK.flex(1);
+    amt500_desc.panel.height = UIK.pixels(42);
+    amt500_btn := UIK.button("admin/amt_500", "500", amt500_desc);
+    amt750_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    amt750_desc.panel.width = UIK.flex(1);
+    amt750_desc.panel.height = UIK.pixels(42);
+    amt750_btn := UIK.button("admin/amt_750", "750", amt750_desc);
+    UIK.panel_end();
+
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     action_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
     UIK.panel_begin(action_row);
@@ -1182,6 +1159,19 @@ draw_admin_panel :: proc(player: Player) {
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+    monster_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(monster_row);
+    monster_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+    monster_desc.panel.width = UIK.flex(1);
+    monster_desc.panel.height = UIK.pixels(54);
+    backrooms_monster_btn := UIK.button("admin/backrooms_monster", "Become Backrooms Monster", monster_desc);
+    verity_jumpscare_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    verity_jumpscare_desc.panel.width = UIK.flex(1);
+    verity_jumpscare_desc.panel.height = UIK.pixels(54);
+    verity_jumpscare_btn := UIK.button("admin/verity_jumpscare_everyone", "Jumpscare Everyone: Verity", verity_jumpscare_desc);
+    UIK.panel_end();
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
     UIK.text("Fight Modes", UIK.text_title());
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     fight_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
@@ -1212,6 +1202,16 @@ draw_admin_panel :: proc(player: Player) {
     }
     if UIK.clicked(fight_btn) {
         start_fight_event(player);
+    }
+    if UIK.clicked(backrooms_monster_btn) {
+        if player.backrooms_monster_active {
+            troll_do_unmorph(player);
+        } else {
+            troll_do_backrooms_monster(player);
+        }
+    }
+    if UIK.clicked(verity_jumpscare_btn) {
+        troll_do_verity_jumpscare_everyone(player);
     }
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
@@ -1302,6 +1302,12 @@ draw_admin_panel :: proc(player: Player) {
     if UIK.clicked(amt250_btn) {
         player.admin_grant_amount = 250;
     }
+    if UIK.clicked(amt500_btn) {
+        player.admin_grant_amount = 500;
+    }
+    if UIK.clicked(amt750_btn) {
+        player.admin_grant_amount = 750;
+    }
 
     if UIK.clicked(grant_coins_btn) {
         if grant_coins_to_username(admin_target.get_username(), player.admin_grant_amount) {
@@ -1317,7 +1323,7 @@ draw_admin_panel :: proc(player: Player) {
         } else if player.admin_grant_amount <= 0 {
             player.play_reward_feedback("Choose a ban duration");
         } else {
-            moderation_ban(player, admin_target, player.admin_grant_amount, "Admin panel action");
+            moderation_ban(player, admin_target, player.admin_grant_amount, player.admin_ban_reason);
             player.play_reward_feedback(format_string("Banned %", {admin_target.get_username()}));
         }
     }
@@ -1427,6 +1433,10 @@ draw_event_panel :: proc(player: Player) {
     UIK.list_begin("admin/events_body", body);
     UIK.text("Start a server-wide event.", UIK.text_title());
     UIK.text("Choose an event, then select a player to assign that element.", UIK.text_body());
+    UIK.text("Verity Event: tap yellow Verity squares for +10,000 Coins.", UIK.text_body());
+    verity_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+    verity_desc.panel.width = UIK.flex(1); verity_desc.panel.height = UIK.pixels(58);
+    verity_btn := UIK.button("events/start_verity", "Start Verity Event", verity_desc);
 
     target_usernames: [..]string;
     target_handles: [..]Interact_Result;
@@ -1513,12 +1523,18 @@ draw_event_panel :: proc(player: Player) {
     lightning_clicked := UIK.clicked(lightning_btn);
     sun_clicked := UIK.clicked(sun_btn);
     void2_clicked := UIK.clicked(void2_btn);
+    verity_clicked := UIK.clicked(verity_btn);
     if void2_clicked {
         start_void2_event(player);
         player.show_event_panel = false;
     }
+    if verity_clicked {
+        start_verity_event(player);
+        player.show_event_panel = false;
+    }
     any_event_clicked := fire_clicked || water_clicked || leaf_clicked || ice_clicked || void_clicked || lightning_clicked || sun_clicked;
     if any_event_clicked {
+        if g_event_verity { stop_active_event(); }
         g_event_elemental = true;
         g_event_ice = ice_clicked;
         g_event_sun = sun_clicked;

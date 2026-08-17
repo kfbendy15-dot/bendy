@@ -256,16 +256,9 @@ Special_Ability :: class : Ability_Base {
                     };
                     spawn_landmine(mine_pos, p.entity.id, config.aoe_damage, 1.15);
                 }
-                case .WARPER: {
+                case .VERITY_GUN: {
                     weapon_shoot(p, wt);
-                    dir := aiming.aim_direction;
-                    if length(dir) < 0.1 {
-                        dir = v2{1, 0};
-                    }
-                    if dir.x != 0 {
-                        p.set_facing_right(dir.x > 0);
-                    }
-                    place_warper_portal(p, dir);
+                    spawn_verity_box_projectile(p, aiming.aim_direction, wt);
                 }
                 case .BATTLE_AXE: {
                     weapon_shoot(p, wt);
@@ -322,7 +315,6 @@ Special_Ability :: class : Ability_Base {
             }
             // Legacy sync
             if wt == .KILLER_FISH { p.killer_fish_cooldown = config.fire_rate; }
-            else if wt == .WARPER { p.warper_cooldown = config.fire_rate; }
             self.was_shooting = true;
         }
 

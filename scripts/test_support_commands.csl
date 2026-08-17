@@ -364,4 +364,98 @@ admin_shop_test_use_specials :: proc(player: Player) {
     giant_gun_attack(player, {1, 0});
 } @chat_command @owner_or_editor
 
+verity_test_start_event :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    reset_test_shop_state(player);
+    start_verity_event(player);
+} @chat_command @owner_or_editor
+
+verity_test_box_setup :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    target: Player;
+    for other: component_iterator(Player) {
+        if other != null && other != player {
+            target = other;
+            break;
+        }
+    }
+    if target == null {
+        Save.set_int(player, "ui_test_verity_box_stunned", 0);
+        return;
+    }
+
+    target.entity.set_local_position(player.entity.local_position + v2{1.5, 0});
+    target.entity.mark_teleported();
+    spawn_verity_box_projectile(player, {1, 0}, .VERITY_GUN);
+    Save.set_int(player, "ui_test_verity_box_stunned", 0);
+} @chat_command @owner_or_editor
+
+verity_test_box_check :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    stunned: s64 = 0;
+    for other: component_iterator(Player) {
+        if other != null && other != player && other.entity.has_effect(Weapon_Stun_Effect) {
+            stunned += 1;
+        }
+    }
+    Save.set_int(player, "ui_test_verity_box_stunned", stunned);
+} @chat_command @owner_or_editor
+
+verity_test_monster_touch :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    target: Player;
+    for other: component_iterator(Player) {
+        if other != null && other != player {
+            target = other;
+            break;
+        }
+    }
+    if target == null {
+        Save.set_int(player, "ui_test_backrooms_monster_invulnerable", 0);
+        Save.set_int(player, "ui_test_backrooms_monster_touch_kill", 0);
+        return;
+    }
+
+    troll_do_backrooms_monster(player);
+    weapon_target_apply_damage(player.weapon_target, player.weapon_target.max_health + 1000.0, 0);
+    invulnerable := player.weapon_target.health == player.weapon_target.max_health;
+
+    target.entity.set_local_position(player.entity.local_position);
+    target.entity.mark_teleported();
+    backrooms_monster_tick(player, 0.1);
+    killed := target.weapon_target != null && target.weapon_target.health <= 0;
+
+    Save.set_int(player, "ui_test_backrooms_monster_invulnerable", invulnerable ? 1 : 0);
+    Save.set_int(player, "ui_test_backrooms_monster_touch_kill", killed ? 1 : 0);
+    troll_do_unmorph(player);
+} @chat_command @owner_or_editor
+
+verity_test_jumpscare_everyone :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    player.troll_jumpscare_next_allowed[1] = 0;
+    troll_do_verity_jumpscare_everyone(player);
+    targets: s64 = 0;
+    for other: component_iterator(Player) {
+        if other != null && other.troll_scare_type == 1 && other.troll_scare_until > get_time() {
+            targets += 1;
+        }
+    }
+    Save.set_int(player, "ui_test_verity_jumpscare_targets", targets);
+} @chat_command @owner_or_editor
+
 

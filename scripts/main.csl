@@ -39,6 +39,7 @@ TEMP_ADMIN_TWO :: "Fluffpuff";
 ADMIN_PERMISSION_PREFIX :: "admin_permission/";
 ADMIN_BAN_PREFIX :: "admin_ban_until/";
 ADMIN_BAN_USERNAME_PREFIX :: "admin_ban_username/";
+ADMIN_BAN_REASON_PREFIX :: "admin_ban_reason/";
 WORLD_BOUNDS_MIN_X :: -31.0;
 WORLD_BOUNDS_MAX_X :: 31.0;
 WORLD_BOUNDS_MIN_Y :: -20.0;
@@ -70,6 +71,7 @@ EVENT_ELEMENTAL_KEY :: "event_elemental";
 EVENT_ICE_KEY :: "event_ice";
 EVENT_SUN_KEY :: "event_sun";
 EVENT_VOID2_KEY :: "event_void2";
+EVENT_VERITY_KEY :: "event_verity";
 SUN_ARMOR_KEY :: "sun_armor";
 
 
@@ -167,14 +169,29 @@ admin_ban_username_for_user :: proc(user_id: string) -> string {
     return Save.get_game_string(admin_ban_username_key(user_id), user_id);
 }
 
-admin_ban_player :: proc(target: Player, duration_seconds: s64) -> bool {
+admin_ban_reason_key :: proc(user_id: string) -> string {
+    return format_string("%0%", {ADMIN_BAN_REASON_PREFIX, user_id});
+}
+
+admin_ban_reason_for_user :: proc(user_id: string) -> string {
+    if user_id == "" return "Admin panel action";
+    reason := Save.get_game_string(admin_ban_reason_key(user_id), "Admin panel action");
+    if reason.count == 0 return "Admin panel action";
+    return reason;
+}
+
+admin_ban_player :: proc(target: Player, duration_seconds: s64, reason: string) -> bool {
     if target == null || duration_seconds <= 0 return false;
+    if reason.count == 0 {
+        reason = "Admin panel action";
+    }
     expiry := get_nanoseconds_since_epoch() / 1000000000 + duration_seconds;
     key := format_string("%0%", {ADMIN_BAN_PREFIX, target.get_user_id()});
     current_expiry := Save.get_game_int(key, 0);
     Save.increment_game_int(key, expiry - current_expiry);
     Save.set_game_string(admin_ban_username_key(target.get_user_id()), target.get_username());
-    Server.kick_player(target, format_string("You have been banned for % seconds", {duration_seconds}));
+    Save.set_game_string(admin_ban_reason_key(target.get_user_id()), reason);
+    Server.kick_player(target, format_string("You have been banned for % seconds. Reason For Ban: %", {duration_seconds, reason}));
     return true;
 }
 
@@ -455,6 +472,7 @@ is_admin_only_weapon :: proc(wt: Weapon_Type) -> bool {
     if wt == .INVISIBLE_GUN_ADMIN { return true; }
     if wt == .BATTLEPASS_GUN { return true; }
     if wt == .SNIPER { return true; }
+    if wt == .VERITY_GUN { return true; }
     return false;
 }
 
@@ -490,6 +508,8 @@ strip_admin_weapons :: proc(player: Player) {
     destroy_all_weapon_items(player, .ADMIN_NUKE_GUN);
     destroy_all_weapon_items(player, .BUILDING_TOOLS);
     destroy_all_weapon_items(player, .SNIPER);
+    destroy_all_weapon_items(player, .WARPER);
+    destroy_all_weapon_items(player, .VERITY_GUN);
 
     if is_admin_only_weapon(player.equipped_weapon_type) {
         weapon_unequip(player, player.equipped_weapon_type);
@@ -952,9 +972,11 @@ ao_start :: proc() {
     g_event_ice = Save.get_game_int(EVENT_ICE_KEY, 0) > 0;
     g_event_sun = Save.get_game_int(EVENT_SUN_KEY, 0) > 0;
     g_event_void2 = Save.get_game_int(EVENT_VOID2_KEY, 0) > 0;
+    g_event_verity = Save.get_game_int(EVENT_VERITY_KEY, 0) > 0;
     if g_event_void2 { g_event_elemental = true; g_active_element_event = 5; }
     else { g_active_element_event = g_event_sun ? 7 : (g_event_ice ? 4 : 0); }
-    g_event_ends_at = 0;
+    g_event_ends_at = g_event_verity ? get_time() + 600.0 : 0;
+    g_verity_event_spawned = false;
     // Ensure URBOIBREYLUND never retains admin permission in shared save
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "URBOIBREYLUND"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "urboibreylund"}), "0");
@@ -969,7 +991,11 @@ ao_start :: proc() {
 
 ao_update :: proc(dt: float) {
     admin_chat_poll();
-    if g_event_elemental && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
+    if g_event_verity && !g_verity_event_spawned {
+        spawn_verity_event_squares();
+        g_verity_event_spawned = true;
+    }
+    if (g_event_elemental || g_event_verity) && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
         stop_active_event();
     }
     check_fight_winner();
@@ -980,6 +1006,8 @@ stop_active_event :: proc() {
     g_event_ice = false;
     g_event_sun = false;
     g_event_void2 = false;
+    g_event_verity = false;
+    g_verity_event_spawned = false;
     g_active_element_event = 0;
     g_event_ends_at = 0;
     cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
@@ -990,6 +1018,9 @@ stop_active_event :: proc() {
     if cur_sun != 0 { Save.increment_game_int(EVENT_SUN_KEY, -cur_sun); }
     cur_void2 := Save.get_game_int(EVENT_VOID2_KEY, 0);
     if cur_void2 != 0 { Save.increment_game_int(EVENT_VOID2_KEY, -cur_void2); }
+    cur_verity := Save.get_game_int(EVENT_VERITY_KEY, 0);
+    if cur_verity != 0 { Save.increment_game_int(EVENT_VERITY_KEY, -cur_verity); }
+    destroy_verity_event_squares();
 }
 
 ao_late_update :: proc(dt: float) {
@@ -1026,11 +1057,7 @@ Player :: class : Player_Base {
     equipped_item_def: Item_Definition;
     last_selected_index: s64;
     boomwheel_cannon: Boomwheel_Cannon;
-    warper_first_portal: Entity;
-    warper_second_portal: Entity;
-    warper_teleport_cooldown: float;
     killer_fish_cooldown: float;
-    warper_cooldown: float;
     weapon_cooldowns: [64]float;
 
     // Game state
@@ -1061,7 +1088,6 @@ Player :: class : Player_Base {
     has_speed_boost: bool;
     has_zoom_out: bool;
     has_medkit: bool;
-    has_ender_pearl: bool;
     has_shield: bool;
     shield_active: bool;
     has_paperclip: bool;
@@ -1081,6 +1107,7 @@ Player :: class : Player_Base {
     out_of_bounds_respawn_start: float;
     admin_target_username: string;
     admin_grant_amount: s64;
+    admin_ban_reason: string;
     admin_armor_tier: s64;
     show_admin_unban: bool;
     admin_banned_user_ids: [..]string;
@@ -1175,11 +1202,13 @@ Player :: class : Player_Base {
     troll_morph_saved_user_tag: string;
     troll_morph_saved_show_vip_crown: bool;
     troll_morph_yellow_square: Entity;
+    backrooms_monster_active: bool;
+    backrooms_monster_entity: Entity;
 
     ao_start :: method() {
         banned_seconds := admin_ban_remaining_seconds(get_user_id());
         if banned_seconds > 0 {
-            Server.kick_player(this, format_string("You have been banned for % seconds", {banned_seconds}));
+            Server.kick_player(this, format_string("You have been banned for % seconds. Reason For Ban: %", {banned_seconds, admin_ban_reason_for_user(get_user_id())}));
             return;
         }
 
@@ -1191,6 +1220,10 @@ Player :: class : Player_Base {
         wt.on_damaged_userdata = this;
         wt.on_damaged = proc(target: Weapon_Target, damage: float, attacker_id: u64, userdata: Object) {
             victim := userdata.(Player);
+            if victim.backrooms_monster_active {
+                target.health = target.max_health;
+                return;
+            }
             if target.health <= 0 && !victim.is_dead {
                 if is_murder_mystery_active() {
                     attacker: Player;
@@ -1257,6 +1290,9 @@ Player :: class : Player_Base {
         ammo := Items.create_item_instance(g_ammo_item_defs[0], STARTING_BULLETS);
         Items.move_item_to_inventory(ammo, default_inventory);
 
+        // Remove retired Warper items from inventories created before the retirement.
+        destroy_all_weapon_items(this, .WARPER);
+
         if can_access_admin_panel(this) {
             if !player_has_weapon(this, .ADMIN_GUN) {
                 give_weapon(.ADMIN_GUN, default_inventory);
@@ -1269,6 +1305,9 @@ Player :: class : Player_Base {
             }
             if !player_has_weapon(this, .BUILDING_TOOLS) {
                 give_weapon(.BUILDING_TOOLS, default_inventory);
+            }
+            if !player_has_weapon(this, .VERITY_GUN) {
+                give_weapon(.VERITY_GUN, default_inventory);
             }
         }
 
@@ -1322,6 +1361,7 @@ Player :: class : Player_Base {
         }
         admin_target_username = "";
         admin_grant_amount = 25;
+        admin_ban_reason = "Admin panel action";
         admin_armor_tier = 1;
         show_admin_unban = false;
         admin_unban_next_refresh_at = 0;
@@ -1388,9 +1428,10 @@ Player :: class : Player_Base {
         troll_morph_saved_user_tag = "";
         troll_morph_saved_show_vip_crown = true;
         troll_morph_yellow_square = null;
+        backrooms_monster_active = false;
+        backrooms_monster_entity = null;
         for i: 0..4 { troll_jumpscare_next_allowed[i] = 0; }
         killer_fish_cooldown = 0;
-        warper_cooldown = 0;
         if is_local() {
             // Voice range is measured in world units. Zero means unlimited/global,
             // so keep voice explicitly local to nearby players.
@@ -1454,7 +1495,13 @@ Player :: class : Player_Base {
                     animator.set_tint({1.0, 0.92, 0.35, 0.0});
                 }
             }
-            if !#alive(troll_morph_yellow_square) {
+            if backrooms_monster_active {
+                if #alive(troll_morph_yellow_square) {
+                    troll_morph_yellow_square.destroy();
+                    troll_morph_yellow_square = null;
+                }
+                ensure_backrooms_monster_visual(this);
+            } else if !#alive(troll_morph_yellow_square) {
                 sq := Scene.create_entity();
                 sq.set_name("Verity_Yellow_Square");
                 sq.set_parent(entity, false);
@@ -1470,6 +1517,10 @@ Player :: class : Player_Base {
             if #alive(troll_morph_yellow_square) {
                 troll_morph_yellow_square.destroy();
                 troll_morph_yellow_square = null;
+            }
+            if #alive(backrooms_monster_entity) {
+                backrooms_monster_entity.destroy();
+                backrooms_monster_entity = null;
             }
         }
 
@@ -1542,10 +1593,6 @@ Player :: class : Player_Base {
             killer_fish_cooldown -= dt;
             if killer_fish_cooldown < 0 { killer_fish_cooldown = 0; }
         }
-        if warper_cooldown > 0 {
-            warper_cooldown -= dt;
-            if warper_cooldown < 0 { warper_cooldown = 0; }
-        }
 
         if is_local() {
             if Voice.get_range() != 12.0 {
@@ -1560,6 +1607,7 @@ Player :: class : Player_Base {
         update_role_mode_player(this, dt);
         update_murder_mystery_player(this, dt);
         troll_tick(this, dt);
+        backrooms_monster_tick(this, dt);
 
         // Reset zoom if dead — keep camera sane
         if is_dead && entity.has_effect(Zoom_Out_Effect) {
@@ -1657,8 +1705,8 @@ Player :: class : Player_Base {
                     }
                 }
 
-                // Dynamic ability slots: weapon is always 0, extras use 1..5 (engine limit is 6 total = 0..5)
-                // Prevents Index 7 out of bounds 0..<6 crash when medkit/ender/distortion overflow
+                // Dynamic ability slots: weapon is always 0, power-ups stack in slots 1..5 on the right side.
+                // Distortion is a weapon secondary, not a power-up, so it stays on the weapon slot.
                 ability_slot := 1;
                 if has_dash {
                     if ability_slot <= 5 { draw_ability_button(this, Dash_Ability, ability_slot); ability_slot += 1; }
@@ -1674,12 +1722,6 @@ Player :: class : Player_Base {
                 }
                 if has_medkit {
                     if ability_slot <= 5 { draw_ability_button(this, Medkit_Ability, ability_slot); ability_slot += 1; }
-                }
-                if has_ender_pearl {
-                    if ability_slot <= 5 { draw_ability_button(this, Ender_Pearl_Ability, ability_slot); ability_slot += 1; }
-                }
-                if equipped_weapon_type == .DISTORTION {
-                    if ability_slot <= 5 { draw_ability_button(this, Distortion_Ability, ability_slot); ability_slot += 1; }
                 }
             }
 
@@ -1776,5 +1818,7 @@ g_event_ice: bool;
 g_event_sun: bool;
 g_event_double_coins: bool;
 g_event_elemental: bool;
+g_event_verity: bool;
+g_verity_event_spawned: bool;
 g_active_element_event: s64;
 g_event_ends_at: float;
