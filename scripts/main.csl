@@ -73,6 +73,10 @@ EVENT_ELEMENTAL_KEY :: "event_elemental";
 EVENT_ICE_KEY :: "event_ice";
 EVENT_SUN_KEY :: "event_sun";
 EVENT_VOID2_KEY :: "event_void2";
+EVENT_CYBER_ENERGY_KEY :: "event_cyber_energy";
+CODE_PAPERCLIPS_ARE_COOL_KEY :: "code_paperclipsarecool";
+CODE_DINO_GANG_ROAD_KEY :: "code_dinogangroad";
+CODE_REWARD_COINS :: 500;
 SUN_ARMOR_KEY :: "sun_armor";
 
 
@@ -1047,7 +1051,11 @@ ao_start :: proc() {
     g_event_ice = Save.get_game_int(EVENT_ICE_KEY, 0) > 0;
     g_event_sun = Save.get_game_int(EVENT_SUN_KEY, 0) > 0;
     g_event_void2 = Save.get_game_int(EVENT_VOID2_KEY, 0) > 0;
-    if g_event_void2 { g_event_elemental = true; g_active_element_event = 5; }
+    g_event_cyber_energy = Save.get_game_int(EVENT_CYBER_ENERGY_KEY, 0) > 0;
+    if g_event_cyber_energy {
+        g_event_elemental = false;
+        g_active_element_event = 8;
+    } else if g_event_void2 { g_event_elemental = true; g_active_element_event = 5; }
     else { g_active_element_event = g_event_sun ? 7 : (g_event_ice ? 4 : 0); }
     g_event_ends_at = 0;
     grant_pileoharse_now();
@@ -1066,7 +1074,7 @@ ao_start :: proc() {
 ao_update :: proc(dt: float) {
     admin_chat_poll();
     grant_pileoharse_now();
-    if g_event_elemental && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
+    if (g_event_elemental || g_event_cyber_energy) && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
         stop_active_event();
     }
     check_fight_winner();
@@ -1077,6 +1085,7 @@ stop_active_event :: proc() {
     g_event_ice = false;
     g_event_sun = false;
     g_event_void2 = false;
+    g_event_cyber_energy = false;
     g_active_element_event = 0;
     g_event_ends_at = 0;
     cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
@@ -1087,6 +1096,8 @@ stop_active_event :: proc() {
     if cur_sun != 0 { Save.increment_game_int(EVENT_SUN_KEY, -cur_sun); }
     cur_void2 := Save.get_game_int(EVENT_VOID2_KEY, 0);
     if cur_void2 != 0 { Save.increment_game_int(EVENT_VOID2_KEY, -cur_void2); }
+    cur_cyber := Save.get_game_int(EVENT_CYBER_ENERGY_KEY, 0);
+    if cur_cyber != 0 { Save.increment_game_int(EVENT_CYBER_ENERGY_KEY, -cur_cyber); }
 }
 
 ao_late_update :: proc(dt: float) {
@@ -1138,6 +1149,9 @@ Player :: class : Player_Base {
     show_tutorial: bool;
     show_admin_panel: bool;
     show_event_panel: bool;
+    show_codes_panel: bool;
+    code_input: string;
+    code_status: string;
     show_admin_shop: bool;
     show_pileo_shop: bool;
     show_caylus_map: bool;
@@ -1352,6 +1366,8 @@ Player :: class : Player_Base {
         load_saved_coins(this);
         ensure_pileoharse_grant(this);
         has_claimed_parkour_reward = Save.get_int(this, PARKOUR_REWARD_KEY, 0) != 0;
+        has_paperclip = Save.get_int(this, PAPERCLIP_UNLOCKED_KEY, 0) != 0;
+        paperclip_active = false;
         has_vip = Save.get_int(this, VIP_SAVE_KEY, 0) != 0;
         show_vip_crown = Save.get_int(this, VIP_CROWN_VISIBLE_SAVE_KEY, 1) != 0;
         show_admin_tag = Save.get_int(this, ADMIN_TAG_VISIBLE_SAVE_KEY, 1) != 0;
@@ -1362,9 +1378,9 @@ Player :: class : Player_Base {
         foltyn_frenzy_speed = 480.0;
         Save.set_int(this, "ui_test_sword_base_damage", get_weapon_config(.SWORD).base_damage.(s64));
 
-        // 100 starting AR rounds
-        ammo := Items.create_item_instance(g_ammo_item_defs[0], STARTING_BULLETS);
-        Items.move_item_to_inventory(ammo, default_inventory);
+        // Spawn with ammo for the starting gun. Use the same inventory-backed
+        // grant path as every other gun so its fire button is immediately usable.
+        grant_weapon_with_ammo(this, .ASSAULT_RIFLE, STARTING_BULLETS);
 
         // Remove retired Warper items from inventories created before the retirement.
         destroy_all_weapon_items(this, .WARPER);
@@ -1455,6 +1471,9 @@ Player :: class : Player_Base {
         is_admin_noclip = false;
         show_admin_shop = false;
         show_pileo_shop = false;
+        show_codes_panel = false;
+        code_input = "";
+        code_status = "Enter a code";
         show_caylus_map = false;
         caylus_map_dismissed = false;
         player_element = 0;
@@ -1714,6 +1733,9 @@ Player :: class : Player_Base {
             if is_murder_mystery_active() && murder_role == .KILLER {
             }
             draw_hud(this);
+            if show_codes_panel {
+                draw_codes_panel(this);
+            }
             if show_caylus_map && has_caylus_sensor(this) {
                 draw_caylus_map(this);
             }
@@ -1779,8 +1801,15 @@ Player :: class : Player_Base {
                 }
 
                 // Dynamic ability slots: weapon is always 0, power-ups stack in slots 1..5 on the right side.
-                // Distortion is a weapon secondary, not a power-up, so it stays on the weapon slot.
+                // Distortion's black hole is a weapon secondary, so it gets its own
+                // button whenever Distortion is equipped.
                 ability_slot := 1;
+                if equipped_weapon_type == .DISTORTION {
+                    if ability_slot <= 5 { draw_ability_button(this, Distortion_Ability, ability_slot); ability_slot += 1; }
+                }
+                if has_paperclip {
+                    if ability_slot <= 5 { draw_ability_button(this, Paperclip_Ability, ability_slot); ability_slot += 1; }
+                }
                 if has_dash {
                     if ability_slot <= 5 { draw_ability_button(this, Dash_Ability, ability_slot); ability_slot += 1; }
                 }
@@ -1898,3 +1927,4 @@ g_event_double_coins: bool;
 g_event_elemental: bool;
 g_active_element_event: s64;
 g_event_ends_at: float;
+g_event_cyber_energy: bool;

@@ -198,7 +198,7 @@ spawn_distortion_vortex :: proc(pos: v2, owner_id: u64) {
 
 Distortion_Ability :: class : Ability_Base {
     on_init :: method() {
-        name = "Distortion Hole";
+        name = "Black Hole";
         icon = get_asset(Texture_Asset, "$AO/circle.png");
     }
     can_use :: method() -> bool {
@@ -229,6 +229,38 @@ Distortion_Ability :: class : Ability_Base {
     }
 }
 
+cyber_energy_price :: proc(base: s64) -> s64 {
+    if g_event_cyber_energy {
+        return max(1, base / 2);
+    }
+    return base;
+}
+
+start_cyber_energy_event :: proc(admin: Player) {
+    // Cyber Energy is a standalone server-wide energy sale event.
+    g_event_elemental = false;
+    g_event_ice = false;
+    g_event_sun = false;
+    g_event_void2 = false;
+    g_event_cyber_energy = true;
+    g_active_element_event = 8;
+    g_event_ends_at = get_time() + 600.0;
+
+    cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
+    if cur_elem != 0 { Save.increment_game_int(EVENT_ELEMENTAL_KEY, -cur_elem); }
+    cur_ice := Save.get_game_int(EVENT_ICE_KEY, 0);
+    if cur_ice != 0 { Save.increment_game_int(EVENT_ICE_KEY, -cur_ice); }
+    cur_sun := Save.get_game_int(EVENT_SUN_KEY, 0);
+    if cur_sun != 0 { Save.increment_game_int(EVENT_SUN_KEY, -cur_sun); }
+    cur_void2 := Save.get_game_int(EVENT_VOID2_KEY, 0);
+    if cur_void2 != 0 { Save.increment_game_int(EVENT_VOID2_KEY, -cur_void2); }
+    cur_cyber := Save.get_game_int(EVENT_CYBER_ENERGY_KEY, 0);
+    if cur_cyber == 0 { Save.increment_game_int(EVENT_CYBER_ENERGY_KEY, 1); }
+
+    if admin != null { admin.play_reward_feedback("Cyber Energy Event started"); }
+    Chat.server_send_message("Cyber Energy Event started: Energy Cells are 50% off");
+}
+
 // Void2 event helpers
 void2_price :: proc(base: s64) -> s64 {
     if g_event_void2 { return base / 2; }
@@ -237,8 +269,11 @@ void2_price :: proc(base: s64) -> s64 {
 
 start_void2_event :: proc(admin: Player) {
     g_event_void2 = true;
+    g_event_cyber_energy = false;
     cur_v2 := Save.get_game_int(EVENT_VOID2_KEY, 0);
     if cur_v2 == 0 { Save.increment_game_int(EVENT_VOID2_KEY, 1); }
+    cur_cyber := Save.get_game_int(EVENT_CYBER_ENERGY_KEY, 0);
+    if cur_cyber != 0 { Save.increment_game_int(EVENT_CYBER_ENERGY_KEY, -cur_cyber); }
     g_event_elemental = true;
     g_active_element_event = 5;
     g_event_ends_at = get_time() + 600.0;
