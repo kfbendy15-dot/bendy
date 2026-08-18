@@ -71,7 +71,6 @@ EVENT_ELEMENTAL_KEY :: "event_elemental";
 EVENT_ICE_KEY :: "event_ice";
 EVENT_SUN_KEY :: "event_sun";
 EVENT_VOID2_KEY :: "event_void2";
-EVENT_VERITY_KEY :: "event_verity";
 SUN_ARMOR_KEY :: "sun_armor";
 
 
@@ -472,7 +471,6 @@ is_admin_only_weapon :: proc(wt: Weapon_Type) -> bool {
     if wt == .INVISIBLE_GUN_ADMIN { return true; }
     if wt == .BATTLEPASS_GUN { return true; }
     if wt == .SNIPER { return true; }
-    if wt == .VERITY_GUN { return true; }
     return false;
 }
 
@@ -509,7 +507,6 @@ strip_admin_weapons :: proc(player: Player) {
     destroy_all_weapon_items(player, .BUILDING_TOOLS);
     destroy_all_weapon_items(player, .SNIPER);
     destroy_all_weapon_items(player, .WARPER);
-    destroy_all_weapon_items(player, .VERITY_GUN);
 
     if is_admin_only_weapon(player.equipped_weapon_type) {
         weapon_unequip(player, player.equipped_weapon_type);
@@ -833,8 +830,8 @@ ao_before_scene_load :: proc() {
     coin_tex := get_asset(Texture_Asset, "$AO/ui/kit/Icons/weapon_tier/weapon_tier_icon_gold.png");
     Economy.register_currency("Coins", coin_tex);
     Economy.register_currency("Sparks", get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png"));
-    init_verity_admin_content();
     init_dice_item();
+    init_youtuber_items();
     init_admin_chat();
 }
 
@@ -972,11 +969,9 @@ ao_start :: proc() {
     g_event_ice = Save.get_game_int(EVENT_ICE_KEY, 0) > 0;
     g_event_sun = Save.get_game_int(EVENT_SUN_KEY, 0) > 0;
     g_event_void2 = Save.get_game_int(EVENT_VOID2_KEY, 0) > 0;
-    g_event_verity = Save.get_game_int(EVENT_VERITY_KEY, 0) > 0;
     if g_event_void2 { g_event_elemental = true; g_active_element_event = 5; }
     else { g_active_element_event = g_event_sun ? 7 : (g_event_ice ? 4 : 0); }
-    g_event_ends_at = g_event_verity ? get_time() + 600.0 : 0;
-    g_verity_event_spawned = false;
+    g_event_ends_at = 0;
     // Ensure URBOIBREYLUND never retains admin permission in shared save
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "URBOIBREYLUND"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "urboibreylund"}), "0");
@@ -991,11 +986,7 @@ ao_start :: proc() {
 
 ao_update :: proc(dt: float) {
     admin_chat_poll();
-    if g_event_verity && !g_verity_event_spawned {
-        spawn_verity_event_squares();
-        g_verity_event_spawned = true;
-    }
-    if (g_event_elemental || g_event_verity) && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
+    if g_event_elemental && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
         stop_active_event();
     }
     check_fight_winner();
@@ -1006,8 +997,6 @@ stop_active_event :: proc() {
     g_event_ice = false;
     g_event_sun = false;
     g_event_void2 = false;
-    g_event_verity = false;
-    g_verity_event_spawned = false;
     g_active_element_event = 0;
     g_event_ends_at = 0;
     cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
@@ -1018,9 +1007,6 @@ stop_active_event :: proc() {
     if cur_sun != 0 { Save.increment_game_int(EVENT_SUN_KEY, -cur_sun); }
     cur_void2 := Save.get_game_int(EVENT_VOID2_KEY, 0);
     if cur_void2 != 0 { Save.increment_game_int(EVENT_VOID2_KEY, -cur_void2); }
-    cur_verity := Save.get_game_int(EVENT_VERITY_KEY, 0);
-    if cur_verity != 0 { Save.increment_game_int(EVENT_VERITY_KEY, -cur_verity); }
-    destroy_verity_event_squares();
 }
 
 ao_late_update :: proc(dt: float) {
@@ -1073,6 +1059,9 @@ Player :: class : Player_Base {
     show_admin_panel: bool;
     show_event_panel: bool;
     show_admin_shop: bool;
+    show_pileo_shop: bool;
+    show_caylus_map: bool;
+    caylus_map_dismissed: bool;
     player_element: s64;
     show_mimicer_selector: bool;
     show_minigames: bool;
@@ -1170,6 +1159,10 @@ Player :: class : Player_Base {
     murder_round_active: bool;
     murder_permadead: bool;
 
+    foltyn_frenzy_active: bool;
+    steak_health_active: bool;
+    foltyn_frenzy_speed: float;
+
     // Leaderboard tracking: top of map boards
     leaderboard_total_kills: s64;
     leaderboard_time_played: float;
@@ -1177,7 +1170,7 @@ Player :: class : Player_Base {
     // Troll panel (admin only)
     show_troll_panel: bool;
     troll_target_username: string;
-    troll_jumpscare_next_allowed: [5]float;
+    troll_jumpscare_next_allowed: [4]float;
     troll_freeze_next_allowed: float;
     troll_mind_next_allowed: float;
     troll_frozen_until: float;
@@ -1201,7 +1194,6 @@ Player :: class : Player_Base {
     troll_morph_saved_skins: []string;
     troll_morph_saved_user_tag: string;
     troll_morph_saved_show_vip_crown: bool;
-    troll_morph_yellow_square: Entity;
     backrooms_monster_active: bool;
     backrooms_monster_entity: Entity;
 
@@ -1284,6 +1276,9 @@ Player :: class : Player_Base {
         show_admin_tag = Save.get_int(this, ADMIN_TAG_VISIBLE_SAVE_KEY, 1) != 0;
         show_reward_popups = Save.get_int(this, "show_reward_popups", 1) != 0;
         show_tutorial_button = Save.get_int(this, "show_tutorial_button", 1) != 0;
+        foltyn_frenzy_active = false;
+        steak_health_active = false;
+        foltyn_frenzy_speed = 480.0;
         Save.set_int(this, "ui_test_sword_base_damage", get_weapon_config(.SWORD).base_damage.(s64));
 
         // 100 starting AR rounds
@@ -1305,9 +1300,6 @@ Player :: class : Player_Base {
             }
             if !player_has_weapon(this, .BUILDING_TOOLS) {
                 give_weapon(.BUILDING_TOOLS, default_inventory);
-            }
-            if !player_has_weapon(this, .VERITY_GUN) {
-                give_weapon(.VERITY_GUN, default_inventory);
             }
         }
 
@@ -1381,6 +1373,9 @@ Player :: class : Player_Base {
         battlepass_music_effect_count = 0;
         is_admin_noclip = false;
         show_admin_shop = false;
+        show_pileo_shop = false;
+        show_caylus_map = false;
+        caylus_map_dismissed = false;
         player_element = 0;
         gun_mutation_element = 0;
         mimicer_form_target_user_id = "";
@@ -1427,10 +1422,9 @@ Player :: class : Player_Base {
         troll_morph_saved_anim_tint = {1, 1, 1, 1};
         troll_morph_saved_user_tag = "";
         troll_morph_saved_show_vip_crown = true;
-        troll_morph_yellow_square = null;
         backrooms_monster_active = false;
         backrooms_monster_entity = null;
-        for i: 0..4 { troll_jumpscare_next_allowed[i] = 0; }
+        for i: 0..3 { troll_jumpscare_next_allowed[i] = 0; }
         killer_fish_cooldown = 0;
         if is_local() {
             // Voice range is measured in world units. Zero means unlimited/global,
@@ -1478,7 +1472,7 @@ Player :: class : Player_Base {
             Save.set_int(this, "ui_test_health_bar_target_restored", #alive(weapon_target) ? 1 : 0);
         }
 
-        // Enforce Verity morph early: hide VIP/PAPERCLIP and ensure yellow square before crown logic
+        // Keep morph cosmetics applied before crown logic.
         if troll_morph_active {
             if user_tag != "" {
                 user_tag = "";
@@ -1496,28 +1490,9 @@ Player :: class : Player_Base {
                 }
             }
             if backrooms_monster_active {
-                if #alive(troll_morph_yellow_square) {
-                    troll_morph_yellow_square.destroy();
-                    troll_morph_yellow_square = null;
-                }
                 ensure_backrooms_monster_visual(this);
-            } else if !#alive(troll_morph_yellow_square) {
-                sq := Scene.create_entity();
-                sq.set_name("Verity_Yellow_Square");
-                sq.set_parent(entity, false);
-                sq.set_local_position({0, 0.15});
-                sq.set_local_scale({1.15, 1.15});
-                spr := sq.add_component(Sprite_Renderer);
-                spr.set_texture(get_asset(Texture_Asset, "$AO/ui/kit/Icons/face/face_icon.png"));
-                spr.color = {1.0, 0.9, 0.2, 1.0};
-                spr.layer = 0;
-                troll_morph_yellow_square = sq;
             }
         } else {
-            if #alive(troll_morph_yellow_square) {
-                troll_morph_yellow_square.destroy();
-                troll_morph_yellow_square = null;
-            }
             if #alive(backrooms_monster_entity) {
                 backrooms_monster_entity.destroy();
                 backrooms_monster_entity = null;
@@ -1535,6 +1510,10 @@ Player :: class : Player_Base {
         if admin_freeze_until > 0 && get_time() >= admin_freeze_until {
             agent.movement_speed = admin_freeze_previous_speed;
             admin_freeze_until = 0;
+        }
+
+        if foltyn_frenzy_active && admin_freeze_until <= get_time() && agent.movement_speed < foltyn_frenzy_speed {
+            agent.movement_speed = foltyn_frenzy_speed;
         }
 
         if !is_dead && !out_of_bounds_respawn_active && is_player_out_of_bounds(this) {
@@ -1632,6 +1611,13 @@ Player :: class : Player_Base {
         if show_admin_shop && !can_access_admin_panel(this) {
             show_admin_shop = false;
         }
+        if show_pileo_shop && !is_pileo_harse(this) {
+            show_pileo_shop = false;
+        }
+        if show_caylus_map && !has_caylus_sensor(this) {
+            show_caylus_map = false;
+            caylus_map_dismissed = false;
+        }
         if show_admin_unban && !can_access_admin_panel(this) {
             show_admin_unban = false;
         }
@@ -1647,6 +1633,9 @@ Player :: class : Player_Base {
             if is_murder_mystery_active() && murder_role == .KILLER {
             }
             draw_hud(this);
+            if show_caylus_map && has_caylus_sensor(this) {
+                draw_caylus_map(this);
+            }
             draw_player_statuses();
             if show_shop {
                 draw_shop(this);
@@ -1662,6 +1651,9 @@ Player :: class : Player_Base {
             }
             if show_admin_shop && can_access_admin_panel(this) {
                 draw_admin_shop(this);
+            }
+            if show_pileo_shop && is_pileo_harse(this) {
+                draw_pileo_shop(this);
             }
             if show_admin_unban && can_access_admin_panel(this) {
                 draw_admin_unban(this);
@@ -1737,14 +1729,14 @@ Player :: class : Player_Base {
                 defn := hotbar.selected_item.get_definition();
                 if defn != null && defn.#type == Dice_Item_Definition {
                     use_rng_dice_item(this, hotbar.selected_item);
+                } else {
+                    use_youtuber_item(this, hotbar.selected_item);
                 }
             }
             if #alive(hotbar.dropped_item) {
                 defn := hotbar.dropped_item.get_definition();
                 if defn != null && defn.#type == Dice_Item_Definition {
                     use_rng_dice_item(this, hotbar.dropped_item);
-                } else if defn != null && defn.#type == Verity_Item_Definition {
-                    place_verity_item(this, hotbar.dropped_item);
                 } else {
                     dropped: Dropped_Item;
                     if Dropped_Item.handle_dropped_item(hotbar, entity.world_position, ref dropped) {
@@ -1794,6 +1786,11 @@ Player :: class : Player_Base {
         last_selected_index = selected_index;
         if new_def == equipped_item_def return;
 
+        if new_def != g_caylus_sensor_item_def {
+            show_caylus_map = false;
+            caylus_map_dismissed = false;
+        }
+
         if equipped_weapon_type != .NONE {
             weapon_unequip(this, equipped_weapon_type);
             equipped_weapon_type = .NONE;
@@ -1818,7 +1815,5 @@ g_event_ice: bool;
 g_event_sun: bool;
 g_event_double_coins: bool;
 g_event_elemental: bool;
-g_event_verity: bool;
-g_verity_event_spawned: bool;
 g_active_element_event: s64;
 g_event_ends_at: float;

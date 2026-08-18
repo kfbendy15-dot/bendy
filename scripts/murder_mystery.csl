@@ -1,6 +1,28 @@
 MURDER_MYSTERY_ROUND_TIME :: 420.0;
 Murder_Role :: enum { NONE; KILLER; DETECTIVE; INNOCENT; SUSPECT; }
 
+message_contains :: proc(message: string, needle: string) -> bool {
+    if needle.count == 0 return true;
+    if message.count < needle.count return false;
+
+    limit := message.count - needle.count;
+    i: s64 = 0;
+    while i <= limit {
+        matched := true;
+        j: s64 = 0;
+        while j < needle.count {
+            if message[i + j] != needle[j] {
+                matched = false;
+                break;
+            }
+            j += 1;
+        }
+        if matched return true;
+        i += 1;
+    }
+    return false;
+}
+
 Murder_Mystery_Manager :: class : Component {
     ends_at: float;
     active: bool;
