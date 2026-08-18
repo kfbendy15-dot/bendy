@@ -90,11 +90,21 @@ draw_hud :: proc(player: Player) {
 
     has_admin_button := can_access_admin_panel(player);
     has_troll_button := can_access_troll_panel(player);
+    has_sensor := has_caylus_sensor(player);
+    has_pileo_shop := is_pileo_harse(player);
+    map_btn: Interact_Result;
     shop_btn: Interact_Result;
     admin_btn: Interact_Result;
     admin_shop_btn: Interact_Result;
+    pileo_shop_btn: Interact_Result;
     events_btn: Interact_Result;
     vs_btn: Interact_Result;
+    if has_sensor {
+        map_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE);
+        map_desc.panel.width = UIK.pixels(92);
+        map_desc.panel.height = UIK.pixels(52);
+        map_btn = UIK.button("hud/map_button", "MAP", map_desc);
+    }
     shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     shop_desc.panel.width = UIK.pixels(92);
     shop_desc.panel.height = UIK.pixels(52);
@@ -117,6 +127,13 @@ draw_hud :: proc(player: Player) {
         admin_shop_desc.panel.height = UIK.pixels(52);
         admin_shop_btn = UIK.button("hud/admin_shop_button", "ADMIN SHOP", admin_shop_desc);
 
+        if has_pileo_shop {
+            pileo_shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+            pileo_shop_desc.panel.width = UIK.pixels(125);
+            pileo_shop_desc.panel.height = UIK.pixels(52);
+            pileo_shop_btn = UIK.button("hud/pileo_shop_button", "PILEO SHOP", pileo_shop_desc);
+        }
+
         events_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
         events_desc.panel.width = UIK.pixels(110);
         events_desc.panel.height = UIK.pixels(52);
@@ -136,6 +153,10 @@ draw_hud :: proc(player: Player) {
         player.shop_tab_index = 0;
         player.show_shop = true;
     }
+    if has_sensor && UIK.clicked(map_btn) {
+        player.show_caylus_map = true;
+        player.caylus_map_dismissed = false;
+    }
     if UIK.clicked(vs_btn) {
         start_vs_battle(player);
     }
@@ -146,6 +167,12 @@ draw_hud :: proc(player: Player) {
     if has_admin_button && UIK.clicked(admin_shop_btn) {
         player.show_admin_shop = true;
         Save.set_int(player, "ui_test_show_admin_shop", 1);
+    }
+    if has_pileo_shop && UIK.clicked(pileo_shop_btn) {
+        player.show_pileo_shop = true;
+        player.show_shop = false;
+        player.show_admin_shop = false;
+        player.show_event_panel = false;
     }
     if has_admin_button && UIK.clicked(events_btn) {
         // Events are a standalone panel, never a child/state of the admin panel.

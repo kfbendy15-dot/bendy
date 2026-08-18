@@ -256,10 +256,6 @@ Special_Ability :: class : Ability_Base {
                     };
                     spawn_landmine(mine_pos, p.entity.id, config.aoe_damage, 1.15);
                 }
-                case .VERITY_GUN: {
-                    weapon_shoot(p, wt);
-                    spawn_verity_box_projectile(p, aiming.aim_direction, wt);
-                }
                 case .BATTLE_AXE: {
                     weapon_shoot(p, wt);
                     dir := aiming.aim_direction;
@@ -278,6 +274,18 @@ Special_Ability :: class : Ability_Base {
                     eff.leap_direction = leap_dir;
                     p.entity.add_passive_effect(eff);
                     // AoE on landing delayed via effect
+                }
+                case .GLAST_SHARD: {
+                    weapon_shoot(p, wt);
+                    dir := aiming.aim_direction;
+                    if length(dir) < 0.1 {
+                        dir = v2{1, 0};
+                    }
+                    if dir.x != 0 {
+                        p.set_facing_right(dir.x > 0);
+                    }
+                    strike_center := v2{p.entity.world_position.x + dir.x * 1.7, p.entity.world_position.y + dir.y * 1.0};
+                    melee_swing_players_in_radius(p, strike_center, 2.35, config.base_damage, 0.45);
                 }
                 case .SUN_SHOOTER_TSUNAMI: {
                     weapon_shoot(p, wt);

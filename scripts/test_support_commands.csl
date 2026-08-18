@@ -95,7 +95,6 @@ prepare_admin_shop_test :: proc(player: Player) {
     Save.set_int(player, "ui_test_killer_fish_used", 0);
     Save.set_int(player, "ui_test_giant_gun_used", 0);
     Save.set_int(player, "ui_test_meteor_boss_spawned", 0);
-    Save.set_string(player, "ui_test_verity_answer", "");
 } @chat_command @owner_or_editor
 
 g_admin_unban_test_player: Player;
@@ -271,51 +270,6 @@ admin_shop_test_grant_massive_bullets :: proc(player: Player) {
     Save.set_int(player, "ui_test_massive_bullets_granted", 1);
 } @chat_command @owner_or_editor
 
-admin_shop_test_grant_verity :: proc(player: Player) {
-    if player == null {
-        return;
-    }
-
-    grant_verity_item(player);
-} @chat_command @owner_or_editor
-
-admin_shop_test_place_verity :: proc(player: Player) {
-    if player == null {
-        return;
-    }
-
-    grant_verity_item(player);
-    for i: 0..player.default_inventory.capacity - 1 {
-        item := player.default_inventory.get_item(i);
-        if item == null {
-            continue;
-        }
-        if item.get_definition() == g_verity_item_def {
-            place_verity_item(player, item);
-            break;
-        }
-    }
-} @chat_command @owner_or_editor
-
-admin_shop_test_verity_chat :: proc(player: Player) {
-    if player == null {
-        return;
-    }
-
-    grant_verity_item(player);
-    for i: 0..player.default_inventory.capacity - 1 {
-        item := player.default_inventory.get_item(i);
-        if item == null {
-            continue;
-        }
-        if item.get_definition() == g_verity_item_def {
-            place_verity_item(player, item);
-            break;
-        }
-    }
-    handle_verity_chat_message(player, "verity, what are you?");
-} @chat_command @owner_or_editor
-
 admin_shop_test_use_spoon :: proc(player: Player) {
     if player == null {
         return;
@@ -364,53 +318,7 @@ admin_shop_test_use_specials :: proc(player: Player) {
     giant_gun_attack(player, {1, 0});
 } @chat_command @owner_or_editor
 
-verity_test_start_event :: proc(player: Player) {
-    if player == null {
-        return;
-    }
-
-    reset_test_shop_state(player);
-    start_verity_event(player);
-} @chat_command @owner_or_editor
-
-verity_test_box_setup :: proc(player: Player) {
-    if player == null {
-        return;
-    }
-
-    target: Player;
-    for other: component_iterator(Player) {
-        if other != null && other != player {
-            target = other;
-            break;
-        }
-    }
-    if target == null {
-        Save.set_int(player, "ui_test_verity_box_stunned", 0);
-        return;
-    }
-
-    target.entity.set_local_position(player.entity.local_position + v2{1.5, 0});
-    target.entity.mark_teleported();
-    spawn_verity_box_projectile(player, {1, 0}, .VERITY_GUN);
-    Save.set_int(player, "ui_test_verity_box_stunned", 0);
-} @chat_command @owner_or_editor
-
-verity_test_box_check :: proc(player: Player) {
-    if player == null {
-        return;
-    }
-
-    stunned: s64 = 0;
-    for other: component_iterator(Player) {
-        if other != null && other != player && other.entity.has_effect(Weapon_Stun_Effect) {
-            stunned += 1;
-        }
-    }
-    Save.set_int(player, "ui_test_verity_box_stunned", stunned);
-} @chat_command @owner_or_editor
-
-verity_test_monster_touch :: proc(player: Player) {
+backrooms_monster_test_touch :: proc(player: Player) {
     if player == null {
         return;
     }
@@ -441,21 +349,4 @@ verity_test_monster_touch :: proc(player: Player) {
     Save.set_int(player, "ui_test_backrooms_monster_touch_kill", killed ? 1 : 0);
     troll_do_unmorph(player);
 } @chat_command @owner_or_editor
-
-verity_test_jumpscare_everyone :: proc(player: Player) {
-    if player == null {
-        return;
-    }
-
-    player.troll_jumpscare_next_allowed[1] = 0;
-    troll_do_verity_jumpscare_everyone(player);
-    targets: s64 = 0;
-    for other: component_iterator(Player) {
-        if other != null && other.troll_scare_type == 1 && other.troll_scare_until > get_time() {
-            targets += 1;
-        }
-    }
-    Save.set_int(player, "ui_test_verity_jumpscare_targets", targets);
-} @chat_command @owner_or_editor
-
 

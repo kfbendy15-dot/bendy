@@ -1,0 +1,321 @@
+// PileoHarse-only YouTuber items.
+TECHY_SNIPER_COST :: 500;
+FOLTYN_FRENZY_COST :: 600;
+STEAKS_YUMMY_STEAK_COST :: 1650;
+GLASS_CANNON_COST :: 2000;
+GLAST_SHARD_COST :: 5000;
+CAYLUS_SENSOR_COST :: 10000;
+KREEKCRAFT_ELIXIR_COST :: 50000;
+KREEKCRAFT_BENCH_COST :: 1000;
+
+Caylus_Sensor_Item_Definition :: class : Item_Definition {
+}
+
+Foltyn_Frenzy_Item_Definition :: class : Item_Definition {
+}
+
+Steaks_Yummy_Steak_Item_Definition :: class : Item_Definition {
+}
+
+Kreekcraft_Elixir_Item_Definition :: class : Item_Definition {
+}
+
+Kreekcraft_Bench_Item_Definition :: class : Item_Definition {
+}
+
+g_youtuber_items_initialized: bool;
+g_caylus_sensor_item_def: Caylus_Sensor_Item_Definition;
+g_foltyn_frenzy_item_def: Foltyn_Frenzy_Item_Definition;
+g_steaks_yummy_steak_item_def: Steaks_Yummy_Steak_Item_Definition;
+g_kreekcraft_elixir_item_def: Kreekcraft_Elixir_Item_Definition;
+g_kreekcraft_bench_item_def: Kreekcraft_Bench_Item_Definition;
+
+is_pileo_harse :: proc(player: Player) -> bool {
+    if player == null {
+        return false;
+    }
+    username := player.get_username();
+    if username == "" {
+        return false;
+    }
+    return to_lower(username) == "pileoharse";
+}
+
+init_youtuber_items :: proc() {
+    if g_youtuber_items_initialized {
+        return;
+    }
+    g_youtuber_items_initialized = true;
+
+    sensor_desc: Item_Definition_Desc;
+    sensor_desc.id = "caylus_sensor";
+    sensor_desc.name = "Caylus Sensor";
+    sensor_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
+    sensor_desc.stack_size = 1;
+    g_caylus_sensor_item_def = Items.register_item_definition(sensor_desc, Caylus_Sensor_Item_Definition);
+
+    frenzy_desc: Item_Definition_Desc;
+    frenzy_desc.id = "foltyn_frenzy";
+    frenzy_desc.name = "Foltyn Frenzy";
+    frenzy_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
+    frenzy_desc.stack_size = 1;
+    g_foltyn_frenzy_item_def = Items.register_item_definition(frenzy_desc, Foltyn_Frenzy_Item_Definition);
+
+    steak_desc: Item_Definition_Desc;
+    steak_desc.id = "steaks_yummy_steak";
+    steak_desc.name = "Steak's Yummy Steak";
+    steak_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png");
+    steak_desc.stack_size = 1;
+    g_steaks_yummy_steak_item_def = Items.register_item_definition(steak_desc, Steaks_Yummy_Steak_Item_Definition);
+
+    elixir_desc: Item_Definition_Desc;
+    elixir_desc.id = "kreekcraft_elixir";
+    elixir_desc.name = "Kreekcraft Elixir";
+    elixir_desc.icon = get_asset(Texture_Asset, get_weapon_config(.FIRE_RAY).weapon_icon_path);
+    elixir_desc.stack_size = 1;
+    g_kreekcraft_elixir_item_def = Items.register_item_definition(elixir_desc, Kreekcraft_Elixir_Item_Definition);
+
+    bench_desc: Item_Definition_Desc;
+    bench_desc.id = "kreekcraft_bench";
+    bench_desc.name = "Kreekcraft Bench";
+    bench_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/shopping_cart/shopping_cart_icon.png");
+    bench_desc.stack_size = 1;
+    g_kreekcraft_bench_item_def = Items.register_item_definition(bench_desc, Kreekcraft_Bench_Item_Definition);
+}
+
+player_has_youtuber_item :: proc(player: Player, defn: Item_Definition) -> bool {
+    if player == null || defn == null {
+        return false;
+    }
+    for i: 0..player.default_inventory.capacity - 1 {
+        item := player.default_inventory.get_item(i);
+        if item != null && item.get_definition() == defn {
+            return true;
+        }
+    }
+    return false;
+}
+
+has_caylus_sensor :: proc(player: Player) -> bool {
+    return player_has_youtuber_item(player, g_caylus_sensor_item_def);
+}
+
+grant_youtuber_item :: proc(player: Player, defn: Item_Definition) -> bool {
+    if player == null || defn == null {
+        return false;
+    }
+    item := Items.create_item_instance(defn, 1);
+    will_destroy: bool;
+    if !Items.can_move_item_to_inventory(item, player.default_inventory, ref will_destroy) {
+        Items.destroy_item_instance(item);
+        return false;
+    }
+    Items.move_item_to_inventory(item, player.default_inventory);
+    return true;
+}
+
+buy_youtuber_item_offer :: proc(player: Player, defn: Item_Definition, cost: s64, feedback_text: string, unique: bool) {
+    if player == null || !is_pileo_harse(player) || defn == null {
+        return;
+    }
+    if unique && player_has_youtuber_item(player, defn) {
+        player.play_reward_feedback("Owned");
+        return;
+    }
+
+    item := Items.create_item_instance(defn, 1);
+    will_destroy: bool;
+    if !Items.can_move_item_to_inventory(item, player.default_inventory, ref will_destroy) {
+        Items.destroy_item_instance(item);
+        player.play_reward_feedback("No room");
+        return;
+    }
+    if !spend_coins(player, cost) {
+        Items.destroy_item_instance(item);
+        player.play_reward_feedback(format_string("Need % coins", {shop_price(player, cost)}));
+        return;
+    }
+    Items.move_item_to_inventory(item, player.default_inventory);
+    player.play_reward_feedback(feedback_text);
+}
+
+start_kreekcraft_fire :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    fire_entity := Scene.create_entity();
+    fire_entity.set_name("Kreekcraft Fire");
+    fire_entity.set_local_position(player.entity.world_position);
+    fire_entity.set_local_scale({2.2, 2.2});
+    fire_sprite := fire_entity.add_component(Sprite_Renderer);
+    fire_sprite.set_texture(get_asset(Texture_Asset, "lava-cracked-ground-tile_d30606.png"));
+    fire_sprite.color = {1.0, 0.3, 0.08, 1.0};
+    fire_sprite.layer = -1;
+    fire := fire_entity.add_component(Kreekcraft_Fire);
+    fire.owner_entity_id = player.entity.id;
+
+    desc := SFX.default_sfx_desc();
+    desc.entity_to_follow = fire_entity.id;
+    desc.volume = 0.7;
+    SFX.play(get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/fire_tornado_start.wav"), desc);
+}
+
+Kreekcraft_Fire :: class : Component {
+    owner_entity_id: u64;
+    next_damage_at: float;
+
+    ao_start :: method() {
+        next_damage_at = get_time() + 0.5;
+    }
+
+    ao_update :: method(dt: float) {
+        if get_time() < next_damage_at {
+            return;
+        }
+        next_damage_at = get_time() + 1.0;
+        for target: component_iterator(Player) {
+            if target.entity.id == owner_entity_id || target.is_dead || target.weapon_target == null {
+                continue;
+            }
+            if length(target.entity.world_position - entity.world_position) <= 1.8 {
+                weapon_target_apply_damage(target.weapon_target, 20.0, owner_entity_id);
+            }
+        }
+    }
+}
+
+use_foltyn_frenzy :: proc(player: Player, item: Item_Instance) {
+    if player.foltyn_frenzy_active {
+        player.play_reward_feedback("Foltyn Frenzy active");
+        return;
+    }
+    player.foltyn_frenzy_active = true;
+    player.foltyn_frenzy_speed = 480.0;
+    player.agent.movement_speed = player.foltyn_frenzy_speed;
+    Items.destroy_item_instance(item, 1);
+    player.play_reward_feedback("Foltyn Frenzy");
+}
+
+use_steaks_yummy_steak :: proc(player: Player, item: Item_Instance) {
+    if player.steak_health_active {
+        player.play_reward_feedback("Steak already active");
+        return;
+    }
+    player.steak_health_active = true;
+    player.weapon_target.max_health = 500.0 + player.armor_bonus_health;
+    player.weapon_target.health = player.weapon_target.max_health;
+    Items.destroy_item_instance(item, 1);
+    player.play_reward_feedback("500 health");
+}
+
+use_kreekcraft_elixir :: proc(player: Player, item: Item_Instance) {
+    Items.destroy_item_instance(item, 1);
+    start_kreekcraft_fire(player);
+    player.play_reward_feedback("Kreekcraft Fire started");
+}
+
+use_kreekcraft_bench :: proc(player: Player, item: Item_Instance) {
+    grant_youtuber_item(player, g_kreekcraft_elixir_item_def);
+    if !player_has_weapon(player, .GLASS_CANNON) {
+        give_weapon(.GLASS_CANNON, player.default_inventory);
+    }
+    if !player_has_weapon(player, .GLAST_SHARD) {
+        give_weapon(.GLAST_SHARD, player.default_inventory);
+    }
+    Items.destroy_item_instance(item, 1);
+    player.play_reward_feedback("Bench rewards claimed");
+}
+
+use_youtuber_item :: proc(player: Player, item: Item_Instance) -> bool {
+    if player == null || item == null {
+        return false;
+    }
+    defn := item.get_definition();
+    if defn == g_caylus_sensor_item_def {
+        if !player.caylus_map_dismissed {
+            player.show_caylus_map = true;
+        }
+        return true;
+    }
+    if defn == g_foltyn_frenzy_item_def {
+        use_foltyn_frenzy(player, item);
+        return true;
+    }
+    if defn == g_steaks_yummy_steak_item_def {
+        use_steaks_yummy_steak(player, item);
+        return true;
+    }
+    if defn == g_kreekcraft_elixir_item_def {
+        use_kreekcraft_elixir(player, item);
+        return true;
+    }
+    if defn == g_kreekcraft_bench_item_def {
+        use_kreekcraft_bench(player, item);
+        return true;
+    }
+    return false;
+}
+
+draw_caylus_map :: proc(player: Player) {
+    if player == null || !has_caylus_sensor(player) {
+        return;
+    }
+
+    UIK.begin(UIK.modal(UIK.rect_window_large(), 25));
+    shell := UIK.panel_modal(.BLACK);
+    shell.gap = 0;
+    UIK.panel_begin(shell);
+    title_desc := UIK.title_area_desc("Caylus Sensor Map");
+    title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
+    exit_handle := UIK.title_area(title_desc);
+
+    body := UIK.layout_column();
+    body.width = UIK.flex(1);
+    body.height = UIK.flex(1);
+    body.padding = v4{12, 16, 12, 16};
+    body.gap = 8;
+    UIK.panel_begin(body);
+    map_row := UIK.layout_row();
+    map_row.width = UIK.flex(1);
+    map_row.height = UIK.flex(1);
+    map_row.gap = 12;
+    UIK.panel_begin(map_row);
+
+    map_panel := UIK.layout_column();
+    map_panel.width = UIK.flex(1);
+    map_panel.height = UIK.flex(1);
+    UIK.panel_begin(map_panel);
+    UIK.image_fitted(get_asset(Texture_Asset, "spawn island_1d4056.png"), UIK.image_desc(.CONTAIN));
+    UIK.panel_end();
+
+    roster := UIK.layout_column();
+    roster.width = UIK.pixels(250);
+    roster.height = UIK.flex(1);
+    roster.gap = 5;
+    UIK.panel_begin(roster);
+    UIK.text("Players", UIK.text_title());
+    for target: component_iterator(Player) {
+        pos := target.entity.world_position;
+        name := target.get_username();
+        if target.entity.id == player.entity.id {
+            name = format_string("YOU - %", {name});
+        }
+        UIK.text(format_string("%  (% , %)", {name, format_float(pos.x, decimals=1), format_float(pos.y, decimals=1)}), UIK.text_body());
+    }
+    UIK.panel_end();
+    UIK.panel_end();
+
+    close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    close_desc.panel.width = UIK.flex(1);
+    close_desc.panel.height = UIK.pixels(52);
+    close_btn := UIK.button("caylus_map/close", "Close Map", close_desc);
+    UIK.panel_end();
+    UIK.panel_end();
+    UIK.end();
+
+    if UIK.clicked(exit_handle) || UIK.clicked(close_btn) {
+        player.show_caylus_map = false;
+        player.caylus_map_dismissed = true;
+    }
+}

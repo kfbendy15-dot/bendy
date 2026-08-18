@@ -12,28 +12,25 @@ TROLL_MC_EMOTE :: 4;
 
 troll_jumpscare_name :: proc(idx: s64) -> string {
     if idx == 0 return "The Boiled One";
-    if idx == 1 return "Verity";
-    if idx == 2 return "67 Kid";
-    if idx == 3 return "Tung Tung Tung Sahur";
-    if idx == 4 return "Alpha Mosasaurus";
+    if idx == 1 return "67 Kid";
+    if idx == 2 return "Tung Tung Tung Sahur";
+    if idx == 3 return "Alpha Mosasaurus";
     return "Unknown";
 }
 
 troll_jumpscare_color :: proc(idx: s64) -> v4 {
     if idx == 0 return {0.15, 0.08, 0.08, 1}; // boiled - dark red
-    if idx == 1 return {1.0, 0.92, 0.2, 1};   // verity yellow
-    if idx == 2 return {0.25, 0.75, 0.35, 1}; // 67 kid green
-    if idx == 3 return {0.55, 0.35, 0.15, 1}; // tung wood
-    if idx == 4 return {0.2, 0.5, 0.85, 1};   // mosasaurus blue
+    if idx == 1 return {0.25, 0.75, 0.35, 1}; // 67 kid green
+    if idx == 2 return {0.55, 0.35, 0.15, 1}; // tung wood
+    if idx == 3 return {0.2, 0.5, 0.85, 1};   // mosasaurus blue
     return {0.5, 0.5, 0.5, 1};
 }
 
 troll_jumpscare_icon_path :: proc(idx: s64) -> string {
     if idx == 0 return "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png";
-    if idx == 1 return "$AO/ui/kit/Icons/face/face_icon.png";
-    if idx == 2 return "$AO/ui/kit/Icons/coin/coin_icon.png";
-    if idx == 3 return "$AO/ui/kit/Icons/misc_icons_1/lock_closed.png";
-    if idx == 4 return "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png";
+    if idx == 1 return "$AO/ui/kit/Icons/coin/coin_icon.png";
+    if idx == 2 return "$AO/ui/kit/Icons/misc_icons_1/lock_closed.png";
+    if idx == 3 return "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png";
     return "$AO/ui/kit/Icons/face/face_icon.png";
 }
 
@@ -76,7 +73,7 @@ troll_find_target :: proc(admin: Player) -> Player {
 }
 
 troll_can_jumpscare :: proc(admin: Player, idx: s64) -> bool {
-    if admin == null || idx < 0 || idx >= 5 return false;
+    if admin == null || idx < 0 || idx >= 4 return false;
     if !can_access_troll_panel(admin) return false;
     return get_time() >= admin.troll_jumpscare_next_allowed[idx];
 }
@@ -244,7 +241,7 @@ troll_tick :: proc(player: Player, dt: float) {
                         slot := rng_range_int(ref rng2, 0, cap - 1);
                         it := player.default_inventory.get_item(slot);
                         if it != null {
-                            // Don't destroy verity or admin essentials? just swap for now drop simulation
+                            // Don't destroy admin essentials; just swap for now drop simulation
                             // Destroy 1 quantity to mess
                             // Instead force drop via Dropped_Item
                             pos := player.entity.world_position + v2{rng_range_float(ref rng2, -1, 1), rng_range_float(ref rng2, -1, 1)};
@@ -378,97 +375,16 @@ troll_do_backrooms_monster :: proc(admin: Player) -> bool {
     return true;
 }
 
-troll_do_verity_jumpscare_everyone :: proc(admin: Player) -> bool {
-    if admin == null || !can_access_admin_panel(admin) {
-        return false;
-    }
-    if !troll_can_jumpscare(admin, 1) {
-        admin.play_reward_feedback("Jumpscare on cooldown");
-        return false;
-    }
-
-    scare_until := get_time() + TROLL_JUMPSCARE_DURATION;
-    for target: component_iterator(Player) {
-        target.troll_scare_until = scare_until;
-        target.troll_scare_type = 1;
-        target.play_reward_feedback("JUMPSCARE: VERITY!");
-    }
-    admin.troll_jumpscare_next_allowed[1] = get_time() + TROLL_JUMPSCARE_COOLDOWN;
-    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/cannon_explode.wav");
-    desc := SFX.default_sfx_desc();
-    desc.set_position(admin.entity.world_position);
-    desc.volume = 1.0;
-    desc.range_multiplier = 8.0;
-    SFX.play(sfx, desc);
-    admin.play_reward_feedback("Jumpscared everyone with Verity");
-    Save.set_int(admin, "ui_test_verity_jumpscare_everyone", 1);
-    return true;
-}
-
-troll_do_morph_verity :: proc(admin: Player) -> bool {
-    if admin == null return false;
-    if !can_access_troll_panel(admin) return false;
-    if admin.troll_morph_active {
-        admin.play_reward_feedback("Already morphed");
-        return false;
-    }
-    troll_save_morph_original(admin);
-    admin.set_name_override("Verity");
-    admin.do_name_color_override = true;
-    admin.name_color_override = {1.0, 0.92, 0.2, 1.0};
-    // Hide VIP / PAPERCLIP tag
-    admin.user_tag = "";
-    // Hide VIP crown
-    admin.show_vip_crown = false;
-    if #alive(admin.vip_crown_entity) {
-        admin.vip_crown_entity.set_local_enabled(false);
-    }
-    // Hide spine and show yellow square from admin shop
-    if #alive(admin.animator) {
-        admin.animator.set_tint({1.0, 0.92, 0.35, 0.0});
-    }
-    // Destroy old square if any
-    if #alive(admin.troll_morph_yellow_square) {
-        admin.troll_morph_yellow_square.destroy();
-    }
-    sq := Scene.create_entity();
-    sq.set_name("Verity_Yellow_Square");
-    sq.set_parent(admin.entity, false);
-    sq.set_local_position({0, 0.15});
-    sq.set_local_scale({1.15, 1.15});
-    spr := sq.add_component(Sprite_Renderer);
-    spr.set_texture(get_asset(Texture_Asset, "$AO/ui/kit/Icons/face/face_icon.png"));
-    spr.color = {1.0, 0.9, 0.2, 1.0};
-    spr.layer = 0;
-    admin.troll_morph_yellow_square = sq;
-    admin.troll_morph_active = true;
-    admin.play_reward_feedback("Morphed to Verity");
-    Save.set_int(admin, "ui_test_troll_morph", 1);
-    Save.set_string(admin, "ui_test_troll_morph_name", "Verity");
-    if admin.is_local() {
-        sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
-        desc := SFX.default_sfx_desc();
-        desc.entity_to_follow = admin.entity.id;
-        desc.volume = 0.6;
-        SFX.play(sfx, desc);
-    }
-    return true;
-}
-
 troll_do_unmorph :: proc(admin: Player) -> bool {
     if admin == null return false;
     if !admin.troll_morph_active {
         admin.play_reward_feedback("Not morphed");
         return false;
     }
-    // Destroy the active monster or yellow square.
+    // Destroy the active monster.
     if #alive(admin.backrooms_monster_entity) {
         admin.backrooms_monster_entity.destroy();
         admin.backrooms_monster_entity = null;
-    }
-    if #alive(admin.troll_morph_yellow_square) {
-        admin.troll_morph_yellow_square.destroy();
-        admin.troll_morph_yellow_square = null;
     }
     if admin.troll_morph_saved_valid {
         admin.set_name_override(admin.troll_morph_saved_name_override);
@@ -550,23 +466,18 @@ draw_troll_status_overlays :: proc(viewer: Player) {
             ts.color = {1.0, 0.35, 0.85, 1};
             UI.text(rect, ts, format_string("CONTROLLED:% %s", {troll_mc_mode_name(player.troll_control_mode), format_float(remain2, decimals=1)}));
         } else if is_morphed {
-            if player.backrooms_monster_active {
-                ts.color = {1.0, 0.25, 0.2, 1};
-                UI.text(rect, ts, "BACKROOMS MONSTER");
-            } else {
-                ts.color = {1.0, 0.92, 0.2, 1};
-                UI.text(rect, ts, "VERITY MORPH");
-            }
+            ts.color = {1.0, 0.25, 0.2, 1};
+            UI.text(rect, ts, "BACKROOMS MONSTER");
         }
-        if is_morphed && (is_frozen || is_controlled) {
+        if is_morphed && player.backrooms_monster_active && (is_frozen || is_controlled) {
             mrect := rect.offset(0, -18);
             mts := UI.default_text_settings();
             mts.size = 12;
             mts.do_outline = true;
             mts.outline_thickness = 2;
             mts.outline_color = {0, 0, 0, 1};
-            mts.color = player.backrooms_monster_active ? {1.0, 0.25, 0.2, 1} : {1.0, 0.92, 0.2, 1};
-            UI.text(mrect, mts, player.backrooms_monster_active ? "MONSTER" : "VERITY");
+            mts.color = {1.0, 0.25, 0.2, 1};
+            UI.text(mrect, mts, "MONSTER");
         }
     }
 }
@@ -578,7 +489,7 @@ draw_troll_jumpscare :: proc(viewer: Player) {
     if !viewer.is_local_or_server() return;
     // Show fullscreen jumpscare modal
     idx := viewer.troll_scare_type;
-    if idx < 0 || idx >= 5 { idx = 0; }
+    if idx < 0 || idx >= 4 { idx = 0; }
     remain := viewer.troll_scare_until - get_time();
     pct := remain / TROLL_JUMPSCARE_DURATION;
     if pct < 0 { pct = 0; }
@@ -687,8 +598,8 @@ draw_troll_panel :: proc(admin: Player) {
     // Row 1: 3 buttons
     js_row1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
     UIK.panel_begin(js_row1);
-    js_handles: [5]Interact_Result;
-    for i: 0..4 {
+    js_handles: [4]Interact_Result;
+    for i: 0..3 {
         // Layout split into two rows manually for clean wrapping: we'll create two rows
         // but keep handles array unified
     }
@@ -709,7 +620,7 @@ draw_troll_panel :: proc(admin: Player) {
     UIK.panel_end();
     row_b := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
     UIK.panel_begin(row_b);
-    for i: 3..4 {
+    for i: 3..3 {
         idx := i;
         can := troll_can_jumpscare(admin, idx);
         btn_desc := UIK.widget_desc_button_auto_default(can ? .BUTTON_BASIC_RED : .BUTTON_BASIC_GREY);
@@ -727,7 +638,7 @@ draw_troll_panel :: proc(admin: Player) {
 
     // Cooldown info line
     now := get_time();
-    for i: 0..4 {
+    for i: 0..3 {
         next := admin.troll_jumpscare_next_allowed[i];
         if next > now {
             remain := next - now;
@@ -822,26 +733,6 @@ draw_troll_panel :: proc(admin: Player) {
     }
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
-    UIK.text("Morphs (become only one thing: Verity)", UIK.text_title());
-    UIK.text("From Admin Shop: Verity", UIK.text_body());
-    if admin.troll_morph_active {
-        UIK.text("Currently morphed as Verity", UIK.text_body());
-    } else {
-        UIK.text("Not morphed", UIK.text_body());
-    }
-    morph_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
-    UIK.panel_begin(morph_row);
-    morph_verity_desc := UIK.widget_desc_button_auto_default(!admin.troll_morph_active ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_GREY);
-    morph_verity_desc.panel.width = UIK.flex(1);
-    morph_verity_desc.panel.height = UIK.pixels(54);
-    morph_verity_btn := UIK.button("troll/morph_verity", "MORPH: VERITY", morph_verity_desc);
-    unmorph_desc := UIK.widget_desc_button_auto_default(admin.troll_morph_active ? .BUTTON_BASIC_RED : .BUTTON_BASIC_GREY);
-    unmorph_desc.panel.width = UIK.flex(1);
-    unmorph_desc.panel.height = UIK.pixels(54);
-    unmorph_btn := UIK.button("troll/unmorph", "UNMORPH", unmorph_desc);
-    UIK.panel_end();
-
-    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     close_desc.panel.width = UIK.flex(1);
     close_desc.panel.height = UIK.pixels(52);
@@ -875,7 +766,7 @@ draw_troll_panel :: proc(admin: Player) {
     }
 
     // Jumpscare clicks
-    for i: 0..4 {
+    for i: 0..3 {
         if UIK.clicked(js_handles[i]) {
             if real_target != null {
                 troll_do_jumpscare(admin, real_target, i);
@@ -908,11 +799,5 @@ draw_troll_panel :: proc(admin: Player) {
         }
     }
 
-    if UIK.clicked(morph_verity_btn) {
-        troll_do_morph_verity(admin);
-    }
-    if UIK.clicked(unmorph_btn) {
-        troll_do_unmorph(admin);
-    }
 }
 

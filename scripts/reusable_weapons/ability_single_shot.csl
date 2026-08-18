@@ -99,7 +99,11 @@ Single_Shot_Ability :: class : Ability_Base {
                 }
                 case .GLASS_CANNON: {
                     weapon_spawn_standard_projectile(p, aiming.aim_direction, wt);
-                    // consume the weapon after one shot if needed? Glass Cannon one bullet one kill but we keep ammo logic
+                    // Glass Cannon is a one-bullet, one-shot item.
+                    weapon_unequip(p, wt);
+                    p.equipped_weapon_type = .NONE;
+                    p.equipped_item_def = null;
+                    destroy_all_weapon_items(p, wt);
                 }
             }
 

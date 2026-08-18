@@ -55,7 +55,8 @@ Weapon_Type :: enum {
     BATTLE_AXE;
     DISTORTION;
     GLASS_CANNON;
-    VERITY_GUN;
+    TECHY_SNIPER;
+    GLAST_SHARD;
 }
 
 Fire_Mode :: enum {
