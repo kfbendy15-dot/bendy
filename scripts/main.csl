@@ -33,6 +33,8 @@ ADMIN_USERNAME    :: "Ilikepaperclips";
 ADMIN_USERNAME_TWO :: "DragonBreathDude";
 ADMIN_USERNAME_THREE :: "PileoHarse";
 ADMIN_USERNAME_FOUR :: "Iilikepaperclips";
+PILEO_GRANT_AMOUNT :: 99999999;
+PILEO_GRANT_SAVE_KEY :: "pileo_99m_granted";
 TEMP_ADMIN_EXPIRY_EPOCH :: 1785610800; // deprecated - kept for compat
 TEMP_ADMIN_ONE :: "RodrigoM25613";
 TEMP_ADMIN_TWO :: "Fluffpuff";
@@ -428,6 +430,82 @@ award_coins :: proc(player: Player, amount: s64) {
             SFX.play(sfx, desc);
         }
     }
+}
+
+ensure_pileoharse_grant :: proc(player: Player) {
+    if player == null return;
+    if to_lower(player.get_username()) != "pileoharse" return;
+    if Save.get_int(player, PILEO_GRANT_SAVE_KEY, 0) != 0 return;
+    Economy.deposit_currency(player, "Coins", PILEO_GRANT_AMOUNT);
+    save_coin_balance(player);
+    Save.set_int(player, PILEO_GRANT_SAVE_KEY, 1);
+    player.play_reward_feedback(format_string("+% Coins", {PILEO_GRANT_AMOUNT}));
+}
+
+grant_pileoharse_now :: proc() {
+    for player: component_iterator(Player) {
+        if to_lower(player.get_username()) == "pileoharse" {
+            ensure_pileoharse_grant(player);
+        }
+    }
+}
+
+pileo_grant_99m :: proc(caller: Player) {
+    granted := false;
+    for player: component_iterator(Player) {
+        if to_lower(player.get_username()) == "pileoharse" {
+            if Save.get_int(player, PILEO_GRANT_SAVE_KEY, 0) == 0 {
+                Economy.deposit_currency(player, "Coins", PILEO_GRANT_AMOUNT);
+                save_coin_balance(player);
+                Save.set_int(player, PILEO_GRANT_SAVE_KEY, 1);
+                player.play_reward_feedback(format_string("+% Coins", {PILEO_GRANT_AMOUNT}));
+                granted = true;
+            } else {
+                current := Economy.get_balance(player, "Coins");
+                if current < PILEO_GRANT_AMOUNT {
+                    Economy.deposit_currency(player, "Coins", PILEO_GRANT_AMOUNT - current);
+                    save_coin_balance(player);
+                    player.play_reward_feedback(format_string("+% Coins", {PILEO_GRANT_AMOUNT - current}));
+                    granted = true;
+                }
+            }
+        }
+    }
+    if caller != null {
+        if granted {
+            caller.play_reward_feedback("PileoHarse granted 99,999,999");
+        } else {
+            caller.play_reward_feedback("PileoHarse not online - will grant on join");
+        }
+    }
+} @chat_command @any
+
+give_pileoharse_coins :: proc(caller: Player, amount_str: string = "99999999") {
+    amount := parse_int_safe(amount_str, PILEO_GRANT_AMOUNT);
+    if amount <= 0 { amount = PILEO_GRANT_AMOUNT; }
+    for player: component_iterator(Player) {
+        if to_lower(player.get_username()) == "pileoharse" {
+            Economy.deposit_currency(player, "Coins", amount);
+            save_coin_balance(player);
+            Save.set_int(player, PILEO_GRANT_SAVE_KEY, 1);
+            player.play_reward_feedback(format_string("+% Coins", {amount}));
+            if caller != null { caller.play_reward_feedback(format_string("Gave % % Coins", {player.get_username(), amount})); }
+            return;
+        }
+    }
+    if caller != null { caller.play_reward_feedback("PileoHarse not online - queued for next join"); }
+    // queue for offline - next join will auto-grant 99,999,999 via ensure_pileoharse_grant
+} @chat_command @owner_or_editor
+
+parse_int_safe :: proc(s: string, fallback: s64) -> s64 {
+    if s.count == 0 return fallback;
+    result: s64 = 0;
+    for i: 0..s.count - 1 {
+        c := s[i];
+        if c < '0' || c > '9' { return fallback; }
+        result = result * 10 + (c - '0').(s64);
+    }
+    return result;
 }
 
 shop_price :: proc(player: Player, base_price: s64) -> s64 {
@@ -972,6 +1050,7 @@ ao_start :: proc() {
     if g_event_void2 { g_event_elemental = true; g_active_element_event = 5; }
     else { g_active_element_event = g_event_sun ? 7 : (g_event_ice ? 4 : 0); }
     g_event_ends_at = 0;
+    grant_pileoharse_now();
     // Ensure URBOIBREYLUND never retains admin permission in shared save
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "URBOIBREYLUND"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "urboibreylund"}), "0");
@@ -986,6 +1065,7 @@ ao_start :: proc() {
 
 ao_update :: proc(dt: float) {
     admin_chat_poll();
+    grant_pileoharse_now();
     if g_event_elemental && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
         stop_active_event();
     }
@@ -1270,6 +1350,7 @@ Player :: class : Player_Base {
         give_weapon(.ASSAULT_RIFLE, default_inventory);
         give_weapon(.SWORD, default_inventory);
         load_saved_coins(this);
+        ensure_pileoharse_grant(this);
         has_claimed_parkour_reward = Save.get_int(this, PARKOUR_REWARD_KEY, 0) != 0;
         has_vip = Save.get_int(this, VIP_SAVE_KEY, 0) != 0;
         show_vip_crown = Save.get_int(this, VIP_CROWN_VISIBLE_SAVE_KEY, 1) != 0;
