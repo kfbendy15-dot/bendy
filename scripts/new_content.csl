@@ -1,8 +1,6 @@
-// New content for requested features: Medkit, Ender Pearl, Battle Axe, Distortion, Warper, Void2, Fight modes
+// New content for requested features: Medkit, Battle Axe, Distortion, Void2, Fight modes
 MEDKIT_COST :: 50000;
 DISTORTION_COST :: 1000;
-WARPER_COST :: 200;
-ENDER_PEARL_COST :: 180;
 FLAMETHROWER_COST :: 45;
 MOLOTOV_COST :: 50;
 BATTLE_AXE_COST :: 75;
@@ -80,81 +78,6 @@ Medkit_Ability :: class : Ability_Base {
                 p := player.(Player);
                 p.play_reward_feedback("Bandaging 7s");
             }
-        }
-    }
-}
-
-// Ender Pearl
-Ender_Pearl_Projectile :: class : Component {
-    owner_id: u64;
-    direction: v2;
-    speed: float;
-    lifetime: float;
-    max_lifetime: float;
-
-    ao_update :: method(dt: float) {
-        lifetime += dt;
-        if max_lifetime <= 0 { max_lifetime = 5.0; }
-        // move
-        entity.add_local_position(v2{direction.x * speed * dt, direction.y * speed * dt});
-        if lifetime >= max_lifetime {
-            // teleport owner to this position if still alive
-            for owner: component_iterator(Player) {
-                if owner.entity.id == owner_id {
-                    if !owner.is_dead {
-                        owner.entity.set_local_position(entity.world_position);
-                        owner.entity.mark_teleported();
-                        owner.play_reward_feedback("Ender Pearl");
-                        spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/electric_burst/014ANT_Electric_Shockwave.spine", "default", entity.world_position, {1.0, 1.0}, "Shockwave_Burst", 0.5);
-                    }
-                    break;
-                }
-            }
-            entity.destroy();
-            return;
-        }
-        // hit ground early? just keep flying
-    }
-}
-
-Ender_Pearl_Ability :: class : Ability_Base {
-    on_init :: method() {
-        name = "Ender Pearl";
-        icon = get_asset(Texture_Asset, "$AO/circle.png");
-    }
-    can_use :: method() -> bool {
-        p := player.(Player);
-        if !p.has_ender_pearl return false;
-        return true;
-    }
-    on_update :: method(params: ref Ability_Update_Params) {
-        activation := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
-        if activation.activate {
-            if current_cooldown > 0 return;
-            current_cooldown = 45.0;
-            p := player.(Player);
-            dir := activation.direction;
-            if length(dir) < 0.1 { dir = v2{1,0}; }
-            dir = normalize(dir);
-            // spawn projectile
-            e := Scene.create_entity();
-            e.set_local_position(p.entity.world_position);
-            e.set_local_scale({0.8, 0.8});
-            spr := e.add_component(Sprite_Renderer);
-            spr.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
-            spr.color = {0.6, 0.25, 1.0, 1};
-            proj := e.add_component(Ender_Pearl_Projectile);
-            proj.owner_id = p.entity.id;
-            proj.direction = dir;
-            proj.speed = 14.0;
-            proj.max_lifetime = 5.0;
-            if p.is_local() {
-                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/player_throw_grenade.wav");
-                desc := SFX.default_sfx_desc();
-                desc.entity_to_follow = p.entity.id;
-                SFX.play(sfx, desc);
-            }
-            p.play_reward_feedback("Ender Pearl thrown");
         }
     }
 }
@@ -306,52 +229,6 @@ Distortion_Ability :: class : Ability_Base {
     }
 }
 
-// Warper portal fix - override place_warper_portal to actually place portals
-// Warper portals are already defined in admin_shop_extras, but we replace logic here via proc redeclaration? We'll define helper
-place_warper_portal :: proc(player: Player, direction: v2) {
-    if player == null || !#alive(player.entity) return;
-    dir := direction;
-    if length_squared(dir) < 0.001 { dir = v2{1,0}; }
-    dir = normalize(dir);
-    pos := player.entity.world_position + dir * 2.0;
-    // if first portal not exists, create first
-    if !#alive(player.warper_first_portal) {
-        e := Scene.create_entity();
-        e.set_local_position(pos);
-        wp := e.add_component(Warper_Portal);
-        wp.owner_user_id = player.get_user_id();
-        wp.is_first = true;
-        player.warper_first_portal = e;
-        player.play_reward_feedback("Portal A placed");
-        return;
-    }
-    if !#alive(player.warper_second_portal) {
-        e2 := Scene.create_entity();
-        e2.set_local_position(pos);
-        wp2 := e2.add_component(Warper_Portal);
-        wp2.owner_user_id = player.get_user_id();
-        wp2.is_first = false;
-        player.warper_second_portal = e2;
-        player.play_reward_feedback("Portal B placed - teleport!");
-        return;
-    }
-    // both exist - replace oldest (first)
-    player.warper_first_portal.destroy();
-    player.warper_first_portal = player.warper_second_portal;
-    // update is_first flag for first? keep as first
-    if #alive(player.warper_first_portal) {
-        comp := player.warper_first_portal.get_component(Warper_Portal);
-        if comp != null { comp.is_first = true; }
-    }
-    e3 := Scene.create_entity();
-    e3.set_local_position(pos);
-    wp3 := e3.add_component(Warper_Portal);
-    wp3.owner_user_id = player.get_user_id();
-    wp3.is_first = false;
-    player.warper_second_portal = e3;
-    player.play_reward_feedback("Portal replaced");
-}
-
 // Void2 event helpers
 void2_price :: proc(base: s64) -> s64 {
     if g_event_void2 { return base / 2; }
@@ -457,8 +334,8 @@ grant_rng_dice :: proc(player: Player, count: s64) -> bool {
 }
 
 rng_reward_pool :: proc(idx: s64) -> string {
-    pool: [11]string = {"Assault Rifle", "SMG", "Blunderbuss", "Flamethrower", "Molotov", "Battle Axe", "Distortion", "Warper", "Medkit", "Ender Pearl", "Glass Cannon"};
-    if idx < 0 || idx >= 11 {
+    pool: [9]string = {"Assault Rifle", "SMG", "Blunderbuss", "Flamethrower", "Molotov", "Battle Axe", "Distortion", "Medkit", "Glass Cannon"};
+    if idx < 0 || idx >= 9 {
         return pool[0];
     }
     return pool[idx];
@@ -472,9 +349,7 @@ grant_rng_reward :: proc(player: Player, reward: string) {
     else if reward == "Molotov" { give_weapon(.MOLOTOV, player.default_inventory); }
     else if reward == "Battle Axe" { give_weapon(.BATTLE_AXE, player.default_inventory); }
     else if reward == "Distortion" { give_weapon(.DISTORTION, player.default_inventory); }
-    else if reward == "Warper" { give_weapon(.WARPER, player.default_inventory); }
     else if reward == "Medkit" { player.has_medkit = true; }
-    else if reward == "Ender Pearl" { player.has_ender_pearl = true; }
     else if reward == "Glass Cannon" { give_weapon(.GLASS_CANNON, player.default_inventory); }
 }
 
@@ -487,7 +362,7 @@ use_rng_dice_item :: proc(player: Player, item: Item_Instance) -> bool {
         return false;
     }
     rng: u64 = rng_root_seed() ^ cast(u64)(get_frame_number() * 9973) ^ cast(u64)(player.entity.id * 131);
-    idx := rng_range_int(ref rng, 0, 10);
+    idx := rng_range_int(ref rng, 0, 8);
     reward := rng_reward_pool(idx);
     grant_rng_reward(player, reward);
     player.play_reward_feedback(format_string("RNG: %", {reward}));
@@ -538,7 +413,7 @@ do_rng_roll :: proc(player: Player) -> string {
             }
             if it.get_definition() == g_dice_item_def {
                 rng: u64 = rng_root_seed() ^ cast(u64)(get_frame_number() * 9973) ^ cast(u64)(player.entity.id * 131);
-                idx := rng_range_int(ref rng, 0, 10);
+                 idx := rng_range_int(ref rng, 0, 8);
                 reward := rng_reward_pool(idx);
                 grant_rng_reward(player, reward);
                 player.play_reward_feedback(format_string("RNG: %", {reward}));
@@ -567,8 +442,8 @@ do_rng_roll :: proc(player: Player) -> string {
     }
     g_rng_rolls_left -= 1;
     rng: u64 = rng_root_seed() ^ cast(u64)(get_frame_number() * 9973);
-    pool: [11]string = {"Assault Rifle", "SMG", "Blunderbuss", "Flamethrower", "Molotov", "Battle Axe", "Distortion", "Warper", "Medkit", "Ender Pearl", "Glass Cannon"};
-    idx := rng_range_int(ref rng, 0, 10);
+    pool: [9]string = {"Assault Rifle", "SMG", "Blunderbuss", "Flamethrower", "Molotov", "Battle Axe", "Distortion", "Medkit", "Glass Cannon"};
+    idx := rng_range_int(ref rng, 0, 8);
     reward := pool[idx];
     grant_rng_reward(player, reward);
     player.play_reward_feedback(format_string("RNG: % (% left)", {reward, g_rng_rolls_left}));

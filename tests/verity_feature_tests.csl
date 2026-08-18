@@ -1,0 +1,37 @@
+test_verity_event_reward :: proc() {
+    Test.run_admin_command("verity_test_start_event");
+    Test.wait_seconds(0.5);
+    Test.assert_entity_count_gt("Verity event squares spawned", "Verity", 0);
+    Test.teleport({0, 0});
+    Test.wait_seconds(0.2);
+    Test.interact();
+    Test.wait_seconds(0.2);
+    Test.assert_balance_range("Verity square pays 10,000 Coins", "Coins", 10100, 10120);
+}
+
+test_verity_box_stuns_dummy :: proc() {
+    Test.spawn_dummy_players(1);
+    Test.wait_seconds(10.0);
+    Test.assert_entity_count("dummy available for Verity box", "Player", 2);
+    Test.run_admin_command("verity_test_box_setup");
+    Test.wait_seconds(0.5);
+    Test.run_admin_command("verity_test_box_check");
+    Test.assert_save_int("Verity box applies stun", "ui_test_verity_box_stunned", 1);
+}
+
+test_backrooms_monster_rules :: proc() {
+    Test.spawn_dummy_players(1);
+    Test.wait_seconds(10.0);
+    Test.assert_entity_count("dummy available for monster touch", "Player", 2);
+    Test.run_admin_command("verity_test_monster_touch");
+    Test.assert_save_int("Backrooms Monster cannot be damaged", "ui_test_backrooms_monster_invulnerable", 1);
+    Test.assert_save_int("Backrooms Monster touch kills", "ui_test_backrooms_monster_touch_kill", 1);
+}
+
+test_verity_jumpscare_everyone :: proc() {
+    Test.spawn_dummy_players(1);
+    Test.wait_seconds(10.0);
+    Test.assert_entity_count("dummy available for jumpscare", "Player", 2);
+    Test.run_admin_command("verity_test_jumpscare_everyone");
+    Test.assert_save_int("Verity jumpscare reaches everyone", "ui_test_verity_jumpscare_targets", 2);
+}
