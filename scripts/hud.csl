@@ -59,6 +59,11 @@ draw_hud :: proc(player: Player) {
     bar.cross_align = .CENTER;
     UIK.panel_begin(bar);
 
+    codes_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+    codes_desc.panel.width = UIK.pixels(82);
+    codes_desc.panel.height = UIK.pixels(52);
+    codes_btn := UIK.button("hud/codes_button", "CODES", codes_desc);
+
     // Coin balance
     coin_tex := get_asset(Texture_Asset, "Gold_Coin_Icon_d3f0f3.png");
     balance := Economy.get_balance(player, "Coins");
@@ -152,6 +157,7 @@ draw_hud :: proc(player: Player) {
     if UIK.clicked(shop_btn) {
         player.shop_tab_index = 0;
         player.show_shop = true;
+        player.show_codes_panel = false;
     }
     if has_sensor && UIK.clicked(map_btn) {
         player.show_caylus_map = true;
@@ -159,6 +165,14 @@ draw_hud :: proc(player: Player) {
     }
     if UIK.clicked(vs_btn) {
         start_vs_battle(player);
+    }
+    if UIK.clicked(codes_btn) {
+        player.show_codes_panel = true;
+        player.show_shop = false;
+        player.show_admin_panel = false;
+        player.show_event_panel = false;
+        player.show_admin_shop = false;
+        player.show_pileo_shop = false;
     }
     if has_admin_button && UIK.clicked(admin_btn) {
         player.show_admin_panel = true;

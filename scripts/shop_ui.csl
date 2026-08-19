@@ -41,6 +41,7 @@ elemental_shop_name :: proc(event: s64) -> string {
     if event == 4 return "Ice";
     if event == 5 return "Void";
     if event == 7 return "Sun";
+    if event == 8 return "Cyber Energy";
     return "Lightning";
 }
 
@@ -395,7 +396,9 @@ draw_shop :: proc(player: Player) {
 
     UIK.text("Featured Shop", UIK.text_title());
     event := elemental_shop_event();
-    if g_event_sun {
+    if g_event_cyber_energy {
+        UIK.text("Cyber Energy event: Energy Cells 50% off", UIK.text_body());
+    } else if g_event_sun {
         UIK.text("Sun event: Sun Shop open", UIK.text_body());
     } else {
         UIK.text(format_string(g_event_elemental ? ((event == 5 || event == 6) ? "% Shop open" : "Element event: % Shop open") : "Element event: Closed", {elemental_shop_name(event)}), UIK.text_body());
@@ -503,7 +506,7 @@ draw_shop :: proc(player: Player) {
     shop_energy_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/energycells.png");
     shop_cryo_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/cryocell.png");
     shop_water_icon := get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/waterballoon.png");
-    energy_handle = draw_shop_card("shop/buy_energy", "Buy 30 Energy Cells", 25, shop_energy_icon, {0.4, 0.75, 0.95, 1}, false);
+    energy_handle = draw_shop_card("shop/buy_energy", "Buy 30 Energy Cells", cyber_energy_price(25), shop_energy_icon, {0.4, 0.75, 0.95, 1}, false);
     cryo_handle = draw_shop_card("shop/buy_cryo", "Buy 30 Cryo Cells", 25, shop_cryo_icon, {0.65, 0.85, 1.0, 1}, false);
     water_handle = draw_shop_card("shop/buy_water", "Buy 10 Water Balloons", 20, shop_water_icon, {0.3, 0.55, 0.9, 1}, false);
     UIK.panel_end();
@@ -633,7 +636,7 @@ draw_shop :: proc(player: Player) {
         buy_ammo_offer(player, 2, 10, 20, "+10 Shells");
     }
     if UIK.clicked(energy_handle) {
-        buy_ammo_offer(player, 5, 30, 25, "+30 Energy Cells");
+        buy_ammo_offer(player, 5, 30, cyber_energy_price(25), "+30 Energy Cells");
     }
     if UIK.clicked(cryo_handle) {
         buy_ammo_offer(player, 3, 30, 25, "+30 Cryo Cells");
@@ -1481,6 +1484,9 @@ draw_event_panel :: proc(player: Player) {
     UIK.list_begin("admin/events_body", body);
     UIK.text("Start a server-wide event.", UIK.text_title());
     UIK.text("Choose an event, then select a player to assign that element.", UIK.text_body());
+    cyber_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+    cyber_desc.panel.width = UIK.flex(1); cyber_desc.panel.height = UIK.pixels(52);
+    cyber_btn := UIK.button("events/start_cyber_energy", "Start Cyber Energy", cyber_desc);
 
     target_usernames: [..]string;
     target_handles: [..]Interact_Result;
@@ -1567,8 +1573,13 @@ draw_event_panel :: proc(player: Player) {
     lightning_clicked := UIK.clicked(lightning_btn);
     sun_clicked := UIK.clicked(sun_btn);
     void2_clicked := UIK.clicked(void2_btn);
+    cyber_clicked := UIK.clicked(cyber_btn);
     if void2_clicked {
         start_void2_event(player);
+        player.show_event_panel = false;
+    }
+    if cyber_clicked {
+        start_cyber_energy_event(player);
         player.show_event_panel = false;
     }
     any_event_clicked := fire_clicked || water_clicked || leaf_clicked || ice_clicked || void_clicked || lightning_clicked || sun_clicked;
@@ -1577,8 +1588,11 @@ draw_event_panel :: proc(player: Player) {
         g_event_ice = ice_clicked;
         g_event_sun = sun_clicked;
         g_event_void2 = false;
+        g_event_cyber_energy = false;
         cur_void2 := Save.get_game_int(EVENT_VOID2_KEY, 0);
         if cur_void2 != 0 { Save.increment_game_int(EVENT_VOID2_KEY, -cur_void2); }
+        cur_cyber := Save.get_game_int(EVENT_CYBER_ENERGY_KEY, 0);
+        if cur_cyber != 0 { Save.increment_game_int(EVENT_CYBER_ENERGY_KEY, -cur_cyber); }
         if fire_clicked { g_active_element_event = 1; }
         else if water_clicked { g_active_element_event = 2; }
         else if leaf_clicked { g_active_element_event = 3; }

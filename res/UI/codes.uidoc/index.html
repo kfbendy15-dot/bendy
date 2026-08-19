@@ -1,0 +1,14 @@
+<div class="codes-root">
+  <div class="codes-safe">
+    <div class="codes-modal">
+      <div class="codes-header">
+        <span class="codes-title">Codes</span>
+        <button class="close-button" data-key="codes/close" data-on-click="event:codes:close">Close</button>
+      </div>
+      <span class="codes-copy">Enter a code to redeem its reward.</span>
+      <input id="code-entry" data-key="code-entry" type="text" data-bind-value="codeInput" placeholder="Type code">
+      <button class="redeem-button" data-key="codes/redeem" data-on-click="event:codes:redeem">Redeem</button>
+      <span class="codes-status" data-text-reserve="Code already used">{{status}}</span>
+    </div>
+  </div>
+</div>

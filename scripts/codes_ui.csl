@@ -1,0 +1,76 @@
+PAPERCLIP_UNLOCKED_KEY :: "paperclip_unlocked";
+
+redeem_player_code :: proc(player: Player, raw_code: string) {
+    if player == null {
+        return;
+    }
+
+    code := to_lower(raw_code);
+    if code == "paperclipsarecool" {
+        if Save.get_int(player, CODE_PAPERCLIPS_ARE_COOL_KEY, 0) != 0 {
+            player.code_status = "Code already used";
+            return;
+        }
+
+        Save.set_int(player, CODE_PAPERCLIPS_ARE_COOL_KEY, 1);
+        Save.set_int(player, PAPERCLIP_UNLOCKED_KEY, 1);
+        player.has_paperclip = true;
+        award_coins(player, CODE_REWARD_COINS);
+        player.code_status = "+500 Coins and Paperclip unlocked";
+        return;
+    }
+
+    if code == "dinogangroad" {
+        if Save.get_int(player, CODE_DINO_GANG_ROAD_KEY, 0) != 0 {
+            player.code_status = "Code already used";
+            return;
+        }
+
+        Save.set_int(player, CODE_DINO_GANG_ROAD_KEY, 1);
+        award_coins(player, CODE_REWARD_COINS);
+        player.code_status = "+500 Coins";
+        return;
+    }
+
+    player.code_status = "Invalid code";
+}
+
+on_codes_ui_event :: proc(event: UIDoc_Event, userdata: Object) {
+    player := userdata.(Player);
+    if !#alive(player) {
+        return;
+    }
+
+    if event.handler == "event:codes:close" {
+        player.show_codes_panel = false;
+        return;
+    }
+
+    if event.handler == "event:codes:redeem" {
+        document := get_asset(UIDoc_Asset, "UI/codes.uidoc");
+        if document != null {
+            player.code_input = UI.uidoc_text_value(document, "code-entry", player.code_input);
+        }
+        redeem_player_code(player, player.code_input);
+    }
+}
+
+draw_codes_panel :: proc(player: Player) {
+    if !player.is_local_or_server() {
+        return;
+    }
+    if player == null || !player.show_codes_panel {
+        return;
+    }
+
+    document := get_asset(UIDoc_Asset, "UI/codes.uidoc");
+    if document == null {
+        return;
+    }
+
+    UI.uidoc_clear_bindings();
+    UI.uidoc_bind_text("codeInput", player.code_input);
+    UI.uidoc_bind_text("status", player.code_status);
+    UI.uidoc(document, false, player, on_codes_ui_event);
+    player.code_input = UI.uidoc_text_value(document, "code-entry", player.code_input);
+}
