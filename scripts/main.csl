@@ -5,6 +5,7 @@ import "core:dropped_items"
 PLAYER_MAX_HEALTH :: 100.0;
 ARMOR_BONUS_HP    :: 50.0;
 SUN_ARMOR_BONUS_HP :: 75.0;
+CYBER_ARMOR_BONUS_HP :: 150.0;
 STARTING_BULLETS  :: 100;
 KILL_COINS        :: 20;
 DOUBLE_COIN_KILL_COINS :: 20;
@@ -24,6 +25,10 @@ STUN_GRENADE_COST :: 35;
 LANDMINE_COST     :: 40;
 SUBSPACE_TRIPMINE_COST :: 60;
 ADMIN_SHOP_GUN_COST :: 150;
+ENERGY_PISTOLS_COST :: 50000;
+ENERGY_RIFLE_COST :: 100000;
+CYBER_ARMOR_COST :: 260000;
+BUZZ_LIGHTYEAR_COST :: 500;
 COINS_SAVE_KEY    :: "coins";
 COINS_SAVE_VERSION_KEY :: "coins_save_version";
 COINS_SAVE_VERSION :: 1;
@@ -78,6 +83,7 @@ CODE_PAPERCLIPS_ARE_COOL_KEY :: "code_paperclipsarecool";
 CODE_DINO_GANG_ROAD_KEY :: "code_dinogangroad";
 CODE_REWARD_COINS :: 500;
 SUN_ARMOR_KEY :: "sun_armor";
+CYBER_ARMOR_KEY :: "cyber_armor";
 
 
 coin_pass_amount_for_product :: proc(product_id: string) -> s64 {
@@ -553,6 +559,8 @@ is_admin_only_weapon :: proc(wt: Weapon_Type) -> bool {
     if wt == .INVISIBLE_GUN_ADMIN { return true; }
     if wt == .BATTLEPASS_GUN { return true; }
     if wt == .SNIPER { return true; }
+    if wt == .ENERGY_PISTOLS { return true; }
+    if wt == .ENERGY_RIFLE { return true; }
     return false;
 }
 
@@ -589,6 +597,8 @@ strip_admin_weapons :: proc(player: Player) {
     destroy_all_weapon_items(player, .BUILDING_TOOLS);
     destroy_all_weapon_items(player, .SNIPER);
     destroy_all_weapon_items(player, .WARPER);
+    destroy_all_weapon_items(player, .ENERGY_PISTOLS);
+    destroy_all_weapon_items(player, .ENERGY_RIFLE);
 
     if is_admin_only_weapon(player.equipped_weapon_type) {
         weapon_unequip(player, player.equipped_weapon_type);
@@ -918,6 +928,7 @@ ao_before_scene_load :: proc() {
 }
 
 armor_tier_for_purchases :: proc(purchases: s64) -> s64 {
+    if purchases >= 7211 return 9; // Cyber
     if purchases >= 7210 return 8; // Netherite
     if purchases >= 3210 return 7; // Obsidian
     if purchases >= 1210 return 6; // Emerald
@@ -930,11 +941,12 @@ armor_tier_for_purchases :: proc(purchases: s64) -> s64 {
 }
 
 armor_tier_name :: proc(tier: s64) -> string {
-    switch tier { case 1: return "Wooden"; case 2: return "Stone"; case 3: return "Iron"; case 4: return "Gold"; case 5: return "Diamond"; case 6: return "Emerald"; case 7: return "Obsidian"; case 8: return "Netherite"; }
+    switch tier { case 1: return "Wooden"; case 2: return "Stone"; case 3: return "Iron"; case 4: return "Gold"; case 5: return "Diamond"; case 6: return "Emerald"; case 7: return "Obsidian"; case 8: return "Netherite"; case 9: return "Cyber"; }
     return "None";
 }
 
 armor_display_name :: proc(player: Player) -> string {
+    if player != null && player.cyber_armor_active return "Cyber";
     if player != null && player.sun_armor_active return "Sun";
     if player == null return "None";
     return armor_tier_name(player.armor_tier);
@@ -952,7 +964,9 @@ refresh_armor_visual :: proc(player: Player) {
         player.armor_visual_entity = visual;
     }
     armor_sprite := player.armor_visual_entity.get_component(Sprite_Renderer);
-    if player.sun_armor_active {
+    if player.cyber_armor_active {
+        armor_sprite.color = {0.2, 0.95, 1.0, 1.0};
+    } else if player.sun_armor_active {
         armor_sprite.color = {1.0, 0.62, 0.08, 1.0};
     } else {
         armor_sprite.color = armor_tier_color(player.armor_tier);
@@ -960,12 +974,13 @@ refresh_armor_visual :: proc(player: Player) {
 }
 
 armor_tier_color :: proc(tier: s64) -> v4 {
-    switch tier { case 1: return {0.55, 0.32, 0.15, 0.9}; case 2: return {0.55, 0.55, 0.58, 0.9}; case 3: return {1.0, 0.72, 0.15, 0.95}; case 4: return {0.75, 0.82, 0.9, 0.95}; case 5: return {0.3, 0.85, 1.0, 0.95}; case 6: return {0.2, 1.0, 0.45, 0.95}; case 7: return {0.18, 0.12, 0.25, 0.98}; case 8: return {0.35, 0.4, 0.48, 1.0}; }
+    switch tier { case 1: return {0.55, 0.32, 0.15, 0.9}; case 2: return {0.55, 0.55, 0.58, 0.9}; case 3: return {1.0, 0.72, 0.15, 0.95}; case 4: return {0.75, 0.82, 0.9, 0.95}; case 5: return {0.3, 0.85, 1.0, 0.95}; case 6: return {0.2, 1.0, 0.45, 0.95}; case 7: return {0.18, 0.12, 0.25, 0.98}; case 8: return {0.35, 0.4, 0.48, 1.0}; case 9: return {0.1, 0.85, 1.0, 1.0}; }
     return {1, 1, 1, 1};
 }
 
 buy_armor_progression :: proc(player: Player) {
     if player == null return;
+    if player.cyber_armor_active return;
     if player.sun_armor_active {
         player.sun_armor_active = false;
         Save.set_int(player, SUN_ARMOR_KEY, 0);
@@ -978,6 +993,27 @@ buy_armor_progression :: proc(player: Player) {
     refresh_armor_visual(player);
     apply_armor_bonus(player, ARMOR_BONUS_HP);
     player.play_reward_feedback(format_string("% armor", {armor_tier_name(tier)}));
+}
+
+buy_cyber_armor :: proc(player: Player) {
+    if player == null || player.cyber_armor_active return;
+    if !g_event_cyber_energy {
+        player.play_reward_feedback("Start Cyber Event first");
+        return;
+    }
+    if !spend_coins(player, CYBER_ARMOR_COST) return;
+
+    player.sun_armor_active = false;
+    Save.set_int(player, SUN_ARMOR_KEY, 0);
+    player.cyber_armor_active = true;
+    Save.set_int(player, CYBER_ARMOR_KEY, 1);
+    player.armor_tier = 9;
+    Save.set_int(player, ARMOR_TIER_KEY, 9);
+    if player.armor_bonus_health < CYBER_ARMOR_BONUS_HP {
+        apply_armor_bonus(player, CYBER_ARMOR_BONUS_HP - player.armor_bonus_health);
+    }
+    refresh_armor_visual(player);
+    player.play_reward_feedback("Cyber armor equipped");
 }
 
 buy_sun_armor :: proc(player: Player) {
@@ -995,6 +1031,8 @@ buy_sun_armor :: proc(player: Player) {
 
 give_armor_to_player :: proc(target: Player) {
     if target == null return;
+    target.cyber_armor_active = false;
+    Save.set_int(target, CYBER_ARMOR_KEY, 0);
     target.sun_armor_active = false;
     Save.set_int(target, SUN_ARMOR_KEY, 0);
     Save.set_int(target, ARMOR_PURCHASES_KEY, 7210);
@@ -1006,14 +1044,16 @@ give_armor_to_player :: proc(target: Player) {
 }
 
 set_armor_tier_for_admin :: proc(target: Player, tier: s64) {
-    if target == null || tier < 1 || tier > 8 return;
+    if target == null || tier < 1 || tier > 9 return;
+    target.cyber_armor_active = tier >= 9;
+    Save.set_int(target, CYBER_ARMOR_KEY, target.cyber_armor_active ? 1 : 0);
     target.sun_armor_active = false;
     Save.set_int(target, SUN_ARMOR_KEY, 0);
     target.armor_tier = tier;
     Save.set_int(target, ARMOR_TIER_KEY, tier);
     refresh_armor_visual(target);
     if target.armor_bonus_health < ARMOR_BONUS_HP { apply_armor_bonus(target, ARMOR_BONUS_HP); }
-    target.play_reward_feedback(format_string("% armor", {armor_tier_name(tier)}));
+    target.play_reward_feedback(format_string("% armor", {armor_display_name(target)}));
 }
 
 buy_starter_pack :: proc(player: Player) {
@@ -1053,7 +1093,7 @@ ao_start :: proc() {
     g_event_void2 = Save.get_game_int(EVENT_VOID2_KEY, 0) > 0;
     g_event_cyber_energy = Save.get_game_int(EVENT_CYBER_ENERGY_KEY, 0) > 0;
     if g_event_cyber_energy {
-        g_event_elemental = false;
+        g_event_elemental = true;
         g_active_element_event = 8;
     } else if g_event_void2 { g_event_elemental = true; g_active_element_event = 5; }
     else { g_active_element_event = g_event_sun ? 7 : (g_event_ice ? 4 : 0); }
@@ -1178,6 +1218,7 @@ Player :: class : Player_Base {
     armor_bonus_health: float;
     armor_tier: s64;
     sun_armor_active: bool;
+    cyber_armor_active: bool;
     armor_visual_entity: Entity;
     purchased_finger_gun: bool;
     purchased_paper_gun: bool;
@@ -1290,6 +1331,7 @@ Player :: class : Player_Base {
     troll_morph_saved_show_vip_crown: bool;
     backrooms_monster_active: bool;
     backrooms_monster_entity: Entity;
+    troll_buzz_active: bool;
 
     ao_start :: method() {
         banned_seconds := admin_ban_remaining_seconds(get_user_id());
@@ -1441,12 +1483,17 @@ Player :: class : Player_Base {
         armor_bonus_health = 0;
         armor_tier = Save.get_int(this, ARMOR_TIER_KEY, 0);
         sun_armor_active = Save.get_int(this, SUN_ARMOR_KEY, 0) != 0;
+        cyber_armor_active = Save.get_int(this, CYBER_ARMOR_KEY, 0) != 0 || armor_tier >= 9;
+        if cyber_armor_active { armor_tier = 9; }
         refresh_armor_visual(this);
         // Leaderboard persistence: restore kills and time played
         leaderboard_total_kills = Save.get_int(this, "total_kills", 0);
         leaderboard_time_played = Save.get_int(this, "total_time_played", 0).(float);
         if sun_armor_active && armor_bonus_health < SUN_ARMOR_BONUS_HP {
             apply_armor_bonus(this, SUN_ARMOR_BONUS_HP - armor_bonus_health);
+        }
+        if cyber_armor_active && armor_bonus_health < CYBER_ARMOR_BONUS_HP {
+            apply_armor_bonus(this, CYBER_ARMOR_BONUS_HP - armor_bonus_health);
         }
         admin_target_username = "";
         admin_grant_amount = 25;
@@ -1524,6 +1571,7 @@ Player :: class : Player_Base {
         troll_morph_saved_show_vip_crown = true;
         backrooms_monster_active = false;
         backrooms_monster_entity = null;
+        troll_buzz_active = false;
         for i: 0..3 { troll_jumpscare_next_allowed[i] = 0; }
         killer_fish_cooldown = 0;
         if is_local() {
@@ -1583,7 +1631,7 @@ Player :: class : Player_Base {
             if #alive(vip_crown_entity) {
                 vip_crown_entity.set_local_enabled(false);
             }
-            if #alive(animator) {
+            if backrooms_monster_active && #alive(animator) {
                 tint := animator.get_tint();
                 if tint.w != 0 {
                     animator.set_tint({1.0, 0.92, 0.35, 0.0});
@@ -1824,6 +1872,10 @@ Player :: class : Player_Base {
                 }
                 if has_medkit {
                     if ability_slot <= 5 { draw_ability_button(this, Medkit_Ability, ability_slot); ability_slot += 1; }
+                }
+                if troll_buzz_active {
+                    if ability_slot <= 5 { draw_ability_button(this, Buzz_Laser_Ability, ability_slot); ability_slot += 1; }
+                    if ability_slot <= 5 { draw_ability_button(this, Buzz_Shield_Ability, ability_slot); ability_slot += 1; }
                 }
             }
 

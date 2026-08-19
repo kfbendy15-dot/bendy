@@ -57,6 +57,8 @@ Weapon_Type :: enum {
     GLASS_CANNON;
     TECHY_SNIPER;
     GLAST_SHARD;
+    ENERGY_PISTOLS;
+    ENERGY_RIFLE;
 }
 
 Fire_Mode :: enum {

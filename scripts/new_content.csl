@@ -1,4 +1,4 @@
-// New content for requested features: Medkit, Battle Axe, Distortion, Void2, Fight modes
+// New content for requested features: Medkit, Battle Axe, Distortion, Cyber, Void2, Fight modes
 MEDKIT_COST :: 50000;
 DISTORTION_COST :: 1000;
 FLAMETHROWER_COST :: 45;
@@ -229,16 +229,148 @@ Distortion_Ability :: class : Ability_Base {
     }
 }
 
-cyber_energy_price :: proc(base: s64) -> s64 {
-    if g_event_cyber_energy {
-        return max(1, base / 2);
+Wall_Bouncing_Energy_Projectile :: class : Component {
+    damage: float;
+    lifetime: float;
+    direction: v2;
+    owner_id: u64;
+    speed: float;
+    max_lifetime: float;
+    max_bounces: s64;
+    bounce_count: s64;
+
+    ao_update :: method(dt: float) {
+        lifetime += dt;
+        if lifetime > max_lifetime {
+            entity.destroy();
+            return;
+        }
+
+        move := direction * (speed * dt);
+        current_pos := entity.world_position;
+        bounced := false;
+        for navmesh: component_iterator(Navmesh) {
+            hit_pos, hit := navmesh.try_raycast(current_pos, move);
+            if hit {
+                entity.set_world_position(hit_pos - direction * 0.08);
+                // The map walls are axis-aligned. Reflect the dominant travel axis.
+                if abs(direction.x) >= abs(direction.y) {
+                    direction.x = -direction.x;
+                } else {
+                    direction.y = -direction.y;
+                }
+                bounce_count += 1;
+                bounced = true;
+                break;
+            }
+        }
+        if !bounced {
+            entity.add_local_position(move);
+        }
+
+        pos := entity.world_position + v2{0, -0.5};
+        hit_target, found := Scene.get_closest_component_in_range(pos, 0.8, Weapon_Target);
+        if found && hit_target != null && hit_target.entity.id != owner_id {
+            weapon_target_apply_damage(hit_target, damage, owner_id);
+            hit_sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/bullet_hit.wav");
+            desc := SFX.default_sfx_desc();
+            desc.set_position(pos);
+            desc.range_multiplier = 2.0;
+            SFX.play(hit_sfx, desc);
+            entity.destroy();
+            return;
+        }
+
+        if bounce_count >= max_bounces {
+            entity.destroy();
+        }
     }
-    return base;
+}
+
+spawn_wall_bouncing_energy_projectile :: proc(player: Player, direction: v2, wt: Weapon_Type) {
+    config := get_weapon_config(wt);
+    dir := normalize(direction);
+    if length(dir) < 0.1 { dir = v2{1, 0}; }
+    spawn_pos := get_projectile_spawn_pos(player, dir);
+
+    projectile_entity := Scene.create_entity();
+    projectile_entity.set_local_position(spawn_pos);
+    projectile_entity.set_local_rotation(to_degrees(atan2(dir.y, dir.x)));
+    projectile_entity.set_local_scale({2.2, 2.2});
+    sprite := projectile_entity.add_component(Sprite_Renderer);
+    sprite.set_texture(get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/projectiles/OP[106]LaserBolt _Crewshia.png"));
+    sprite.color = {0.25, 0.9, 1.0, 1.0};
+
+    projectile := projectile_entity.add_component(Wall_Bouncing_Energy_Projectile);
+    projectile.damage = config.base_damage;
+    projectile.direction = dir;
+    projectile.owner_id = player.entity.id;
+    projectile.speed = config.projectile_speed;
+    projectile.max_lifetime = config.projectile_lifetime;
+    projectile.max_bounces = config.max_bounces;
+}
+
+Buzz_Shield_Effect :: class : Effect_Base {
+    effect_start :: method() {
+        set_duration(5.0);
+        player.play_reward_feedback("Buzz shield active");
+    }
+
+    effect_end :: method(interrupt: bool) {
+        if #alive(player) && !interrupt {
+            player.play_reward_feedback("Buzz shield ended");
+        }
+    }
+}
+
+Buzz_Shield_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Buzz Shield";
+        icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
+    }
+
+    can_use :: method() -> bool {
+        p := player.(Player);
+        return p.troll_buzz_active && !p.entity.has_effect(Buzz_Shield_Effect);
+    }
+
+    on_update :: method(params: ref Ability_Update_Params) {
+        if params.clicked && params.can_use {
+            player.entity.add_passive_effect(new(Buzz_Shield_Effect));
+            current_cooldown = 6.0;
+        }
+    }
+}
+
+Buzz_Laser_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Buzz Laser";
+        icon = get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/projectiles/OP[106]LaserBolt _Crewshia.png");
+        is_aimed_ability = true;
+    }
+
+    can_use :: method() -> bool {
+        return player.(Player).troll_buzz_active;
+    }
+
+    on_update :: method(params: ref Ability_Update_Params) {
+        activation := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
+        if activation.activate && current_cooldown <= 0 {
+            p := player.(Player);
+            dir := activation.direction;
+            if length(dir) < 0.1 { dir = p.last_aim_direction; }
+            if length(dir) < 0.1 { dir = v2{1, 0}; }
+            weapon_start_shoot_anim(p, .RAY_GUN);
+            weapon_play_fire_sound(p, .RAY_GUN);
+            spawn_ray_gun_projectile(p, dir, .RAY_GUN);
+            current_cooldown = 0.45;
+        }
+    }
 }
 
 start_cyber_energy_event :: proc(admin: Player) {
     // Cyber Energy is a standalone server-wide energy sale event.
-    g_event_elemental = false;
+    g_event_elemental = true;
     g_event_ice = false;
     g_event_sun = false;
     g_event_void2 = false;
@@ -258,7 +390,7 @@ start_cyber_energy_event :: proc(admin: Player) {
     if cur_cyber == 0 { Save.increment_game_int(EVENT_CYBER_ENERGY_KEY, 1); }
 
     if admin != null { admin.play_reward_feedback("Cyber Energy Event started"); }
-    Chat.server_send_message("Cyber Energy Event started: Energy Cells are 50% off");
+    Chat.server_send_message("Cyber Energy Event started: Energy weapons and Cyber armor unlocked");
 }
 
 // Void2 event helpers
