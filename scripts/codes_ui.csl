@@ -1,34 +1,67 @@
 PAPERCLIP_UNLOCKED_KEY :: "paperclip_unlocked";
 
+grant_code_weapon :: proc(player: Player, wt: Weapon_Type) {
+    grant_weapon_with_ammo(player, wt, 999);
+}
+
 redeem_player_code :: proc(player: Player, raw_code: string) {
     if player == null {
         return;
     }
 
     code := to_lower(raw_code);
+
     if code == "paperclipsarecool" {
         if Save.get_int(player, CODE_PAPERCLIPS_ARE_COOL_KEY, 0) != 0 {
             player.code_status = "Code already used";
             return;
         }
-
         Save.set_int(player, CODE_PAPERCLIPS_ARE_COOL_KEY, 1);
-        Save.set_int(player, PAPERCLIP_UNLOCKED_KEY, 1);
-        player.has_paperclip = true;
-        award_coins(player, CODE_REWARD_COINS);
-        player.code_status = "+500 Coins and Paperclip unlocked";
+        award_coins(player, 50000);
+        grant_code_weapon(player, .EXPLOSIVE_SHOTGUN);
+        player.code_status = "+50k Coins and Explosive Shotgun";
         return;
     }
 
-    if code == "dinogangroad" {
-        if Save.get_int(player, CODE_DINO_GANG_ROAD_KEY, 0) != 0 {
+    if code == "#dinosquad" || code == "dinosquad" {
+        if Save.get_int(player, CODE_DINO_SQUAD_KEY, 0) != 0 {
             player.code_status = "Code already used";
             return;
         }
+        Save.set_int(player, CODE_DINO_SQUAD_KEY, 1);
+        award_coins(player, 20000);
+        player.has_dash = true;
+        player.has_medkit = true;
+        player.has_invisible = true;
+        player.powerup_invisible_active = true;
+        player.entity.add_passive_effect(new(Invisible_Effect));
+        grant_code_weapon(player, .MEGA_BLADE);
+        player.code_status = "+20k Coins, Dash, Medkit, Invisibility, Gun Cutter";
+        return;
+    }
 
-        Save.set_int(player, CODE_DINO_GANG_ROAD_KEY, 1);
-        award_coins(player, CODE_REWARD_COINS);
-        player.code_status = "+500 Coins";
+    if code == "pileo'sevents" || code == "pileosevents" || code == "pileo’sevents" {
+        if Save.get_int(player, CODE_PILEO_EVENTS_KEY, 0) != 0 {
+            player.code_status = "Code already used";
+            return;
+        }
+        Save.set_int(player, CODE_PILEO_EVENTS_KEY, 1);
+        award_coins(player, 10000);
+        grant_code_weapon(player, .DISTORTION);
+        grant_code_weapon(player, .FLAMETHROWER);
+        grant_code_weapon(player, .KILLER_FISH);
+        grant_code_weapon(player, .BATTLE_AXE);
+        grant_code_weapon(player, .SUN_SHOOTER_TSUNAMI);
+        grant_code_weapon(player, .ENERGY_RIFLE);
+        if !player.sun_armor_active {
+            player.sun_armor_active = true;
+            Save.set_int(player, SUN_ARMOR_KEY, 1);
+            if player.armor_bonus_health < SUN_ARMOR_BONUS_HP {
+                apply_armor_bonus(player, SUN_ARMOR_BONUS_HP - player.armor_bonus_health);
+            }
+            refresh_armor_visual(player);
+        }
+        player.code_status = "+10k Coins and event pack";
         return;
     }
 
