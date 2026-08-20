@@ -30,6 +30,7 @@ element_icon_for_value :: proc(element: s64) -> string {
     if element == 5 return "[VOID]";
     if element == 6 return "[LIGHTNING]";
     if element == 7 return "[SUN]";
+    if element == 8 return "[CYBER]";
     return "";
 }
 
@@ -41,5 +42,6 @@ element_name_for_value :: proc(element: s64) -> string {
     if element == 5 return "Void";
     if element == 6 return "Lightning";
     if element == 7 return "Sun";
+    if element == 8 return "Cyber";
     return "";
 }

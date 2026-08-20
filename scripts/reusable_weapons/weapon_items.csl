@@ -1,4 +1,4 @@
-WEAPON_COUNT :: 58;
+WEAPON_COUNT :: 60;
 AMMO_TYPE_COUNT :: 10;
 
 g_weapon_item_defs: [WEAPON_COUNT]Item_Definition;
@@ -70,6 +70,8 @@ weapon_type_to_index :: proc(wt: Weapon_Type) -> s64 {
         case .GLASS_CANNON:           return 54;
         case .TECHY_SNIPER:           return 55;
         case .GLAST_SHARD:            return 56;
+        case .ENERGY_PISTOLS:         return 57;
+        case .ENERGY_RIFLE:           return 58;
     }
     return -1;
 }
@@ -226,6 +228,8 @@ init_weapon_items :: proc() {
     register_weapon(.GLASS_CANNON);
     register_weapon(.TECHY_SNIPER);
     register_weapon(.GLAST_SHARD);
+    register_weapon(.ENERGY_PISTOLS);
+    register_weapon(.ENERGY_RIFLE);
 
     // Load fire sounds for each weapon
     load_fire_sounds();
@@ -389,6 +393,8 @@ load_fire_sounds :: proc() {
     load_single_sound(.GLASS_CANNON, "reusable_weapons/sounds/reusable-weapons/plasma_gun_shoot_05.wav");
     load_single_sound(.TECHY_SNIPER, "reusable_weapons/sounds/reusable-weapons/assault_rifle_1.wav");
     load_single_sound(.GLAST_SHARD, "reusable_weapons/sounds/reusable-weapons/katana_slash.wav");
+    load_sound_range(.ENERGY_PISTOLS, "reusable_weapons/sounds/reusable-weapons/pistol_shoot_0", 4);
+    load_single_sound(.ENERGY_RIFLE, "reusable_weapons/sounds/reusable-weapons/ray_gun_shoot.wav");
 }
 
 load_sound_range :: proc(wt: Weapon_Type, prefix: string, count: s64) {
@@ -472,6 +478,8 @@ get_weapon_type_for_item :: proc(item_def: Item_Definition) -> Weapon_Type {
                  case 54: return .GLASS_CANNON;
                  case 55: return .TECHY_SNIPER;
                  case 56: return .GLAST_SHARD;
+                 case 57: return .ENERGY_PISTOLS;
+                 case 58: return .ENERGY_RIFLE;
             }
         }
         i += 1;

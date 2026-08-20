@@ -1000,6 +1000,42 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.shoot_trigger = "melee_AL";
             config.use_ik_var = "use_1h_ik";
         }
+        case .ENERGY_PISTOLS: {
+            config.fire_mode = .SINGLE_SHOT;
+            config.hand_type = .ONE_HAND;
+            config.fire_rate = 0.22;
+            config.base_damage = 140.0;
+            config.projectile_speed = 24.0;
+            config.projectile_lifetime = 3.0;
+            config.weapon_skin = "weapons/beam_machine";
+            config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/akimbo_pistols.png";
+            config.item_id = "energy_pistols";
+            config.item_name = "Energy Pistols";
+            config.ammo_type_index = -1;
+            config.ammo_first_pickup = 0;
+            config.ammo_per_shot = 0;
+            config.shoot_trigger = "shoot_1h_weapon";
+            config.use_ik_var = "use_1h_ik";
+        }
+        case .ENERGY_RIFLE: {
+            config.fire_mode = .SINGLE_SHOT;
+            config.hand_type = .TWO_HAND;
+            config.fire_rate = 0.5;
+            config.base_damage = 190.0;
+            config.projectile_speed = 22.0;
+            config.projectile_lifetime = 6.0;
+            config.max_bounces = 8;
+            config.bounce_target_radius = 0.0;
+            config.weapon_skin = "weapons/beam_machine";
+            config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/weapon_icons/weapon_icons_250x250/beammachine.png";
+            config.item_id = "energy_rifle";
+            config.item_name = "Energy Rifle";
+            config.ammo_type_index = -1;
+            config.ammo_first_pickup = 0;
+            config.ammo_per_shot = 0;
+            config.shoot_trigger = "shoot_2h_weapon";
+            config.use_ik_var = "use_2h_ik";
+        }
     }
 
     return config;

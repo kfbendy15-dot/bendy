@@ -15,6 +15,7 @@ weapon_element :: proc(wt: Weapon_Type) -> s64 {
     if wt == .WARPER return 5; // void - black hole
     if wt == .RAY_GUN || wt == .STORMS_EYE return 6; // lightning
     if wt == .SUN_SHOOTER_TSUNAMI || wt == .SUN_SHOOTER_SAND return 7; // sun
+    if wt == .ENERGY_PISTOLS || wt == .ENERGY_RIFLE return 8; // cyber
     return 0; // normal
 }
 
@@ -31,7 +32,12 @@ elemental_damage_multiplier :: proc(attacker: s64, defender: s64) -> float {
     if (attacker == 5 && (defender == 1 || defender == 2 || defender == 3)) return 2.0;
     if attacker == 1 && defender == 5 return 2.0;
     if attacker == 6 && (defender == 1 || defender == 2 || defender == 3) return 2.0;
+    // Void and Void #2 intentionally use the same element value and matchup.
     if (attacker == 5 || attacker == 4) && defender == 6 return 2.0;
+    // Cyber is strong against Fire, Water, Leaf, and Void, but weak to Sun,
+    // Lightning, and Ice.
+    if attacker == 8 && (defender == 1 || defender == 2 || defender == 3 || defender == 5) return 2.0;
+    if defender == 8 && (attacker == 4 || attacker == 6 || attacker == 7) return 2.0;
     if g_event_ice && ((attacker == 1 && defender == 4) || (attacker == 4 && defender == 3)) return 2.0;
     return 0.5;
 }
@@ -68,6 +74,9 @@ weapon_target_apply_damage :: proc(target: Weapon_Target, damage: float, attacke
         return;
     }
     if player != null && is_player_invisible_for_targeting(player) {
+        return;
+    }
+    if player != null && player.entity.has_effect(Buzz_Shield_Effect) {
         return;
     }
 

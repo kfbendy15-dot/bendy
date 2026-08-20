@@ -97,6 +97,12 @@ Single_Shot_Ability :: class : Ability_Base {
                 case .DISTORTION: {
                     weapon_spawn_standard_projectile(p, aiming.aim_direction, wt);
                 }
+                case .ENERGY_PISTOLS: {
+                    weapon_spawn_standard_projectile(p, aiming.aim_direction, wt);
+                }
+                case .ENERGY_RIFLE: {
+                    spawn_wall_bouncing_energy_projectile(p, aiming.aim_direction, wt);
+                }
                 case .GLASS_CANNON: {
                     weapon_spawn_standard_projectile(p, aiming.aim_direction, wt);
                     // Glass Cannon is a one-bullet, one-shot item.
