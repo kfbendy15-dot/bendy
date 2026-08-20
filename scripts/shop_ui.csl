@@ -341,9 +341,6 @@ draw_shop :: proc(player: Player) {
     exit_handle := UIK.title_area(title_desc);
 
     shop_close_btn: Interact_Result;
-    armor_handle: Interact_Result;
-    cyber_armor_handle: Interact_Result;
-    sun_armor_handle: Interact_Result;
     sun_tsunami_handle: Interact_Result;
     sun_sand_handle: Interact_Result;
     fire_shop_handle: Interact_Result;
@@ -411,7 +408,6 @@ draw_shop :: proc(player: Player) {
     if event == 3 { leaf_shop_handle = draw_shop_card("shop/leaf_shop", "Tree Trap", 60, get_asset(Texture_Asset, get_weapon_config(.KILLER_FISH).weapon_icon_path), {0.2, 0.8, 0.25, 1}, player_has_weapon(player, .KILLER_FISH)); }
     if event == 4 { ice_shop_handle = draw_shop_card("shop/ice_shop", "Ice Launcher", 85, get_asset(Texture_Asset, get_weapon_config(.ICE_LAUNCHER).weapon_icon_path), {0.55, 0.85, 1.0, 1}, player_has_weapon(player, .ICE_LAUNCHER)); }
     if event == 7 {
-        sun_armor_handle = draw_shop_card("shop/sun_armor", "Sun Armor", 1000, get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png"), {1.0, 0.58, 0.08, 1.0}, player.sun_armor_active || player.armor_tier >= 8);
         sun_tsunami_handle = draw_shop_card("shop/sun_shooter_tsunami", "Sun Shooter", 120, get_asset(Texture_Asset, get_weapon_config(.SUN_SHOOTER_TSUNAMI).weapon_icon_path), {0.15, 0.65, 1.0, 1.0}, player_has_weapon(player, .SUN_SHOOTER_TSUNAMI));
         sun_sand_handle = draw_shop_card("shop/sun_shooter_sand", "Sun Shooter", 120, get_asset(Texture_Asset, get_weapon_config(.SUN_SHOOTER_SAND).weapon_icon_path), {1.0, 0.35, 0.08, 1.0}, player_has_weapon(player, .SUN_SHOOTER_SAND));
     }
@@ -427,15 +423,6 @@ draw_shop :: proc(player: Player) {
         UIK.text(UIK.text_body(), "VIP: 50% off shop prices");
     }
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
-    support_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(support_row);
-    armor_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
-    armor_handle = draw_shop_card("shop/armor", "Armor", shop_price(player, 750), armor_icon, {0.35, 0.55, 0.85, 1}, false);
-    if g_event_cyber_energy {
-        cyber_armor_handle = draw_shop_card("shop/cyber_armor", "Cyber Armor", shop_price(player, CYBER_ARMOR_COST), armor_icon, {0.1, 0.85, 1.0, 1}, player.cyber_armor_active);
-    }
-    UIK.panel_end();
-
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
     UIK.text("Guns", UIK.text_title());
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
@@ -580,7 +567,6 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(water_shop_handle) && event == 2 { buy_weapon_offer(player, .WATER_GUN, 30, "+Water Gun"); }
     if UIK.clicked(leaf_shop_handle) && event == 3 { buy_weapon_offer(player, .KILLER_FISH, 60, "+Tree Trap"); }
     if UIK.clicked(ice_shop_handle) && event == 4 { buy_weapon_offer(player, .ICE_LAUNCHER, 85, "+Ice Launcher"); }
-    if UIK.clicked(sun_armor_handle) && event == 7 { buy_sun_armor(player); }
     if UIK.clicked(sun_tsunami_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_TSUNAMI, 120, "+Sun Shooter"); }
     if UIK.clicked(sun_sand_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_SAND, 120, "+Sun Shooter"); }
 
@@ -627,12 +613,6 @@ draw_shop :: proc(player: Player) {
         buy_weapon_offer(player, .LANDMINE, LANDMINE_COST, "+Landmine");
     }
 
-    if UIK.clicked(armor_handle) {
-        buy_armor_offer(player);
-    }
-    if UIK.clicked(cyber_armor_handle) {
-        buy_cyber_armor(player);
-    }
     if UIK.clicked(bullets_handle) {
         buy_bullets(player);
     }
@@ -758,6 +738,88 @@ draw_shop :: proc(player: Player) {
 
 }
 
+draw_armor_shop :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    UIK.begin(UIK.modal(UIK.rect_window_large(), 16));
+    shell := UIK.panel_modal(.BLACK);
+    shell.gap = 0;
+    UIK.panel_begin(shell);
+    title_desc := UIK.title_area_desc("Armor Shop");
+    title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
+    exit_handle := UIK.title_area(title_desc);
+
+    content := UIK.layout_column();
+    content.width = UIK.flex(1);
+    content.height = UIK.flex(1);
+    content.padding = v4{12, 16, 12, 16};
+    content.gap = 8;
+    UIK.list_begin("armor_shop_scroll", content);
+
+    armor_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
+    sun_armor_handle: Interact_Result;
+    cyber_armor_handle: Interact_Result;
+
+    UIK.text("Featured", UIK.text_title());
+    if g_event_sun || g_event_cyber_energy {
+        feat_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+        UIK.panel_begin(feat_row);
+        if g_event_sun {
+            sun_armor_handle = draw_shop_card("armor_shop/sun_armor", "Sun Armor", 1000, armor_icon, {1.0, 0.58, 0.08, 1.0}, player.sun_armor_active);
+        }
+        if g_event_cyber_energy {
+            cyber_armor_handle = draw_shop_card("armor_shop/cyber_armor", "Cyber Armor", shop_price(player, CYBER_ARMOR_COST), armor_icon, {0.1, 0.85, 1.0, 1}, player.cyber_armor_active);
+        }
+        UIK.panel_end();
+    } else {
+        UIK.text("Sun and Cyber armor unlock when those events start", UIK.text_body());
+    }
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+    UIK.text("Armor", UIK.text_title());
+    row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(row_1);
+    wood_h := draw_shop_card("armor_shop/wood", "Wood Armor", shop_price(player, 50), armor_icon, {0.55, 0.32, 0.15, 1}, player.armor_tier >= 1);
+    stone_h := draw_shop_card("armor_shop/stone", "Stone Armor", shop_price(player, 100), armor_icon, {0.55, 0.55, 0.58, 1}, player.armor_tier >= 2);
+    iron_h := draw_shop_card("armor_shop/iron", "Iron Armor", shop_price(player, 200), armor_icon, {0.75, 0.82, 0.9, 1}, player.armor_tier >= 3);
+    UIK.panel_end();
+    row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(row_2);
+    gold_h := draw_shop_card("armor_shop/gold", "Gold Armor", shop_price(player, 400), armor_icon, {1.0, 0.72, 0.15, 1}, player.armor_tier >= 4);
+    diamond_h := draw_shop_card("armor_shop/diamond", "Diamond Armor", shop_price(player, 800), armor_icon, {0.3, 0.85, 1.0, 1}, player.armor_tier >= 5);
+    emerald_h := draw_shop_card("armor_shop/emerald", "Emerald Armor", shop_price(player, 1600), armor_icon, {0.2, 1.0, 0.45, 1}, player.armor_tier >= 6);
+    UIK.panel_end();
+    row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(row_3);
+    obsidian_h := draw_shop_card("armor_shop/obsidian", "Obsidian Armor", shop_price(player, 3200), armor_icon, {0.18, 0.12, 0.25, 1}, player.armor_tier >= 7);
+    netherite_h := draw_shop_card("armor_shop/netherite", "Netherite Armor", shop_price(player, 6400), armor_icon, {0.35, 0.4, 0.48, 1}, player.armor_tier >= 8);
+    UIK.panel_end();
+
+    UIK.list_end();
+    close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    close_desc.panel.width = UIK.flex(1);
+    close_desc.panel.height = UIK.pixels(52);
+    close_btn := UIK.button("armor_shop/close", "Close", close_desc);
+    UIK.panel_end();
+    UIK.end();
+
+    if UIK.clicked(exit_handle) || UIK.clicked(close_btn) {
+        player.show_armor_shop = false;
+    }
+    if UIK.clicked(sun_armor_handle) && g_event_sun { buy_sun_armor(player); }
+    if UIK.clicked(cyber_armor_handle) && g_event_cyber_energy { buy_cyber_armor(player); }
+    if UIK.clicked(wood_h) { buy_armor_tier_offer(player, 1, 50); }
+    if UIK.clicked(stone_h) { buy_armor_tier_offer(player, 2, 100); }
+    if UIK.clicked(iron_h) { buy_armor_tier_offer(player, 3, 200); }
+    if UIK.clicked(gold_h) { buy_armor_tier_offer(player, 4, 400); }
+    if UIK.clicked(diamond_h) { buy_armor_tier_offer(player, 5, 800); }
+    if UIK.clicked(emerald_h) { buy_armor_tier_offer(player, 6, 1600); }
+    if UIK.clicked(obsidian_h) { buy_armor_tier_offer(player, 7, 3200); }
+    if UIK.clicked(netherite_h) { buy_armor_tier_offer(player, 8, 6400); }
+}
+
 draw_pileo_shop :: proc(player: Player) {
     if player == null || !is_pileo_harse(player) {
         return;
@@ -813,6 +875,21 @@ draw_pileo_shop :: proc(player: Player) {
     elixir_handle = draw_shop_card("pileo/kreekcraft_elixir", "Kreekcraft Elixir", KREEKCRAFT_ELIXIR_COST, get_asset(Texture_Asset, get_weapon_config(.FIRE_RAY).weapon_icon_path), {1.0, 0.3, 0.1, 1}, false);
     UIK.panel_end();
 
+    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+    UIK.text("Ammo", UIK.text_title());
+    pileo_ammo_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(pileo_ammo_1);
+    pileo_bullets := draw_shop_card("pileo/buy_bullets", "Buy 10 Bullets", BULLET_COST, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/bullet.png"), {0.3, 0.7, 0.3, 1}, false);
+    pileo_heavy := draw_shop_card("pileo/buy_heavy", "Buy 10 Heavy Ammo", 20, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/cannonball.png"), {0.7, 0.6, 0.35, 1}, false);
+    pileo_explosive := draw_shop_card("pileo/buy_explosive", "Buy 10 Shells", 20, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/shotgunshell.png"), {0.85, 0.6, 0.35, 1}, false);
+    UIK.panel_end();
+    pileo_ammo_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(pileo_ammo_2);
+    pileo_energy := draw_shop_card("pileo/buy_energy", "Buy 30 Energy Cells", 25, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/energycells.png"), {0.4, 0.75, 0.95, 1}, false);
+    pileo_water := draw_shop_card("pileo/buy_water", "Buy 10 Water Balloons", 20, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/waterballoon.png"), {0.3, 0.55, 0.9, 1}, false);
+    pileo_lmg := draw_shop_card("pileo/buy_lmg", "Buy 30 LMG Rounds", 40, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/bullet_alt.png"), {0.8, 0.8, 0.5, 1}, false);
+    UIK.panel_end();
+
     UIK.list_end();
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     close_desc.panel.width = UIK.flex(1);
@@ -832,6 +909,12 @@ draw_pileo_shop :: proc(player: Player) {
     if UIK.clicked(glast_handle) { buy_weapon_offer(player, .GLAST_SHARD, GLAST_SHARD_COST, "+Glast Shard"); }
     if UIK.clicked(sensor_handle) { buy_youtuber_item_offer(player, g_caylus_sensor_item_def, CAYLUS_SENSOR_COST, "+Caylus Sensor", true); }
     if UIK.clicked(elixir_handle) { buy_youtuber_item_offer(player, g_kreekcraft_elixir_item_def, KREEKCRAFT_ELIXIR_COST, "+Kreekcraft Elixir", false); }
+    if UIK.clicked(pileo_bullets) { buy_ammo_offer(player, 0, BULLETS_PER_BUY, BULLET_COST, format_string("+% Bullets", {BULLETS_PER_BUY})); }
+    if UIK.clicked(pileo_heavy) { buy_ammo_offer(player, 1, 10, 20, "+10 Heavy Ammo"); }
+    if UIK.clicked(pileo_explosive) { buy_ammo_offer(player, 2, 10, 20, "+10 Shells"); }
+    if UIK.clicked(pileo_energy) { buy_ammo_offer(player, 5, 30, 25, "+30 Energy Cells"); }
+    if UIK.clicked(pileo_water) { buy_ammo_offer(player, 9, 10, 20, "+10 Water Balloons"); }
+    if UIK.clicked(pileo_lmg) { buy_ammo_offer(player, 8, 30, 40, "+30 LMG Rounds"); }
 }
 
 draw_admin_shop :: proc(player: Player) {

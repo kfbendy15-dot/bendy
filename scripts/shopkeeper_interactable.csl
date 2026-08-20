@@ -23,3 +23,26 @@ Shopkeeper_Interactable :: class : Component {
     }
 }
 
+Armor_Shop_Interactable :: class : Component {
+    interactable: Interactable @ao_serialize;
+
+    ao_start :: method() {
+        if interactable == null return;
+        interactable.set_listener(this);
+        interactable.set_text("Open Armor Shop");
+        interactable.set_hold_text("Tap");
+        interactable.set_subtitle("Armor");
+        interactable.radius = 4.0;
+        interactable.required_hold_time = 0.0;
+        interactable.prompt_offset = {0, 24};
+    }
+
+    can_use :: method(player: Player) -> bool {
+        return true;
+    }
+
+    on_interact :: method(player: Player) {
+        player.show_armor_shop = true;
+    }
+}
+

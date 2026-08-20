@@ -80,8 +80,8 @@ EVENT_SUN_KEY :: "event_sun";
 EVENT_VOID2_KEY :: "event_void2";
 EVENT_CYBER_ENERGY_KEY :: "event_cyber_energy";
 CODE_PAPERCLIPS_ARE_COOL_KEY :: "code_paperclipsarecool";
-CODE_DINO_GANG_ROAD_KEY :: "code_dinogangroad";
-CODE_REWARD_COINS :: 500;
+CODE_DINO_SQUAD_KEY :: "code_dinosquad";
+CODE_PILEO_EVENTS_KEY :: "code_pileo_events";
 SUN_ARMOR_KEY :: "sun_armor";
 CYBER_ARMOR_KEY :: "cyber_armor";
 
@@ -978,6 +978,38 @@ armor_tier_color :: proc(tier: s64) -> v4 {
     return {1, 1, 1, 1};
 }
 
+armor_purchases_for_tier :: proc(tier: s64) -> s64 {
+    if tier == 1 return 1;
+    if tier == 2 return 3;
+    if tier == 3 return 40;
+    if tier == 4 return 140;
+    if tier == 5 return 210;
+    if tier == 6 return 1210;
+    if tier == 7 return 3210;
+    if tier == 8 return 7210;
+    if tier == 9 return 7211;
+    return 0;
+}
+
+buy_armor_tier_offer :: proc(player: Player, tier: s64, cost: s64) {
+    if player == null return;
+    if player.cyber_armor_active return;
+    if player.armor_tier >= tier && !player.sun_armor_active {
+        player.play_reward_feedback("Owned");
+        return;
+    }
+    if !spend_coins(player, cost) return;
+    player.sun_armor_active = false;
+    Save.set_int(player, SUN_ARMOR_KEY, 0);
+    purchases := armor_purchases_for_tier(tier);
+    Save.set_int(player, ARMOR_PURCHASES_KEY, purchases);
+    Save.set_int(player, ARMOR_TIER_KEY, tier);
+    player.armor_tier = tier;
+    refresh_armor_visual(player);
+    apply_armor_bonus(player, ARMOR_BONUS_HP);
+    player.play_reward_feedback(format_string("% armor", {armor_tier_name(tier)}));
+}
+
 buy_armor_progression :: proc(player: Player) {
     if player == null return;
     if player.cyber_armor_active return;
@@ -1194,6 +1226,7 @@ Player :: class : Player_Base {
     code_status: string;
     show_admin_shop: bool;
     show_pileo_shop: bool;
+    show_armor_shop: bool;
     show_caylus_map: bool;
     caylus_map_dismissed: bool;
     player_element: s64;
@@ -1423,6 +1456,16 @@ Player :: class : Player_Base {
         // Spawn with ammo for the starting gun. Use the same inventory-backed
         // grant path as every other gun so its fire button is immediately usable.
         grant_weapon_with_ammo(this, .ASSAULT_RIFLE, STARTING_BULLETS);
+        if is_pileo_harse(this) {
+            Items.set_capacity(default_inventory, 40);
+            grant_weapon_with_ammo(this, .MISSILE_BARRAGE, 999);
+            grant_weapon_with_ammo(this, .BATTLE_AXE, 999);
+            grant_weapon_with_ammo(this, .FLAMETHROWER, 999);
+            grant_weapon_with_ammo(this, .WATER_BALLOON_RPG, 999);
+            grant_weapon_with_ammo(this, .GATLING_GUN, 999);
+            grant_weapon_with_ammo(this, .ENERGY_PISTOLS, 999);
+            grant_weapon_with_ammo(this, .SUN_SHOOTER_TSUNAMI, 999);
+        }
 
         // Remove retired Warper items from inventories created before the retirement.
         destroy_all_weapon_items(this, .WARPER);
@@ -1760,7 +1803,8 @@ Player :: class : Player_Base {
             show_admin_shop = false;
         }
         if show_pileo_shop && !is_pileo_harse(this) {
-            show_pileo_shop = false;
+        show_pileo_shop = false;
+        show_armor_shop = false;
         }
         if show_caylus_map && !has_caylus_sensor(this) {
             show_caylus_map = false;
@@ -1790,6 +1834,9 @@ Player :: class : Player_Base {
             draw_player_statuses();
             if show_shop {
                 draw_shop(this);
+            }
+            if show_armor_shop {
+                draw_armor_shop(this);
             }
             if show_tutorial {
                 draw_tutorial(this);
