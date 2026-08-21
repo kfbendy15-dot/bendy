@@ -907,12 +907,25 @@ set_weapon_ammo_count :: proc(player: Player, wt: Weapon_Type, desired: s64) {
     }
 
     if current < desired {
-        ammo := Items.create_item_instance(ammo_def, desired - current);
-        will_destroy: bool;
-        if Items.can_move_item_to_inventory(ammo, player.default_inventory, ref will_destroy) {
-            Items.move_item_to_inventory(ammo, player.default_inventory);
-        } else {
-            Items.destroy_item_instance(ammo);
+        config := get_weapon_config(wt);
+        ammo_index := config.ammo_type_index;
+        stack_size: s64 = 480;
+        if ammo_index >= 0 && ammo_index < AMMO_TYPE_COUNT {
+            stack_size = get_ammo_info(ammo_index).stack_size;
+        }
+        remaining := desired - current;
+        while remaining > 0 {
+            chunk := remaining;
+            if chunk > stack_size { chunk = stack_size; }
+            ammo := Items.create_item_instance(ammo_def, chunk);
+            will_destroy: bool;
+            if Items.can_move_item_to_inventory(ammo, player.default_inventory, ref will_destroy) {
+                Items.move_item_to_inventory(ammo, player.default_inventory);
+            } else {
+                Items.destroy_item_instance(ammo);
+                break;
+            }
+            remaining -= chunk;
         }
     }
 }

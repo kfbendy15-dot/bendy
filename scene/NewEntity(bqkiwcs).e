@@ -22,7 +22,7 @@
   "component_type": "Internal_Component",
   "internal_component_type": "Spine_Animator",
   "data": {
-    "skeleton_data_asset": "modular player character_9e9dfa/modular player character.spine",
+    "skeleton_data_asset": "$AO/streamed_character",
     "ordered_skins": [
       "base/crewchsia"
     ],
