@@ -1,4 +1,4 @@
-ADMIN_UNBAN_REFRESH_INTERVAL :: 1.0;
+ADMIN_UNBAN_REFRESH_INTERVAL :: 5.0;
 
 admin_unban_key_has_prefix :: proc(key: string, prefix: string) -> bool {
     if key.count <= prefix.count {
