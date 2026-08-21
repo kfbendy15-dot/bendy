@@ -47,6 +47,16 @@ assign_murder_roles :: proc() {
     murderer_chance := killers.(float) / players.count.(float) * 100.0;
     detective_chance := 1.0 / players.count.(float) * 100.0;
     for p: players { p.murderer_chance_percent = murderer_chance; p.detective_chance_percent = detective_chance; }
+    // Fair random assignment - shuffle so early joiners don't always get killer
+    rng: u64 = rng_root_seed() ^ (get_frame_number() + 1) * 6364136223846793005;
+    i: s64 = players.count - 1;
+    while i > 0 {
+        j := rng_range_int(ref rng, 0, i);
+        tmp := players[i];
+        players[i] = players[j];
+        players[j] = tmp;
+        i -= 1;
+    }
     for i: 0..<killers { players[i].murder_role = .KILLER; }
     players[killers].murder_role = .DETECTIVE;
     for p: players { murder_give_loadout(p); p.play_reward_feedback(format_string("Role: %", {murder_role_name(p.murder_role)})); }
@@ -95,3 +105,36 @@ Murder_Fingerprint_Ability :: class : Ability_Base {
 update_murder_mystery_player :: proc(p: Player, dt: float) { }
 murder_kill_reward :: proc(killer: Player) { if killer != null { killer.murder_kills += 1; } }
 set_murder_role :: proc(target: Player, role: Murder_Role) { if target == null || !is_murder_mystery_active() return; target.murder_role = role; target.play_reward_feedback(format_string("Role: %", {murder_role_name(role)})); }
+
+// Auto-start for public lobbies: when no admin is online and 3+ players are present,
+// the game should not sit idle. This starter ensures Murder Mystery begins automatically.
+Murder_Mystery_Auto_Starter :: class : Component {
+    next_check_at: float;
+    cooldown_until: float;
+    ao_start :: method() { next_check_at = get_time() + 5.0; cooldown_until = 0; }
+    ao_update :: method(dt: float) {
+        if get_time() < next_check_at return;
+        next_check_at = get_time() + 2.0;
+        if is_murder_mystery_active() return;
+        if get_time() < cooldown_until return;
+        count: s64 = 0;
+        for p: component_iterator(Player) { count += 1; }
+        if count < 3 return;
+        // Auto-start when no round is active - public lobby behavior
+        e := Scene.create_entity();
+        e.set_name("Murder_Mystery");
+        e.add_component(Murder_Mystery_Manager);
+        cooldown_until = get_time() + 15.0;
+    }
+}
+
+g_murder_auto_starter_created: bool;
+
+ensure_murder_auto_starter :: proc() {
+    if g_murder_auto_starter_created return;
+    for s: component_iterator(Murder_Mystery_Auto_Starter) { g_murder_auto_starter_created = true; return; }
+    e := Scene.create_entity();
+    e.set_name("Murder_Mystery_Auto_Starter");
+    e.add_component(Murder_Mystery_Auto_Starter);
+    g_murder_auto_starter_created = true;
+}
