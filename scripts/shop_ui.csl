@@ -45,6 +45,18 @@ elemental_shop_name :: proc(event: s64) -> string {
     return "Lightning";
 }
 
+event_map_color :: proc(event: s64) -> v4 {
+    if event == 1 return {1.0, 0.45, 0.05, 1.0}; // Fire
+    if event == 2 return {0.0, 0.9, 0.95, 1.0}; // Water
+    if event == 3 return {0.15, 0.85, 0.2, 1.0}; // Leaf
+    if event == 4 return {1.0, 1.0, 1.0, 1.0}; // Ice
+    if event == 5 return {0.55, 0.1, 0.85, 1.0}; // Void
+    if event == 6 return {1.0, 1.0, 0.55, 1.0}; // Lightning
+    if event == 7 return {0.85, 0.55, 0.05, 1.0}; // Sun
+    if event == 8 return {0.05, 0.15, 0.45, 1.0}; // Cyber
+    return {0.0, 0.0, 0.0, 1.0}; // Void #2
+}
+
 element_icon_for_name :: proc(name: string) -> string {
     if name == "Fire Ray" || name == "Solar Siphoner" || name == "Meteorite" { return "Fire"; }
     if name == "Water Gun" || name == "Water Balloon RPG" || name == "Hydro Cannon" || name == "Bubble Gun" { return "Water"; }
@@ -463,8 +475,10 @@ draw_shop :: proc(player: Player) {
     shop_gun_row_5 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(shop_gun_row_5);
     shop_battle_axe_icon := get_asset(Texture_Asset, get_weapon_config(.BATTLE_AXE).weapon_icon_path);
+    shop_trowel_icon := get_asset(Texture_Asset, get_weapon_config(.SWORD).weapon_icon_path);
     shop_distortion_icon := get_asset(Texture_Asset, get_weapon_config(.DISTORTION).weapon_icon_path);
-    shop_battle_axe_handle = draw_shop_card("shop/battle_axe", "Battle Axe", shop_price(player, BATTLE_AXE_COST), shop_battle_axe_icon, {0.75, 0.55, 0.25, 1}, player_has_weapon(player, .BATTLE_AXE));
+    shop_battle_axe_handle = draw_shop_card("shop/scythe", "Scythe", shop_price(player, SCYTHE_COST), shop_battle_axe_icon, {0.65, 0.65, 0.7, 1}, player_has_weapon(player, .BATTLE_AXE));
+    trowel_handle := draw_shop_card("shop/trowel", "Trowel", shop_price(player, TROWEL_COST), shop_trowel_icon, {0.55, 0.35, 0.2, 1}, player_has_weapon(player, .SWORD));
     shop_distortion_handle = draw_shop_card("shop/distortion", "Distortion", void2_price(DISTORTION_COST), shop_distortion_icon, {0.12, 0.05, 0.35, 1}, player_has_weapon(player, .DISTORTION));
     UIK.panel_end();
 
@@ -519,7 +533,6 @@ draw_shop :: proc(player: Player) {
     dash_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
     inv_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/lock_closed.png");
     dash_handle = draw_shop_card("shop/buy_dash", "Dash", DASH_COST, dash_icon, {0.3, 0.5, 0.9, 1}, player.has_dash);
-    invis_handle = draw_shop_card("shop/buy_invisible", "Invisible", INVISIBLE_COST, inv_icon, {0.6, 0.2, 0.8, 1}, player.has_invisible);
     UIK.panel_end();
     powerup_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(powerup_row_2);
@@ -592,7 +605,10 @@ draw_shop :: proc(player: Player) {
         buy_weapon_offer(player, .MOLOTOV, MOLOTOV_COST, "+Molotov");
     }
     if UIK.clicked(shop_battle_axe_handle) {
-        buy_weapon_offer(player, .BATTLE_AXE, BATTLE_AXE_COST, "+Battle Axe");
+        buy_weapon_offer(player, .BATTLE_AXE, SCYTHE_COST, "+Scythe");
+    }
+    if UIK.clicked(trowel_handle) {
+        buy_weapon_offer(player, .SWORD, TROWEL_COST, "+Trowel");
     }
     if UIK.clicked(shop_distortion_handle) {
         if spend_coins(player, void2_price(DISTORTION_COST)) {
@@ -651,7 +667,7 @@ draw_shop :: proc(player: Player) {
         }
     }
 
-    if UIK.clicked(invis_handle) && !player.has_invisible {
+    if false && UIK.clicked(invis_handle) && !player.has_invisible {
         if spend_coins(player, INVISIBLE_COST) {
             player.has_invisible = true;
             player.powerup_invisible_active = true;
@@ -850,6 +866,7 @@ draw_pileo_shop :: proc(player: Player) {
     glast_handle: Interact_Result;
     sensor_handle: Interact_Result;
     elixir_handle: Interact_Result;
+    emma_handle: Interact_Result;
 
     row_one := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(row_one);
@@ -873,6 +890,7 @@ draw_pileo_shop :: proc(player: Player) {
     UIK.panel_begin(row_four);
     sensor_handle = draw_shop_card("pileo/caylus_sensor", "Caylus Sensor", CAYLUS_SENSOR_COST, get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png"), {0.25, 0.75, 1.0, 1}, has_caylus_sensor(player));
     elixir_handle = draw_shop_card("pileo/kreekcraft_elixir", "Kreekcraft Elixir", KREEKCRAFT_ELIXIR_COST, get_asset(Texture_Asset, get_weapon_config(.FIRE_RAY).weapon_icon_path), {1.0, 0.3, 0.1, 1}, false);
+    emma_handle = draw_shop_card("pileo/emma_ray", "Emma Ray", EMMA_RAY_COST, get_asset(Texture_Asset, get_weapon_config(.ENERGY_RIFLE).weapon_icon_path), {1.0, 0.2, 0.65, 1}, player_has_weapon(player, .ENERGY_RIFLE));
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
@@ -909,6 +927,7 @@ draw_pileo_shop :: proc(player: Player) {
     if UIK.clicked(glast_handle) { buy_weapon_offer(player, .GLAST_SHARD, GLAST_SHARD_COST, "+Glast Shard"); }
     if UIK.clicked(sensor_handle) { buy_youtuber_item_offer(player, g_caylus_sensor_item_def, CAYLUS_SENSOR_COST, "+Caylus Sensor", true); }
     if UIK.clicked(elixir_handle) { buy_youtuber_item_offer(player, g_kreekcraft_elixir_item_def, KREEKCRAFT_ELIXIR_COST, "+Kreekcraft Elixir", false); }
+    if UIK.clicked(emma_handle) { buy_weapon_offer(player, .ENERGY_RIFLE, EMMA_RAY_COST, "+Emma Ray"); }
     if UIK.clicked(pileo_bullets) { buy_ammo_offer(player, 0, BULLETS_PER_BUY, BULLET_COST, format_string("+% Bullets", {BULLETS_PER_BUY})); }
     if UIK.clicked(pileo_heavy) { buy_ammo_offer(player, 1, 10, 20, "+10 Heavy Ammo"); }
     if UIK.clicked(pileo_explosive) { buy_ammo_offer(player, 2, 10, 20, "+10 Shells"); }
@@ -1096,17 +1115,6 @@ admin_spawn_tripmine_test_trigger :: proc(player: Player) {
     }
 }
 
-admin_apply_invisible_test :: proc(player: Player) {
-    if player == null {
-        return;
-    }
-
-    player.has_invisible = true;
-    player.powerup_invisible_active = true;
-    effect := new(Invisible_Effect);
-    player.entity.add_passive_effect(effect);
-}
-
 draw_admin_panel :: proc(player: Player) {
     if !can_access_admin_panel(player) return;
 
@@ -1116,7 +1124,7 @@ draw_admin_panel :: proc(player: Player) {
     shell.gap = 0;
     UIK.panel_begin(shell);
 
-    title_desc := UIK.title_area_desc("Admin");
+    title_desc := UIK.title_area_desc(is_pileo_harse(player) ? "Pileo Admin Powers" : "Admin");
     title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
     exit_handle := UIK.title_area(title_desc);
 
@@ -1312,19 +1320,6 @@ draw_admin_panel :: proc(player: Player) {
     meteor_desc.panel.height = UIK.pixels(52);
     meteor_btn := UIK.button("admin/summon_meteor_boss", "Summon Meteor", meteor_desc);
 
-    fun_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    if is_fun_mode_active() {
-        fun_desc = UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
-    }
-    fun_desc.panel.width  = UIK.flex(1);
-    fun_desc.panel.height = UIK.pixels(52);
-    fun_btn := UIK.button("admin/fun_mode", "Fun Mode", fun_desc);
-
-    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
-    mimicer_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
-    mimicer_desc.panel.width = UIK.flex(1);
-    mimicer_desc.panel.height = UIK.pixels(52);
-    mimicer_btn := UIK.button("admin/become_mimicer", "Become Mimicer", mimicer_desc);
 
     UIK.panel_end();
 
@@ -1421,10 +1416,6 @@ draw_admin_panel :: proc(player: Player) {
     test_tripmine_trigger_desc.panel.width = UIK.flex(1);
     test_tripmine_trigger_desc.panel.height = UIK.pixels(52);
     test_tripmine_trigger_btn := UIK.button("admin/tripmine_trigger", "Trigger Tripmine", test_tripmine_trigger_desc);
-    test_invisible_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    test_invisible_desc.panel.width = UIK.flex(1);
-    test_invisible_desc.panel.height = UIK.pixels(52);
-    test_invisible_btn := UIK.button("admin/powerup_invisible", "Powerup Invisible", test_invisible_desc);
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
@@ -1511,15 +1502,6 @@ draw_admin_panel :: proc(player: Player) {
         player.play_reward_feedback("Meteor incoming!");
     }
 
-    if UIK.clicked(fun_btn) {
-        toggle_fun_mode();
-    }
-
-    if UIK.clicked(mimicer_btn) {
-        grant_mimicer_mode(player);
-        player.show_admin_panel = false;
-    }
-
     if UIK.clicked(inv_btn) {
         set_player_invincible(admin_target, true);
         admin_target.play_reward_feedback("Invincible");
@@ -1570,9 +1552,6 @@ draw_admin_panel :: proc(player: Player) {
     }
     if UIK.clicked(test_tripmine_trigger_btn) {
         admin_spawn_tripmine_test_trigger(admin_target);
-    }
-    if UIK.clicked(test_invisible_btn) {
-        admin_apply_invisible_test(admin_target);
     }
 
 }
