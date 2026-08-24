@@ -1154,6 +1154,7 @@ ao_start :: proc() {
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "RodrigoM25613"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "Fluffpuff"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "fluffpuff"}), "0");
+    ensure_murder_auto_starter();
 }
 
 ao_update :: proc(dt: float) {
