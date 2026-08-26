@@ -42,6 +42,7 @@ elemental_shop_name :: proc(event: s64) -> string {
     if event == 5 return "Void";
     if event == 7 return "Sun";
     if event == 8 return "Cyber Energy";
+    if event == 9 return "TADC";
     return "Lightning";
 }
 
@@ -54,6 +55,7 @@ event_map_color :: proc(event: s64) -> v4 {
     if event == 6 return {1.0, 1.0, 0.55, 1.0}; // Lightning
     if event == 7 return {0.85, 0.55, 0.05, 1.0}; // Sun
     if event == 8 return {0.05, 0.15, 0.45, 1.0}; // Cyber
+    if event == 9 return {0.95, 0.2, 0.65, 1.0}; // TADC
     return {0.0, 0.0, 0.0, 1.0}; // Void #2
 }
 
@@ -393,6 +395,10 @@ draw_shop :: proc(player: Player) {
     detective_chance_handle: Interact_Result;
     mystery_bundle_handle: Interact_Result;
     distortion_featured_handle: Interact_Result;
+    abstraction_handle: Interact_Result;
+    kingers_shotgun_handle: Interact_Result;
+    g_angles_minigun_handle: Interact_Result;
+    jax_sniper_handle: Interact_Result;
     tabs := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(tabs);
     normal_tab := UIK.button("shop/tab_normal", "Shop", UIK.widget_desc_button_auto_default(player.shop_tab_index == 0 ? .BUTTON_BASIC_GREEN : .BUTTON_BASIC_GREY));
@@ -434,6 +440,21 @@ draw_shop :: proc(player: Player) {
     if player.has_vip {
         UIK.text(UIK.text_body(), "VIP: 50% off shop prices");
     }
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+    UIK.text("TADC", UIK.text_title());
+    UIK.text("Character gear and Abstraction", UIK.text_body());
+    tadc_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(tadc_row_1);
+    abstraction_handle = draw_shop_card("shop/abstraction", "Abstraction", shop_price(player, ABSTRACTION_COST), get_asset(Texture_Asset, "$AO/circle.png"), {0.55, 0.1, 0.85, 1}, player.has_abstraction);
+    kingers_shotgun_handle = draw_shop_card("shop/kingers_shotgun", "Kinger's Shotgun", shop_price(player, KINGERS_SHOTGUN_COST), get_asset(Texture_Asset, get_weapon_config(.EXPLOSIVE_SHOTGUN).weapon_icon_path), {0.7, 0.45, 0.2, 1}, player_has_weapon(player, .EXPLOSIVE_SHOTGUN));
+    g_angles_minigun_handle = draw_shop_card("shop/gangles_minigun", "Gangle's Minigun", shop_price(player, GANGLES_MINIGUN_COST), get_asset(Texture_Asset, get_weapon_config(.GATLING_GUN).weapon_icon_path), {0.65, 0.65, 0.75, 1}, player_has_weapon(player, .GATLING_GUN));
+    UIK.panel_end();
+    tadc_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(tadc_row_2);
+    jax_sniper_handle = draw_shop_card("shop/jax_sniper", "Jax's Sniper", shop_price(player, JAX_SNIPER_COST), get_asset(Texture_Asset, get_weapon_config(.SNIPER).weapon_icon_path), {0.8, 0.25, 0.35, 1}, player_has_weapon(player, .SNIPER));
+    UIK.panel_end();
+
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
     UIK.text("Guns", UIK.text_title());
@@ -582,6 +603,11 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(ice_shop_handle) && event == 4 { buy_weapon_offer(player, .ICE_LAUNCHER, 85, "+Ice Launcher"); }
     if UIK.clicked(sun_tsunami_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_TSUNAMI, 120, "+Sun Shooter"); }
     if UIK.clicked(sun_sand_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_SAND, 120, "+Sun Shooter"); }
+
+    if UIK.clicked(abstraction_handle) { buy_abstraction(player); }
+    if UIK.clicked(kingers_shotgun_handle) { buy_weapon_offer(player, .EXPLOSIVE_SHOTGUN, KINGERS_SHOTGUN_COST, "+Kinger's Shotgun"); }
+    if UIK.clicked(g_angles_minigun_handle) { buy_weapon_offer(player, .GATLING_GUN, GANGLES_MINIGUN_COST, "+Gangle's Minigun"); }
+    if UIK.clicked(jax_sniper_handle) { buy_weapon_offer(player, .SNIPER, JAX_SNIPER_COST, "+Jax's Sniper"); }
 
     if UIK.clicked(shop_gun_cutter_handle) && !player_has_weapon(player, .MEGA_BLADE) {
         buy_weapon_offer(player, .MEGA_BLADE, GUN_CUTTER_COST, "+Gun Cutter");
@@ -776,41 +802,45 @@ draw_armor_shop :: proc(player: Player) {
 
     armor_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
     sun_armor_handle: Interact_Result;
+    jester_armor_handle: Interact_Result;
     cyber_armor_handle: Interact_Result;
 
     UIK.text("Featured", UIK.text_title());
-    if g_event_sun || g_event_cyber_energy {
+    if g_event_sun || g_event_tadc || g_event_cyber_energy {
         feat_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
         UIK.panel_begin(feat_row);
         if g_event_sun {
-            sun_armor_handle = draw_shop_card("armor_shop/sun_armor", "Sun Armor", 1000, armor_icon, {1.0, 0.58, 0.08, 1.0}, player.sun_armor_active);
+            sun_armor_handle = draw_shop_card("armor_shop/sun_armor", "Sun Armor", shop_price(player, SUN_ARMOR_COST), armor_icon, {1.0, 0.58, 0.08, 1.0}, player.armor_tier >= 8);
+        }
+        if g_event_tadc {
+            jester_armor_handle = draw_shop_card("armor_shop/jester_armor", "Jester Armor", shop_price(player, JESTER_ARMOR_COST), armor_icon, {1.0, 0.2, 0.65, 1.0}, player.armor_tier >= 10);
         }
         if g_event_cyber_energy {
             cyber_armor_handle = draw_shop_card("armor_shop/cyber_armor", "Cyber Armor", shop_price(player, CYBER_ARMOR_COST), armor_icon, {0.1, 0.85, 1.0, 1}, player.cyber_armor_active);
         }
         UIK.panel_end();
     } else {
-        UIK.text("Sun and Cyber armor unlock when those events start", UIK.text_body());
+        UIK.text("Sun, Jester, and Cyber armor unlock during their events", UIK.text_body());
     }
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
     UIK.text("Armor", UIK.text_title());
     row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(row_1);
-    wood_h := draw_shop_card("armor_shop/wood", "Wood Armor", shop_price(player, 50), armor_icon, {0.55, 0.32, 0.15, 1}, player.armor_tier >= 1);
-    stone_h := draw_shop_card("armor_shop/stone", "Stone Armor", shop_price(player, 100), armor_icon, {0.55, 0.55, 0.58, 1}, player.armor_tier >= 2);
-    iron_h := draw_shop_card("armor_shop/iron", "Iron Armor", shop_price(player, 200), armor_icon, {0.75, 0.82, 0.9, 1}, player.armor_tier >= 3);
+    wood_h := draw_shop_card("armor_shop/wood", "Wood Armor", shop_price(player, WOOD_ARMOR_COST), armor_icon, {0.55, 0.32, 0.15, 1}, player.armor_tier >= 1);
+    stone_h := draw_shop_card("armor_shop/stone", "Stone Armor", shop_price(player, STONE_ARMOR_COST), armor_icon, {0.55, 0.55, 0.58, 1}, player.armor_tier >= 2);
+    iron_h := draw_shop_card("armor_shop/iron", "Iron Armor", shop_price(player, IRON_ARMOR_COST), armor_icon, {0.75, 0.82, 0.9, 1}, player.armor_tier >= 3);
     UIK.panel_end();
     row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(row_2);
-    gold_h := draw_shop_card("armor_shop/gold", "Gold Armor", shop_price(player, 400), armor_icon, {1.0, 0.72, 0.15, 1}, player.armor_tier >= 4);
-    diamond_h := draw_shop_card("armor_shop/diamond", "Diamond Armor", shop_price(player, 800), armor_icon, {0.3, 0.85, 1.0, 1}, player.armor_tier >= 5);
-    emerald_h := draw_shop_card("armor_shop/emerald", "Emerald Armor", shop_price(player, 1600), armor_icon, {0.2, 1.0, 0.45, 1}, player.armor_tier >= 6);
+    gold_h := draw_shop_card("armor_shop/gold", "Gold Armor", shop_price(player, GOLD_ARMOR_COST), armor_icon, {1.0, 0.72, 0.15, 1}, player.armor_tier >= 4);
+    diamond_h := draw_shop_card("armor_shop/diamond", "Diamond Armor", shop_price(player, DIAMOND_ARMOR_COST), armor_icon, {0.3, 0.85, 1.0, 1}, player.armor_tier >= 5);
+    emerald_h := draw_shop_card("armor_shop/emerald", "Emerald Armor", shop_price(player, EMERALD_ARMOR_COST), armor_icon, {0.2, 1.0, 0.45, 1}, player.armor_tier >= 6);
     UIK.panel_end();
     row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(row_3);
-    obsidian_h := draw_shop_card("armor_shop/obsidian", "Obsidian Armor", shop_price(player, 3200), armor_icon, {0.18, 0.12, 0.25, 1}, player.armor_tier >= 7);
-    netherite_h := draw_shop_card("armor_shop/netherite", "Netherite Armor", shop_price(player, 6400), armor_icon, {0.35, 0.4, 0.48, 1}, player.armor_tier >= 8);
+    obsidian_h := draw_shop_card("armor_shop/obsidian", "Obsidian Armor", shop_price(player, OBSIDIAN_ARMOR_COST), armor_icon, {0.18, 0.12, 0.25, 1}, player.armor_tier >= 7);
+    netherite_h := draw_shop_card("armor_shop/netherite", "Netherite Armor", shop_price(player, NETHERITE_ARMOR_COST), armor_icon, {0.35, 0.4, 0.48, 1}, player.armor_tier >= 9);
     UIK.panel_end();
 
     UIK.list_end();
@@ -825,15 +855,16 @@ draw_armor_shop :: proc(player: Player) {
         player.show_armor_shop = false;
     }
     if UIK.clicked(sun_armor_handle) && g_event_sun { buy_sun_armor(player); }
+    if UIK.clicked(jester_armor_handle) && g_event_tadc { buy_armor_tier_offer(player, 10, JESTER_ARMOR_COST); }
     if UIK.clicked(cyber_armor_handle) && g_event_cyber_energy { buy_cyber_armor(player); }
-    if UIK.clicked(wood_h) { buy_armor_tier_offer(player, 1, 50); }
-    if UIK.clicked(stone_h) { buy_armor_tier_offer(player, 2, 100); }
-    if UIK.clicked(iron_h) { buy_armor_tier_offer(player, 3, 200); }
-    if UIK.clicked(gold_h) { buy_armor_tier_offer(player, 4, 400); }
-    if UIK.clicked(diamond_h) { buy_armor_tier_offer(player, 5, 800); }
-    if UIK.clicked(emerald_h) { buy_armor_tier_offer(player, 6, 1600); }
-    if UIK.clicked(obsidian_h) { buy_armor_tier_offer(player, 7, 3200); }
-    if UIK.clicked(netherite_h) { buy_armor_tier_offer(player, 8, 6400); }
+    if UIK.clicked(wood_h) { buy_armor_tier_offer(player, 1, WOOD_ARMOR_COST); }
+    if UIK.clicked(stone_h) { buy_armor_tier_offer(player, 2, STONE_ARMOR_COST); }
+    if UIK.clicked(iron_h) { buy_armor_tier_offer(player, 3, IRON_ARMOR_COST); }
+    if UIK.clicked(gold_h) { buy_armor_tier_offer(player, 4, GOLD_ARMOR_COST); }
+    if UIK.clicked(diamond_h) { buy_armor_tier_offer(player, 5, DIAMOND_ARMOR_COST); }
+    if UIK.clicked(emerald_h) { buy_armor_tier_offer(player, 6, EMERALD_ARMOR_COST); }
+    if UIK.clicked(obsidian_h) { buy_armor_tier_offer(player, 7, OBSIDIAN_ARMOR_COST); }
+    if UIK.clicked(netherite_h) { buy_armor_tier_offer(player, 9, NETHERITE_ARMOR_COST); }
 }
 
 draw_pileo_shop :: proc(player: Player) {
@@ -1269,6 +1300,10 @@ draw_admin_panel :: proc(player: Player) {
     amt750_desc.panel.width = UIK.flex(1);
     amt750_desc.panel.height = UIK.pixels(42);
     amt750_btn := UIK.button("admin/amt_750", "750", amt750_desc);
+    amt1000_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    amt1000_desc.panel.width = UIK.flex(1);
+    amt1000_desc.panel.height = UIK.pixels(42);
+    amt1000_btn := UIK.button("admin/amt_1000", "1,000", amt1000_desc);
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
@@ -1461,6 +1496,9 @@ draw_admin_panel :: proc(player: Player) {
     if UIK.clicked(amt750_btn) {
         player.admin_grant_amount = 750;
     }
+    if UIK.clicked(amt1000_btn) {
+        player.admin_grant_amount = 1000;
+    }
 
     if UIK.clicked(grant_coins_btn) {
         if grant_coins_to_username(admin_target.get_username(), player.admin_grant_amount) {
@@ -1635,6 +1673,9 @@ draw_event_panel :: proc(player: Player) {
     cyber_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
     cyber_desc.panel.width = UIK.flex(1); cyber_desc.panel.height = UIK.pixels(52);
     cyber_btn := UIK.button("events/start_cyber_energy", "Start Cyber Event", cyber_desc);
+    tadc_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+    tadc_desc.panel.width = UIK.flex(1); tadc_desc.panel.height = UIK.pixels(52);
+    tadc_btn := UIK.button("events/start_tadc", "Start TADC Event", tadc_desc);
     stop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     stop_desc.panel.width = UIK.flex(1); stop_desc.panel.height = UIK.pixels(52);
     stop_btn := UIK.button("events/stop", "Stop Event", stop_desc);
@@ -1663,12 +1704,17 @@ draw_event_panel :: proc(player: Player) {
     sun_clicked := UIK.clicked(sun_btn);
     void2_clicked := UIK.clicked(void2_btn);
     cyber_clicked := UIK.clicked(cyber_btn);
+    tadc_clicked := UIK.clicked(tadc_btn);
     if void2_clicked {
         start_void2_event(player);
         player.show_event_panel = false;
     }
     if cyber_clicked {
         start_cyber_energy_event(player);
+        player.show_event_panel = false;
+    }
+    if tadc_clicked {
+        start_tadc_event(player);
         player.show_event_panel = false;
     }
     any_event_clicked := fire_clicked || water_clicked || leaf_clicked || ice_clicked || void_clicked || lightning_clicked || sun_clicked;
@@ -1678,10 +1724,13 @@ draw_event_panel :: proc(player: Player) {
         g_event_sun = sun_clicked;
         g_event_void2 = false;
         g_event_cyber_energy = false;
+        g_event_tadc = false;
         cur_void2 := Save.get_game_int(EVENT_VOID2_KEY, 0);
         if cur_void2 != 0 { Save.increment_game_int(EVENT_VOID2_KEY, -cur_void2); }
         cur_cyber := Save.get_game_int(EVENT_CYBER_ENERGY_KEY, 0);
         if cur_cyber != 0 { Save.increment_game_int(EVENT_CYBER_ENERGY_KEY, -cur_cyber); }
+        cur_tadc := Save.get_game_int(EVENT_TADC_KEY, 0);
+        if cur_tadc != 0 { Save.increment_game_int(EVENT_TADC_KEY, -cur_tadc); }
         if fire_clicked { g_active_element_event = 1; }
         else if water_clicked { g_active_element_event = 2; }
         else if leaf_clicked { g_active_element_event = 3; }

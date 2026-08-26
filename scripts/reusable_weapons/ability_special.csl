@@ -156,8 +156,11 @@ Special_Ability :: class : Ability_Base {
                         p.entity.world_position.y + dir.y * 1.7,
                     };
                     melee_swing_players_in_radius(p, strike_center, 2.0, config.base_damage, 0.35);
-                    // Trowel secondary: place a falling block in front of the player.
-                    spawn_trowel_block(v2{strike_center.x, strike_center.y + 0.8});
+                    // Trowel secondary: the first swing places a block; a later
+                    // swing near that block turns it into fixed gray stone.
+                    if !freeze_trowel_block_near(strike_center, 2.2) {
+                        spawn_trowel_block(v2{strike_center.x, strike_center.y + 0.8});
+                    }
                 }
                 case .AKIMBO_PISTOLS: {
                     weapon_shoot(p, wt);
@@ -270,16 +273,6 @@ Special_Ability :: class : Ability_Base {
                     // Swing damage
                     strike_center := v2{p.entity.world_position.x + dir.x * 1.7, p.entity.world_position.y + dir.y * 1.0};
                     melee_swing_players_in_radius(p, strike_center, 2.2, config.base_damage, 0.3);
-                    for block: component_iterator(Trowel_Block) {
-                        if block.frozen continue;
-                        delta := block.entity.world_position - p.entity.world_position;
-                        if length_squared(delta) <= 9.0 {
-                            block.frozen = true;
-                            block.velocity_y = 0;
-                            frozen_sprite := block.entity.get_component(Sprite_Renderer);
-                            if frozen_sprite != null { frozen_sprite.color = {0.55, 0.55, 0.58, 1.0}; }
-                        }
-                    }
                     // Leap
                     leap_dir := normalize(dir);
                     eff := new(Battle_Axe_Leap_Effect);

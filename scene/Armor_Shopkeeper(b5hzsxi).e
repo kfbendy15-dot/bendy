@@ -56,15 +56,6 @@
   }
 },
 {
-  "cid": 4,
-  "aoid": 2058859143,
-  "component_type": "Internal_Component",
-  "internal_component_type": "Shopkeeper_Interactable",
-  "data": {
-    "interactable": 2059366751
-  }
-},
-{
   "cid": 5,
   "aoid": 2059721836,
   "component_type": "Internal_Component",

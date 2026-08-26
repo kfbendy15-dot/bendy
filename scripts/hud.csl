@@ -47,7 +47,7 @@ draw_settings :: proc(player: Player) {
     UIK.panel_end();
     UIK.end();
 
-    if g_event_elemental || g_event_cyber_energy {
+    if g_event_elemental || g_event_cyber_energy || g_event_tadc {
         UI.push_screen_draw_context();
         defer UI.pop_draw_context();
         event_ts := UI.default_text_settings();
@@ -167,7 +167,6 @@ draw_hud :: proc(player: Player) {
     if UIK.clicked(shop_btn) {
         player.shop_tab_index = 0;
         player.show_shop = true;
-        player.show_codes_panel = false;
     }
     if has_sensor && UIK.clicked(map_btn) {
         player.show_caylus_map = true;
