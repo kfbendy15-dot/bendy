@@ -441,19 +441,21 @@ draw_shop :: proc(player: Player) {
         UIK.text(UIK.text_body(), "VIP: 50% off shop prices");
     }
 
-    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
-    UIK.text("TADC", UIK.text_title());
-    UIK.text("Character gear and Abstraction", UIK.text_body());
-    tadc_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(tadc_row_1);
-    abstraction_handle = draw_shop_card("shop/abstraction", "Abstraction", shop_price(player, ABSTRACTION_COST), get_asset(Texture_Asset, "$AO/circle.png"), {0.55, 0.1, 0.85, 1}, player.has_abstraction);
-    kingers_shotgun_handle = draw_shop_card("shop/kingers_shotgun", "Kinger's Shotgun", shop_price(player, KINGERS_SHOTGUN_COST), get_asset(Texture_Asset, get_weapon_config(.EXPLOSIVE_SHOTGUN).weapon_icon_path), {0.7, 0.45, 0.2, 1}, player_has_weapon(player, .EXPLOSIVE_SHOTGUN));
-    g_angles_minigun_handle = draw_shop_card("shop/gangles_minigun", "Gangle's Minigun", shop_price(player, GANGLES_MINIGUN_COST), get_asset(Texture_Asset, get_weapon_config(.GATLING_GUN).weapon_icon_path), {0.65, 0.65, 0.75, 1}, player_has_weapon(player, .GATLING_GUN));
-    UIK.panel_end();
-    tadc_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(tadc_row_2);
-    jax_sniper_handle = draw_shop_card("shop/jax_sniper", "Jax's Sniper", shop_price(player, JAX_SNIPER_COST), get_asset(Texture_Asset, get_weapon_config(.SNIPER).weapon_icon_path), {0.8, 0.25, 0.35, 1}, player_has_weapon(player, .SNIPER));
-    UIK.panel_end();
+    if g_event_tadc {
+        UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+        UIK.text("TADC", UIK.text_title());
+        UIK.text("Character gear and Abstraction", UIK.text_body());
+        tadc_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+        UIK.panel_begin(tadc_row_1);
+        abstraction_handle = draw_shop_card("shop/abstraction", "Abstraction", shop_price(player, ABSTRACTION_COST), get_asset(Texture_Asset, "$AO/circle.png"), {0.55, 0.1, 0.85, 1}, player.has_abstraction);
+        kingers_shotgun_handle = draw_shop_card("shop/kingers_shotgun", "Kinger's Shotgun", shop_price(player, KINGERS_SHOTGUN_COST), get_asset(Texture_Asset, get_weapon_config(.EXPLOSIVE_SHOTGUN).weapon_icon_path), {0.7, 0.45, 0.2, 1}, player_has_weapon(player, .EXPLOSIVE_SHOTGUN));
+        g_angles_minigun_handle = draw_shop_card("shop/gangles_minigun", "Gangle's Minigun", shop_price(player, GANGLES_MINIGUN_COST), get_asset(Texture_Asset, get_weapon_config(.GATLING_GUN).weapon_icon_path), {0.65, 0.65, 0.75, 1}, player_has_weapon(player, .GATLING_GUN));
+        UIK.panel_end();
+        tadc_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+        UIK.panel_begin(tadc_row_2);
+        jax_sniper_handle = draw_shop_card("shop/jax_sniper", "Jax's Sniper", shop_price(player, JAX_SNIPER_COST), get_asset(Texture_Asset, get_weapon_config(.SNIPER).weapon_icon_path), {0.8, 0.25, 0.35, 1}, player_has_weapon(player, .SNIPER));
+        UIK.panel_end();
+    }
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
@@ -604,10 +606,10 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(sun_tsunami_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_TSUNAMI, 120, "+Sun Shooter"); }
     if UIK.clicked(sun_sand_handle) && event == 7 { buy_weapon_offer(player, .SUN_SHOOTER_SAND, 120, "+Sun Shooter"); }
 
-    if UIK.clicked(abstraction_handle) { buy_abstraction(player); }
-    if UIK.clicked(kingers_shotgun_handle) { buy_weapon_offer(player, .EXPLOSIVE_SHOTGUN, KINGERS_SHOTGUN_COST, "+Kinger's Shotgun"); }
-    if UIK.clicked(g_angles_minigun_handle) { buy_weapon_offer(player, .GATLING_GUN, GANGLES_MINIGUN_COST, "+Gangle's Minigun"); }
-    if UIK.clicked(jax_sniper_handle) { buy_weapon_offer(player, .SNIPER, JAX_SNIPER_COST, "+Jax's Sniper"); }
+    if g_event_tadc && UIK.clicked(abstraction_handle) { buy_abstraction(player); }
+    if g_event_tadc && UIK.clicked(kingers_shotgun_handle) { buy_weapon_offer(player, .EXPLOSIVE_SHOTGUN, KINGERS_SHOTGUN_COST, "+Kinger's Shotgun"); }
+    if g_event_tadc && UIK.clicked(g_angles_minigun_handle) { buy_weapon_offer(player, .GATLING_GUN, GANGLES_MINIGUN_COST, "+Gangle's Minigun"); }
+    if g_event_tadc && UIK.clicked(jax_sniper_handle) { buy_weapon_offer(player, .SNIPER, JAX_SNIPER_COST, "+Jax's Sniper"); }
 
     if UIK.clicked(shop_gun_cutter_handle) && !player_has_weapon(player, .MEGA_BLADE) {
         buy_weapon_offer(player, .MEGA_BLADE, GUN_CUTTER_COST, "+Gun Cutter");
@@ -1155,7 +1157,7 @@ draw_admin_panel :: proc(player: Player) {
     shell.gap = 0;
     UIK.panel_begin(shell);
 
-    title_desc := UIK.title_area_desc(is_pileo_harse(player) ? "Pileo Admin Powers" : "Admin");
+    title_desc := UIK.title_area_desc("Admin Panel");
     title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
     exit_handle := UIK.title_area(title_desc);
 
@@ -1359,15 +1361,6 @@ draw_admin_panel :: proc(player: Player) {
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
-    monster_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(monster_row);
-    monster_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
-    monster_desc.panel.width = UIK.flex(1);
-    monster_desc.panel.height = UIK.pixels(54);
-    backrooms_monster_btn := UIK.button("admin/backrooms_monster", "Become Backrooms Monster", monster_desc);
-    UIK.panel_end();
-
-    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
     UIK.text("Fight Modes", UIK.text_title());
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     fight_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
@@ -1398,13 +1391,6 @@ draw_admin_panel :: proc(player: Player) {
     }
     if UIK.clicked(fight_btn) {
         start_fight_event(player);
-    }
-    if UIK.clicked(backrooms_monster_btn) {
-        if player.backrooms_monster_active {
-            troll_do_unmorph(player);
-        } else {
-            troll_do_backrooms_monster(player);
-        }
     }
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
     UIK.text("Maps", UIK.text_title());
