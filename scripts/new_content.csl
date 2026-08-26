@@ -3,7 +3,44 @@ MEDKIT_COST :: 50000;
 DISTORTION_COST :: 1000;
 FLAMETHROWER_COST :: 45;
 MOLOTOV_COST :: 50;
-BATTLE_AXE_COST :: 75;
+BATTLE_AXE_COST :: 2000;
+TROWEL_COST :: 500;
+SCYTHE_COST :: 2000;
+EMMA_RAY_COST :: 100000;
+
+Trowel_Block :: class : Component {
+    velocity_y: float;
+    frozen: bool;
+
+    ao_start :: method() {
+        velocity_y = 0;
+        sprite := entity.add_component(Sprite_Renderer);
+        sprite.set_texture(get_asset(Texture_Asset, "stone_ground_tile_ce8345.png"));
+        sprite.color = {0.72, 0.45, 0.2, 1.0};
+        entity.set_local_scale({0.45, 0.45});
+        collider := entity.add_component(Box_Collider);
+        collider.size = {0.9, 0.9};
+        collider.is_trigger = false;
+    }
+
+    ao_update :: method(dt: float) {
+        if frozen return;
+        velocity_y -= 18.0 * dt;
+        pos := entity.local_position;
+        pos.y += velocity_y * dt;
+        if pos.y < -18.0 {
+            entity.destroy();
+            return;
+        }
+        entity.set_local_position(pos);
+    }
+}
+
+spawn_trowel_block :: proc(pos: v2) {
+    e := Scene.create_entity();
+    e.set_local_position(pos);
+    e.add_component(Trowel_Block);
+}
 LASER_GUN_COST :: 60;
 
 g_event_void2: bool;

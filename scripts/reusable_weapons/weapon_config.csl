@@ -420,8 +420,8 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.base_damage = 10.0;
             config.weapon_skin = "weapons/katana";
             config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/katana.png";
-            config.item_id = "sword";
-            config.item_name = "Sword";
+            config.item_id = "trowel";
+            config.item_name = "Trowel";
             config.ammo_type_index = -1;
             config.ammo_first_pickup = 0;
             config.shoot_trigger = "melee_AL";
@@ -929,8 +929,8 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.base_damage = 35.0;
             config.weapon_skin = "weapons/katana";
             config.weapon_icon_path = "reusable_weapons/sprites/reusable-weapons/katana.png";
-            config.item_id = "battle_axe";
-            config.item_name = "Battle Axe";
+            config.item_id = "scythe";
+            config.item_name = "Scythe";
             config.ammo_type_index = -1;
             config.ammo_first_pickup = 0;
             config.shoot_trigger = "melee_AL";

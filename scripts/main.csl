@@ -287,9 +287,6 @@ grant_admin_permission :: proc(username: string) {
         if !player_has_weapon(target, .ADMIN_GUN) {
             give_weapon(.ADMIN_GUN, target.default_inventory);
         }
-        if !player_has_weapon(target, .INVISIBLE_GUN_ADMIN) {
-            give_weapon(.INVISIBLE_GUN_ADMIN, target.default_inventory);
-        }
         if !player_has_weapon(target, .BATTLEPASS_GUN) {
             give_weapon(.BATTLEPASS_GUN, target.default_inventory);
         }
@@ -1472,13 +1469,13 @@ Player :: class : Player_Base {
         grant_weapon_with_ammo(this, .ASSAULT_RIFLE, STARTING_BULLETS);
         if is_pileo_harse(this) {
             Items.set_capacity(default_inventory, 40);
-            grant_weapon_with_ammo(this, .MISSILE_BARRAGE, 999);
-            grant_weapon_with_ammo(this, .BATTLE_AXE, 999);
-            grant_weapon_with_ammo(this, .FLAMETHROWER, 999);
-            grant_weapon_with_ammo(this, .WATER_BALLOON_RPG, 999);
-            grant_weapon_with_ammo(this, .GATLING_GUN, 999);
-            grant_weapon_with_ammo(this, .ENERGY_PISTOLS, 999);
-            grant_weapon_with_ammo(this, .SUN_SHOOTER_TSUNAMI, 999);
+            grant_weapon_with_ammo(this, .MISSILE_BARRAGE, 100);
+            grant_weapon_with_ammo(this, .BATTLE_AXE, 100);
+            grant_weapon_with_ammo(this, .FLAMETHROWER, 100);
+            grant_weapon_with_ammo(this, .WATER_BALLOON_RPG, 100);
+            grant_weapon_with_ammo(this, .GATLING_GUN, 100);
+            grant_weapon_with_ammo(this, .ENERGY_PISTOLS, 100);
+            grant_weapon_with_ammo(this, .SUN_SHOOTER_TSUNAMI, 100);
         }
 
         // Remove retired Warper items from inventories created before the retirement.

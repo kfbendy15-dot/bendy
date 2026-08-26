@@ -46,6 +46,20 @@ draw_settings :: proc(player: Player) {
     UIK.panel_end();
     UIK.panel_end();
     UIK.end();
+
+    if g_event_elemental || g_event_cyber_energy {
+        UI.push_screen_draw_context();
+        defer UI.pop_draw_context();
+        event_ts := UI.default_text_settings();
+        event_ts.size = 20;
+        event_ts.color = event_map_color(g_active_element_event);
+        event_ts.do_outline = true;
+        event_ts.outline_thickness = 2;
+        event_ts.outline_color = {0, 0, 0, 1};
+        remaining := max(0.0, g_event_ends_at - get_time());
+        event_rect := UI.get_safe_screen_rect().bottom_right_rect().offset(-12, -48).grow(12, 8, 12, 8);
+        UI.text(event_rect, event_ts, format_string("EVENT: %  |  %s", {elemental_shop_name(g_active_element_event), format_float(remaining, decimals=0)}));
+    }
 }
 
 draw_hud :: proc(player: Player) {
@@ -59,10 +73,6 @@ draw_hud :: proc(player: Player) {
     bar.cross_align = .CENTER;
     UIK.panel_begin(bar);
 
-    codes_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
-    codes_desc.panel.width = UIK.pixels(82);
-    codes_desc.panel.height = UIK.pixels(52);
-    codes_btn := UIK.button("hud/codes_button", "CODES", codes_desc);
 
     // Coin balance
     coin_tex := get_asset(Texture_Asset, "Gold_Coin_Icon_d3f0f3.png");
@@ -125,7 +135,7 @@ draw_hud :: proc(player: Player) {
         admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
         admin_desc.panel.width = UIK.pixels(120);
         admin_desc.panel.height = UIK.pixels(52);
-        admin_btn = UIK.button("hud/admin_button", "ADMIN PANEL", admin_desc);
+        admin_btn = UIK.button("hud/admin_button", is_pileo_harse(player) ? "ADMIN POWERS" : "ADMIN PANEL", admin_desc);
 
         admin_shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
         admin_shop_desc.panel.width = UIK.pixels(120);
@@ -165,14 +175,6 @@ draw_hud :: proc(player: Player) {
     }
     if UIK.clicked(vs_btn) {
         start_vs_battle(player);
-    }
-    if UIK.clicked(codes_btn) {
-        player.show_codes_panel = true;
-        player.show_shop = false;
-        player.show_admin_panel = false;
-        player.show_event_panel = false;
-        player.show_admin_shop = false;
-        player.show_pileo_shop = false;
     }
     if has_admin_button && UIK.clicked(admin_btn) {
         player.show_admin_panel = true;
