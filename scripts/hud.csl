@@ -135,7 +135,7 @@ draw_hud :: proc(player: Player) {
         admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
         admin_desc.panel.width = UIK.pixels(120);
         admin_desc.panel.height = UIK.pixels(52);
-        admin_btn = UIK.button("hud/admin_button", is_pileo_harse(player) ? "ADMIN POWERS" : "ADMIN PANEL", admin_desc);
+        admin_btn = UIK.button("hud/admin_button", "ADMIN PANEL", admin_desc);
 
         admin_shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
         admin_shop_desc.panel.width = UIK.pixels(120);

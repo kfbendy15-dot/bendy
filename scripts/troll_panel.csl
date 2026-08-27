@@ -347,7 +347,7 @@ backrooms_monster_tick :: proc(player: Player, dt: float) {
 }
 
 troll_do_backrooms_monster :: proc(admin: Player) -> bool {
-    if admin == null || !can_access_admin_panel(admin) {
+    if admin == null || !can_access_troll_panel(admin) {
         return false;
     }
     if admin.troll_morph_active {
@@ -640,14 +640,25 @@ draw_troll_panel :: proc(admin: Player) {
     }
     UIK.list_end();
 
-    // Morphs stay near the target controls so the Buzz option is immediately reachable.
+    // Morphs stay near the target controls so the available transformations are immediately reachable.
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
     UIK.text("Morphs", UIK.text_title());
+    morph_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(morph_row);
+    backrooms_desc := UIK.widget_desc_button_auto_default(admin.backrooms_monster_active ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_PURPLE);
+    backrooms_desc.panel.width = UIK.flex(1);
+    backrooms_desc.panel.height = UIK.pixels(54);
+    backrooms_label := admin.backrooms_monster_active ? "Unmorph Backrooms Monster" : "Backrooms Monster";
+    backrooms_btn := UIK.button("troll/morph_backrooms", backrooms_label, backrooms_desc);
     buzz_desc := UIK.widget_desc_button_auto_default(admin.troll_buzz_active ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_PURPLE);
     buzz_desc.panel.width = UIK.flex(1);
     buzz_desc.panel.height = UIK.pixels(54);
     buzz_label := admin.troll_buzz_active ? "Unmorph Buzz Lightyear" : "Buzz Lightyear (500 Coins)";
     buzz_btn := UIK.button("troll/morph_buzz", buzz_label, buzz_desc);
+    UIK.panel_end();
+    if admin.backrooms_monster_active {
+        UIK.text("Touch players to eliminate them.", UIK.text_body());
+    }
     if admin.troll_buzz_active {
         UIK.text("Fly through walls. Shoot lasers. Activate a shield.", UIK.text_body());
     }
@@ -857,6 +868,14 @@ draw_troll_panel :: proc(admin: Player) {
             troll_do_mind_control(admin, real_target, admin.troll_selected_mc_mode, admin.troll_selected_emote_idx);
         } else {
             admin.play_reward_feedback("Select a target");
+        }
+    }
+
+    if UIK.clicked(backrooms_btn) {
+        if admin.backrooms_monster_active {
+            troll_do_unmorph(admin);
+        } else {
+            troll_do_backrooms_monster(admin);
         }
     }
 
