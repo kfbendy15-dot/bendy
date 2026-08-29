@@ -34,7 +34,7 @@ hb_test_drop_target :: proc(player: Player) {
 
     player.weapon_target = null;
     player.ui_test_restore_weapon_target_at = get_time() + 2.0;
-    Save.set_int(player, "ui_test_health_bar_target_restored", 0);
+    player.ui_test_health_bar_target_restored = false;
 } @chat_command @owner_or_editor
 
 vip_test_grant :: proc(player: Player) {
@@ -336,7 +336,7 @@ backrooms_monster_test_touch :: proc(player: Player) {
         return;
     }
 
-    troll_do_backrooms_monster(player);
+    troll_do_backrooms_monster(player, player);
     weapon_target_apply_damage(player.weapon_target, player.weapon_target.max_health + 1000.0, 0);
     invulnerable := player.weapon_target.health == player.weapon_target.max_health;
 
@@ -347,6 +347,6 @@ backrooms_monster_test_touch :: proc(player: Player) {
 
     Save.set_int(player, "ui_test_backrooms_monster_invulnerable", invulnerable ? 1 : 0);
     Save.set_int(player, "ui_test_backrooms_monster_touch_kill", killed ? 1 : 0);
-    troll_do_unmorph(player);
+    troll_do_unmorph(player, player);
 } @chat_command @owner_or_editor
 

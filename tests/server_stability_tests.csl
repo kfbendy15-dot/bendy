@@ -2,7 +2,7 @@ test_health_bar_missing_target_lifecycle :: proc() {
     Test.run_admin_command("hb_test_drop_target");
     Test.wait_frames(120);
 
-    Test.assert_save_int("health target automatically restores after missing-reference window", "ui_test_health_bar_target_restored", 1);
+    Test.assert_component_bool("health target automatically restores after missing-reference window", "", "Player.ui_test_health_bar_target_restored", true);
 }
 
 test_health_bar_multiplayer_profile :: proc() {
