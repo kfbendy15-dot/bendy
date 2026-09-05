@@ -1370,6 +1370,7 @@ Player :: class : Player_Base {
     ui_test_invincible_health_initialized: bool;
     ui_test_invincible_health_last: s64;
     ui_test_restore_weapon_target_at: float;
+    ui_test_health_bar_target_restored: bool;
     battlepass_music_effect_count: s64;
     is_admin_noclip: bool;
     mimicer_form_target_user_id: string;
@@ -1441,9 +1442,12 @@ Player :: class : Player_Base {
     troll_morph_saved_skins: []string;
     troll_morph_saved_user_tag: string;
     troll_morph_saved_show_vip_crown: bool;
+    troll_morph_saved_armor_visible: bool;
     backrooms_monster_active: bool;
     backrooms_monster_entity: Entity;
     troll_buzz_active: bool;
+    troll_caine_active: bool;
+    troll_caine_entity: Entity;
 
     ao_start :: method() {
         banned_seconds := admin_ban_remaining_seconds(get_user_id());
@@ -1713,9 +1717,12 @@ Player :: class : Player_Base {
         troll_morph_saved_anim_tint = {1, 1, 1, 1};
         troll_morph_saved_user_tag = "";
         troll_morph_saved_show_vip_crown = true;
+        troll_morph_saved_armor_visible = true;
         backrooms_monster_active = false;
         backrooms_monster_entity = null;
         troll_buzz_active = false;
+        troll_caine_active = false;
+        troll_caine_entity = null;
         for i: 0..3 { troll_jumpscare_next_allowed[i] = 0; }
         killer_fish_cooldown = 0;
         if is_local() {
@@ -1761,7 +1768,7 @@ Player :: class : Player_Base {
         if ui_test_restore_weapon_target_at > 0 && get_time() >= ui_test_restore_weapon_target_at {
             weapon_target = entity.get_component(Weapon_Target);
             ui_test_restore_weapon_target_at = 0;
-            Save.set_int(this, "ui_test_health_bar_target_restored", #alive(weapon_target) ? 1 : 0);
+            ui_test_health_bar_target_restored = #alive(weapon_target);
         }
 
         // Keep morph cosmetics applied before crown logic.
@@ -1775,19 +1782,30 @@ Player :: class : Player_Base {
             if #alive(vip_crown_entity) {
                 vip_crown_entity.set_local_enabled(false);
             }
-            if backrooms_monster_active && #alive(animator) {
+            if #alive(armor_visual_entity) {
+                armor_visual_entity.destroy();
+                armor_visual_entity = null;
+            }
+            if (backrooms_monster_active || troll_caine_active) && #alive(animator) {
                 tint := animator.get_tint();
                 if tint.w != 0 {
-                    animator.set_tint({1.0, 0.92, 0.35, 0.0});
+                    animator.set_tint({1.0, 1.0, 1.0, 0.0});
                 }
             }
             if backrooms_monster_active {
                 ensure_backrooms_monster_visual(this);
             }
+            if troll_caine_active {
+                ensure_caine_visual(this);
+            }
         } else {
             if #alive(backrooms_monster_entity) {
                 backrooms_monster_entity.destroy();
                 backrooms_monster_entity = null;
+            }
+            if #alive(troll_caine_entity) {
+                troll_caine_entity.destroy();
+                troll_caine_entity = null;
             }
         }
 

@@ -293,12 +293,46 @@ troll_save_morph_original :: proc(player: Player) {
     player.troll_morph_saved_name_color_override = player.name_color_override;
     player.troll_morph_saved_user_tag = player.user_tag;
     player.troll_morph_saved_show_vip_crown = player.show_vip_crown;
+    player.troll_morph_saved_armor_visible = !#alive(player.armor_visual_entity) || player.armor_visual_entity.get_local_enabled();
     if #alive(player.animator) {
         player.troll_morph_saved_anim_tint = player.animator.get_tint();
         player.troll_morph_saved_skins = player.animator.get_skins();
     } else {
         player.troll_morph_saved_anim_tint = {1, 1, 1, 1};
     }
+}
+
+Caine_Morph_Visual :: class : Component {
+    elapsed: float;
+
+    ao_update :: method(dt: float) {
+        elapsed += dt;
+        bob := sin(elapsed * 4.0) * 0.035;
+        pulse := 1.0 + sin(elapsed * 5.0) * 0.018;
+        entity.set_local_position({0, 0.85 + bob});
+        entity.set_local_scale({0.42 * pulse, 0.42 * pulse});
+    }
+}
+
+ensure_caine_visual :: proc(player: Player) {
+    if player == null || !player.troll_caine_active {
+        return;
+    }
+    if #alive(player.troll_caine_entity) {
+        return;
+    }
+
+    e := Scene.create_entity();
+    e.set_name("TADC_Caine_Morph");
+    e.set_parent(player.entity, false);
+    e.set_local_position({0, 0.85});
+    e.set_local_scale({0.42, 0.42});
+    sprite := e.add_component(Sprite_Renderer);
+    sprite.set_texture(get_asset(Texture_Asset, "caine_tadc_morph.png"));
+    sprite.color = {1, 1, 1, 1};
+    sprite.layer = 2;
+    e.add_component(Caine_Morph_Visual);
+    player.troll_caine_entity = e;
 }
 
 ensure_backrooms_monster_visual :: proc(player: Player) {
@@ -346,132 +380,214 @@ backrooms_monster_tick :: proc(player: Player, dt: float) {
     }
 }
 
-troll_do_backrooms_monster :: proc(admin: Player) -> bool {
-    if admin == null || !can_access_troll_panel(admin) {
+troll_do_backrooms_monster :: proc(admin: Player, target: Player) -> bool {
+    if admin == null || target == null || !can_access_troll_panel(admin) {
         return false;
     }
-    if admin.troll_morph_active {
+    if target.troll_morph_active {
         admin.play_reward_feedback("Already transformed");
         return false;
     }
 
-    troll_save_morph_original(admin);
-    admin.troll_morph_active = true;
-    admin.troll_buzz_active = false;
-    admin.backrooms_monster_active = true;
-    admin.set_name_override("Backrooms Monster");
-    admin.do_name_color_override = true;
-    admin.name_color_override = {0.9, 0.15, 0.12, 1.0};
-    admin.user_tag = "";
-    admin.show_vip_crown = false;
-    if #alive(admin.vip_crown_entity) {
-        admin.vip_crown_entity.set_local_enabled(false);
+    troll_save_morph_original(target);
+    target.troll_morph_active = true;
+    target.troll_buzz_active = false;
+    target.troll_caine_active = false;
+    target.backrooms_monster_active = true;
+    target.add_invisibility_reason("troll_morph_hide_player");
+    target.set_name_override("Backrooms Monster");
+    target.do_name_color_override = true;
+    target.name_color_override = {0.9, 0.15, 0.12, 1.0};
+    target.user_tag = "";
+    target.show_vip_crown = false;
+    if #alive(target.vip_crown_entity) {
+        target.vip_crown_entity.set_local_enabled(false);
     }
-    if #alive(admin.animator) {
-        admin.animator.set_tint({1.0, 1.0, 1.0, 0.0});
+    if #alive(target.armor_visual_entity) {
+        target.armor_visual_entity.destroy();
+        target.armor_visual_entity = null;
     }
-    ensure_backrooms_monster_visual(admin);
-    admin.play_reward_feedback("Backrooms Monster: touch to kill");
+    if #alive(target.animator) {
+        target.animator.set_tint({1.0, 1.0, 1.0, 0.0});
+    }
+    ensure_backrooms_monster_visual(target);
+    target.play_reward_feedback("Backrooms Monster: touch to kill");
+    if target != admin {
+        admin.play_reward_feedback(format_string("Morphed % into Backrooms Monster", {target.get_username()}));
+    }
     Save.set_int(admin, "ui_test_backrooms_monster", 1);
+    Save.set_string(admin, "ui_test_troll_morph_target", target.get_username());
     return true;
 }
 
-troll_do_buzz_lightyear :: proc(admin: Player) -> bool {
-    if admin == null || !can_access_troll_panel(admin) return false;
-    if admin.troll_morph_active {
+troll_do_buzz_lightyear :: proc(admin: Player, target: Player) -> bool {
+    if admin == null || target == null || !can_access_troll_panel(admin) return false;
+    if target.troll_morph_active {
         admin.play_reward_feedback("Already transformed");
         return false;
     }
     if !spend_coins(admin, BUZZ_LIGHTYEAR_COST) return false;
 
-    troll_save_morph_original(admin);
-    admin.troll_morph_active = true;
-    admin.troll_buzz_active = true;
-    admin.backrooms_monster_active = false;
-    admin.add_ghost_reason("buzz_lightyear_fly");
-    admin.set_name_override("Buzz Lightyear");
-    admin.do_name_color_override = true;
-    admin.name_color_override = {0.35, 0.85, 1.0, 1.0};
-    admin.user_tag = "";
-    admin.show_vip_crown = false;
-    if #alive(admin.vip_crown_entity) {
-        admin.vip_crown_entity.set_local_enabled(false);
+    troll_save_morph_original(target);
+    target.troll_morph_active = true;
+    target.troll_buzz_active = true;
+    target.troll_caine_active = false;
+    target.backrooms_monster_active = false;
+    target.add_ghost_reason("buzz_lightyear_fly");
+    target.set_name_override("Buzz Lightyear");
+    target.do_name_color_override = true;
+    target.name_color_override = {0.35, 0.85, 1.0, 1.0};
+    target.user_tag = "";
+    target.show_vip_crown = false;
+    if #alive(target.vip_crown_entity) {
+        target.vip_crown_entity.set_local_enabled(false);
     }
-    if #alive(admin.animator) {
-        admin.animator.set_tint({1.0, 1.0, 1.0, 1.0});
-        admin.animator.disable_all_skins();
-        admin.animator.enable_skin("base/crewchsia");
-        admin.animator.enable_skin("body/space_suit");
-        admin.animator.enable_skin("hat/space_helmet_hat");
-        admin.animator.enable_skin("face/facevisor_antennae");
-        admin.animator.refresh_skins();
+    if #alive(target.armor_visual_entity) {
+        target.armor_visual_entity.destroy();
+        target.armor_visual_entity = null;
     }
-    admin.play_reward_feedback("Buzz Lightyear: fly, laser, shield");
+    if #alive(target.animator) {
+        target.animator.set_tint({1.0, 1.0, 1.0, 1.0});
+        target.animator.disable_all_skins();
+        target.animator.enable_skin("base/crewchsia");
+        target.animator.enable_skin("body/space_suit");
+        target.animator.enable_skin("hat/space_helmet_hat");
+        target.animator.enable_skin("face/facevisor_antennae");
+        target.animator.refresh_skins();
+    }
+    target.play_reward_feedback("Buzz Lightyear: fly, laser, shield");
+    if target != admin {
+        admin.play_reward_feedback(format_string("Morphed % into Buzz Lightyear", {target.get_username()}));
+    }
     Save.set_int(admin, "ui_test_buzz_lightyear", 1);
+    Save.set_string(admin, "ui_test_troll_morph_target", target.get_username());
     return true;
 }
 
-troll_do_unmorph :: proc(admin: Player) -> bool {
-    if admin == null return false;
-    if !admin.troll_morph_active {
+troll_do_caine :: proc(admin: Player, target: Player) -> bool {
+    if admin == null || target == null || !can_access_troll_panel(admin) {
+        return false;
+    }
+    if target.troll_morph_active {
+        admin.play_reward_feedback("Already transformed");
+        return false;
+    }
+
+    troll_save_morph_original(target);
+    target.troll_morph_active = true;
+    target.troll_buzz_active = false;
+    target.backrooms_monster_active = false;
+    target.troll_caine_active = true;
+    target.add_invisibility_reason("troll_morph_hide_player");
+    target.set_name_override("Caine");
+    target.do_name_color_override = true;
+    target.name_color_override = {1.0, 0.16, 0.32, 1.0};
+    target.user_tag = "";
+    target.show_vip_crown = false;
+    if #alive(target.vip_crown_entity) {
+        target.vip_crown_entity.set_local_enabled(false);
+    }
+    if #alive(target.armor_visual_entity) {
+        target.armor_visual_entity.destroy();
+        target.armor_visual_entity = null;
+    }
+    if #alive(target.animator) {
+        target.animator.set_tint({1.0, 1.0, 1.0, 0.0});
+    }
+    ensure_caine_visual(target);
+
+    desc := SFX.default_sfx_desc();
+    desc.entity_to_follow = target.entity.id;
+    desc.volume = 0.75;
+    desc.speed_perturb = 0.05;
+    SFX.play(get_asset(SFX_Asset, "$AO/sfx/character_emote_thumbs_up_v2.wav"), desc);
+
+    target.play_reward_feedback("Welcome to the TADC event!");
+    if target != admin {
+        admin.play_reward_feedback(format_string("Morphed % into Caine", {target.get_username()}));
+    }
+    Save.set_int(admin, "ui_test_troll_morph", 1);
+    Save.set_string(admin, "ui_test_troll_morph_name", "Caine");
+    Save.set_string(admin, "ui_test_troll_morph_target", target.get_username());
+    return true;
+}
+
+troll_do_unmorph :: proc(admin: Player, target: Player) -> bool {
+    if admin == null || target == null || !can_access_troll_panel(admin) return false;
+    if !target.troll_morph_active {
         admin.play_reward_feedback("Not morphed");
         return false;
     }
     // Destroy the active monster.
-    if #alive(admin.backrooms_monster_entity) {
-        admin.backrooms_monster_entity.destroy();
-        admin.backrooms_monster_entity = null;
+    if #alive(target.backrooms_monster_entity) {
+        target.backrooms_monster_entity.destroy();
+        target.backrooms_monster_entity = null;
     }
-    if admin.troll_buzz_active {
-        admin.remove_ghost_reason("buzz_lightyear_fly");
-        if admin.entity.has_effect(Buzz_Shield_Effect) {
-            remove_effect(admin.entity, Buzz_Shield_Effect, true);
+    if #alive(target.troll_caine_entity) {
+        target.troll_caine_entity.destroy();
+        target.troll_caine_entity = null;
+    }
+    if target.backrooms_monster_active || target.troll_caine_active {
+        target.remove_invisibility_reason("troll_morph_hide_player");
+    }
+    if target.troll_buzz_active {
+        target.remove_ghost_reason("buzz_lightyear_fly");
+        if target.entity.has_effect(Buzz_Shield_Effect) {
+            remove_effect(target.entity, Buzz_Shield_Effect, true);
         }
     }
-    if admin.troll_morph_saved_valid {
-        admin.set_name_override(admin.troll_morph_saved_name_override);
-        admin.do_name_color_override = admin.troll_morph_saved_do_name_color_override;
-        admin.name_color_override = admin.troll_morph_saved_name_color_override;
-        admin.user_tag = admin.troll_morph_saved_user_tag;
-        Save.set_string(admin, PLAYER_TITLE_SAVE_KEY, admin.troll_morph_saved_user_tag);
-        admin.show_vip_crown = admin.troll_morph_saved_show_vip_crown;
-        if admin.show_vip_crown && admin.has_vip && #alive(admin.vip_crown_entity) {
-            admin.vip_crown_entity.set_local_enabled(true);
-        } else if admin.show_vip_crown && admin.has_vip && !#alive(admin.vip_crown_entity) {
-            ensure_vip_crown_visual(admin);
+    if target.troll_morph_saved_valid {
+        target.set_name_override(target.troll_morph_saved_name_override);
+        target.do_name_color_override = target.troll_morph_saved_do_name_color_override;
+        target.name_color_override = target.troll_morph_saved_name_color_override;
+        target.user_tag = target.troll_morph_saved_user_tag;
+        target.show_vip_crown = target.troll_morph_saved_show_vip_crown;
+        if target.show_vip_crown && target.has_vip && #alive(target.vip_crown_entity) {
+            target.vip_crown_entity.set_local_enabled(true);
+        } else if target.show_vip_crown && target.has_vip && !#alive(target.vip_crown_entity) {
+            ensure_vip_crown_visual(target);
         }
-        if #alive(admin.animator) {
-            admin.animator.set_tint(admin.troll_morph_saved_anim_tint);
-            admin.animator.disable_all_skins();
-            for skin: admin.troll_morph_saved_skins {
+        if target.troll_morph_saved_armor_visible && target.armor_tier > 0 {
+            refresh_armor_visual(target);
+        }
+        if #alive(target.animator) {
+            target.animator.set_tint(target.troll_morph_saved_anim_tint);
+            target.animator.disable_all_skins();
+            for skin: target.troll_morph_saved_skins {
                 if skin != "" {
-                    admin.animator.enable_skin(skin);
+                    target.animator.enable_skin(skin);
                 }
             }
-            admin.animator.refresh_skins();
+            target.animator.refresh_skins();
         }
-        admin.troll_morph_saved_valid = false;
+        target.troll_morph_saved_valid = false;
     } else {
-        admin.set_name_override("");
-        admin.user_tag = "";
-        if admin.is_admin_user {
-            admin.do_name_color_override = true;
-            admin.name_color_override = {1.0, 0.84, 0.18, 1.0};
-            if #alive(admin.animator) {
-                admin.animator.set_tint({1, 1, 1, 1});
+        target.set_name_override("");
+        target.user_tag = "";
+        if target.is_admin_user {
+            target.do_name_color_override = true;
+            target.name_color_override = {1.0, 0.84, 0.18, 1.0};
+            if #alive(target.animator) {
+                target.animator.set_tint({1, 1, 1, 1});
             }
         } else {
-            admin.do_name_color_override = false;
+            target.do_name_color_override = false;
         }
     }
-    admin.troll_morph_active = false;
-    admin.troll_buzz_active = false;
-    admin.backrooms_monster_active = false;
-    admin.play_reward_feedback("Unmorphed");
+    target.troll_morph_active = false;
+    target.troll_buzz_active = false;
+    target.backrooms_monster_active = false;
+    target.troll_caine_active = false;
+    target.play_reward_feedback("Unmorphed");
+    if target != admin {
+        admin.play_reward_feedback(format_string("Unmorphed %", {target.get_username()}));
+    }
     Save.set_int(admin, "ui_test_troll_morph", 0);
     Save.set_string(admin, "ui_test_troll_morph_name", "");
     Save.set_int(admin, "ui_test_backrooms_monster", 0);
     Save.set_int(admin, "ui_test_buzz_lightyear", 0);
+    Save.set_int(admin, "ui_test_caine", 0);
+    Save.set_string(admin, "ui_test_troll_morph_target", target.get_username());
     return true;
 }
 
@@ -514,11 +630,14 @@ draw_troll_status_overlays :: proc(viewer: Player) {
             if player.troll_buzz_active {
                 ts.color = {0.35, 0.85, 1.0, 1};
                 UI.text(rect, ts, "BUZZ LIGHTYEAR");
+            } else if player.troll_caine_active {
+                ts.color = {1.0, 0.2, 0.4, 1};
+                UI.text(rect, ts, "CAINE • TADC");
             } else {
                 UI.text(rect, ts, "BACKROOMS MONSTER");
             }
         }
-        if is_morphed && (player.backrooms_monster_active || player.troll_buzz_active) && (is_frozen || is_controlled) {
+        if is_morphed && (player.backrooms_monster_active || player.troll_buzz_active || player.troll_caine_active) && (is_frozen || is_controlled) {
             mrect := rect.offset(0, -18);
             mts := UI.default_text_settings();
             mts.size = 12;
@@ -640,27 +759,42 @@ draw_troll_panel :: proc(admin: Player) {
     }
     UIK.list_end();
 
-    // Morphs stay near the target controls so the available transformations are immediately reachable.
+    selected_morph_target := find_online_player_by_username(admin.troll_target_username);
+
+    // Morphs stay near the target controls so the selected player can be transformed immediately.
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
-    UIK.text("Morphs", UIK.text_title());
+    UIK.text("Morph Selected Player", UIK.text_title());
     morph_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(morph_row);
-    backrooms_desc := UIK.widget_desc_button_auto_default(admin.backrooms_monster_active ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_PURPLE);
+    backrooms_active := selected_morph_target != null && selected_morph_target.backrooms_monster_active;
+    buzz_active := selected_morph_target != null && selected_morph_target.troll_buzz_active;
+    caine_active := selected_morph_target != null && selected_morph_target.troll_caine_active;
+    backrooms_desc := UIK.widget_desc_button_auto_default(backrooms_active ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_PURPLE);
     backrooms_desc.panel.width = UIK.flex(1);
     backrooms_desc.panel.height = UIK.pixels(54);
-    backrooms_label := admin.backrooms_monster_active ? "Unmorph Backrooms Monster" : "Backrooms Monster";
+    backrooms_label := backrooms_active ? "Unmorph Backrooms Monster" : "Backrooms Monster";
     backrooms_btn := UIK.button("troll/morph_backrooms", backrooms_label, backrooms_desc);
-    buzz_desc := UIK.widget_desc_button_auto_default(admin.troll_buzz_active ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_PURPLE);
+    buzz_desc := UIK.widget_desc_button_auto_default(buzz_active ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_PURPLE);
     buzz_desc.panel.width = UIK.flex(1);
     buzz_desc.panel.height = UIK.pixels(54);
-    buzz_label := admin.troll_buzz_active ? "Unmorph Buzz Lightyear" : "Buzz Lightyear (500 Coins)";
+    buzz_label := buzz_active ? "Unmorph Buzz Lightyear" : "Buzz Lightyear (500 Coins)";
     buzz_btn := UIK.button("troll/morph_buzz", buzz_label, buzz_desc);
     UIK.panel_end();
-    if admin.backrooms_monster_active {
+
+    caine_desc := UIK.widget_desc_button_auto_default(caine_active ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_RED);
+    caine_desc.panel.width = UIK.flex(1);
+    caine_desc.panel.height = UIK.pixels(58);
+    caine_label := caine_active ? "Unmorph Caine" : "Caine • TADC Event";
+    caine_btn := UIK.button("troll/morph_caine", caine_label, caine_desc);
+
+    if backrooms_active {
         UIK.text("Touch players to eliminate them.", UIK.text_body());
     }
-    if admin.troll_buzz_active {
+    if buzz_active {
         UIK.text("Fly through walls. Shoot lasers. Activate a shield.", UIK.text_body());
+    }
+    if caine_active {
+        UIK.text("The TADC ringmaster morph is active on the selected player.", UIK.text_body());
     }
 
     // Jumpscares
@@ -872,18 +1006,32 @@ draw_troll_panel :: proc(admin: Player) {
     }
 
     if UIK.clicked(backrooms_btn) {
-        if admin.backrooms_monster_active {
-            troll_do_unmorph(admin);
+        if real_target == null {
+            admin.play_reward_feedback("Select a target");
+        } else if real_target.backrooms_monster_active {
+            troll_do_unmorph(admin, real_target);
         } else {
-            troll_do_backrooms_monster(admin);
+            troll_do_backrooms_monster(admin, real_target);
         }
     }
 
     if UIK.clicked(buzz_btn) {
-        if admin.troll_buzz_active {
-            troll_do_unmorph(admin);
+        if real_target == null {
+            admin.play_reward_feedback("Select a target");
+        } else if real_target.troll_buzz_active {
+            troll_do_unmorph(admin, real_target);
         } else {
-            troll_do_buzz_lightyear(admin);
+            troll_do_buzz_lightyear(admin, real_target);
+        }
+    }
+
+    if UIK.clicked(caine_btn) {
+        if real_target == null {
+            admin.play_reward_feedback("Select a target");
+        } else if real_target.troll_caine_active {
+            troll_do_unmorph(admin, real_target);
+        } else {
+            troll_do_caine(admin, real_target);
         }
     }
 
