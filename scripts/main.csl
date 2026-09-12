@@ -42,7 +42,7 @@ BUZZ_LIGHTYEAR_COST :: 500;
 COINS_SAVE_KEY    :: "coins";
 COINS_SAVE_VERSION_KEY :: "coins_save_version";
 COINS_SAVE_VERSION :: 1;
-SPECIAL_BALANCE_RESET_KEY :: "special_balance_reset_v2";
+SPECIAL_BALANCE_RESET_KEY :: "special_balance_reset_v4";
 PARKOUR_REWARD_KEY :: "parkour_reward_claimed";
 PAPERCLIP_UNLOCKED_KEY :: "paperclip_unlocked";
 PLAYER_TITLE_SAVE_KEY :: "player_title";
@@ -50,8 +50,8 @@ ADMIN_USERNAME    :: "Ilikepaperclips";
 ADMIN_USERNAME_TWO :: "DragonBreathDude";
 ADMIN_USERNAME_THREE :: "PileoHarse";
 ADMIN_USERNAME_FOUR :: "Iilikepaperclips";
-PILEO_GRANT_AMOUNT :: 99999999;
-PILEO_GRANT_SAVE_KEY :: "pileo_99m_granted";
+PILEO_GRANT_AMOUNT :: 10000000;
+PILEO_GRANT_SAVE_KEY :: "pileo_10m_granted";
 TEMP_ADMIN_EXPIRY_EPOCH :: 1785610800; // deprecated - kept for compat
 TEMP_ADMIN_ONE :: "RodrigoM25613";
 TEMP_ADMIN_TWO :: "Fluffpuff";
@@ -486,7 +486,7 @@ reset_special_balance_once :: proc(player: Player) {
     if player == null || Save.get_int(player, SPECIAL_BALANCE_RESET_KEY, 0) != 0 { return; }
     lower := to_lower(player.get_username());
     desired: s64 = -1;
-    if lower == "pileoharse" { desired = 999997; }
+    if lower == "pileoharse" { desired = 10000000; }
     if lower == "ilikepaperclips" || lower == "iilikepaperclips" { desired = 1077; }
     if desired < 0 { return; }
 
@@ -1238,7 +1238,6 @@ ao_start :: proc() {
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "RodrigoM25613"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "Fluffpuff"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "fluffpuff"}), "0");
-    ensure_murder_auto_starter();
 }
 
 ao_update :: proc(dt: float) {
@@ -1424,15 +1423,12 @@ Player :: class : Player_Base {
     murder_kills: s64;
     murder_round_active: bool;
     murder_permadead: bool;
+    katana_deflect_until: float;
 
     foltyn_frenzy_active: bool;
     steak_health_active: bool;
     foltyn_frenzy_speed: float;
     permanent_speed_multiplier: s64;
-
-    // Leaderboard tracking: top of map boards
-    leaderboard_total_kills: s64;
-    leaderboard_time_played: float;
 
     // Troll panel (admin only)
     show_troll_panel: bool;
@@ -1516,9 +1512,6 @@ Player :: class : Player_Base {
                             reward *= 2;
                         }
                         award_coins(attacker, reward);
-                        // Track for Most Kills leaderboard (pushed every 30s by manager)
-                        attacker.leaderboard_total_kills += 1;
-                        Save.set_int(attacker, "total_kills", attacker.leaderboard_total_kills);
                         if attacker.is_local() {
                             sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
                             desc := SFX.default_sfx_desc();
@@ -1662,9 +1655,6 @@ Player :: class : Player_Base {
         cyber_armor_active = stored_cyber_armor || armor_tier == 11;
         if cyber_armor_active { armor_tier = 11; }
         refresh_armor_visual(this);
-        // Leaderboard persistence: restore kills and time played
-        leaderboard_total_kills = Save.get_int(this, "total_kills", 0);
-        leaderboard_time_played = Save.get_int(this, "total_time_played", 0).(float);
         desired_armor_bonus := armor_bonus_health_for_tier(armor_tier);
         if armor_bonus_health < desired_armor_bonus {
             apply_armor_bonus(this, desired_armor_bonus - armor_bonus_health);
@@ -1919,7 +1909,6 @@ Player :: class : Player_Base {
         }
 
         update_role_mode_player(this, dt);
-        update_murder_mystery_player(this, dt);
         troll_tick(this, dt);
         backrooms_monster_tick(this, dt);
 

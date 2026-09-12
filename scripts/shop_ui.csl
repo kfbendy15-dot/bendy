@@ -500,7 +500,7 @@ draw_shop :: proc(player: Player) {
     shop_trowel_icon := get_asset(Texture_Asset, get_weapon_config(.SWORD).weapon_icon_path);
     shop_distortion_icon := get_asset(Texture_Asset, get_weapon_config(.DISTORTION).weapon_icon_path);
     shop_battle_axe_handle = draw_shop_card("shop/scythe", "Scythe", shop_price(player, SCYTHE_COST), shop_battle_axe_icon, {0.65, 0.65, 0.7, 1}, player_has_weapon(player, .BATTLE_AXE));
-    trowel_handle := draw_shop_card("shop/trowel", "Trowel", shop_price(player, TROWEL_COST), shop_trowel_icon, {0.55, 0.35, 0.2, 1}, player_has_weapon(player, .SWORD));
+    trowel_handle := draw_shop_card("shop/katana", "Katana", shop_price(player, TROWEL_COST), shop_trowel_icon, {0.55, 0.35, 0.2, 1}, player_has_weapon(player, .SWORD));
     shop_distortion_handle = draw_shop_card("shop/distortion", "Distortion", void2_price(DISTORTION_COST), shop_distortion_icon, {0.12, 0.05, 0.35, 1}, player_has_weapon(player, .DISTORTION));
     UIK.panel_end();
 
@@ -635,7 +635,7 @@ draw_shop :: proc(player: Player) {
         buy_weapon_offer(player, .BATTLE_AXE, SCYTHE_COST, "+Scythe");
     }
     if UIK.clicked(trowel_handle) {
-        buy_weapon_offer(player, .SWORD, TROWEL_COST, "+Trowel");
+        buy_weapon_offer(player, .SWORD, TROWEL_COST, "+Katana");
     }
     if UIK.clicked(shop_distortion_handle) {
         if spend_coins(player, void2_price(DISTORTION_COST)) {
@@ -1395,7 +1395,7 @@ draw_admin_panel :: proc(player: Player) {
 
     if UIK.clicked(minigames_btn) {
         player.show_admin_panel = false;
-        player.show_minigames = true;
+        player.show_minigames = false;
     }
 
     if UIK.clicked(summon_btn) {
