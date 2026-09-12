@@ -683,8 +683,13 @@ equip_weapon_item_if_present :: proc(player: Player, wt: Weapon_Type) {
                     if Items.can_swap_items(player.default_inventory, player.default_inventory, i, selected_slot) {
                         Items.swap_items(player.default_inventory, player.default_inventory, i, selected_slot);
                     }
+                } else {
+                    // If the requested weapon is already in an empty slot,
+                    // select that slot instead of trying to equip the empty
+                    // previous selection.
+                    selected_slot = i;
                 }
-            }
+                }
             player.handle_equipped_item_changing(selected_slot);
             return;
         }
@@ -1220,6 +1225,16 @@ ao_start :: proc() {
     g_event_void2 = Save.get_game_int(EVENT_VOID2_KEY, 0) > 0;
     g_event_cyber_energy = Save.get_game_int(EVENT_CYBER_ENERGY_KEY, 0) > 0;
     g_event_tadc = Save.get_game_int(EVENT_TADC_KEY, 0) > 0;
+    g_event_birthday = Save.get_game_int(BIRTHDAY_EVENT_KEY, 0) > 0;
+    if g_event_birthday {
+        g_event_elemental = false;
+        g_event_ice = false;
+        g_event_sun = false;
+        g_event_void2 = false;
+        g_event_cyber_energy = false;
+        g_event_tadc = false;
+        g_active_element_event = 0;
+    }
     if g_event_tadc {
         g_active_element_event = 9;
     } else if g_event_cyber_energy {
@@ -1227,7 +1242,7 @@ ao_start :: proc() {
         g_active_element_event = 8;
     } else if g_event_void2 { g_event_elemental = true; g_active_element_event = 5; }
     else { g_active_element_event = g_event_sun ? 7 : (g_event_ice ? 4 : 0); }
-    g_event_ends_at = 0;
+    g_event_ends_at = g_event_birthday ? get_time() + BIRTHDAY_EVENT_DURATION : 0;
     // Ensure URBOIBREYLUND never retains admin permission in shared save
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "URBOIBREYLUND"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "urboibreylund"}), "0");
@@ -1242,8 +1257,11 @@ ao_start :: proc() {
 
 ao_update :: proc(dt: float) {
     admin_chat_poll();
-    if (g_event_elemental || g_event_cyber_energy || g_event_tadc) && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
+    if (g_event_elemental || g_event_cyber_energy || g_event_tadc || g_event_birthday) && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
         stop_active_event();
+    }
+    if g_event_birthday {
+        ensure_birthday_event_manager();
     }
     check_fight_winner();
 }
@@ -1255,8 +1273,15 @@ stop_active_event :: proc() {
     g_event_void2 = false;
     g_event_cyber_energy = false;
     g_event_tadc = false;
+    g_event_birthday = false;
     g_active_element_event = 0;
     g_event_ends_at = 0;
+    set_birthday_save_state(false);
+    for manager: component_iterator(Birthday_Event_Manager) {
+        manager.active = false;
+        manager.ends_at = 0;
+    }
+    birthday_cleanup_all_players();
     cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
     if cur_elem != 0 { Save.increment_game_int(EVENT_ELEMENTAL_KEY, -cur_elem); }
     cur_ice := Save.get_game_int(EVENT_ICE_KEY, 0);
@@ -1344,6 +1369,7 @@ Player :: class : Player_Base {
     shield_active: bool;
     has_paperclip: bool;
     paperclip_active: bool;
+    birthday_loadout_active: bool;
     armor_bonus_health: float;
     armor_tier: s64;
     sun_armor_active: bool;
@@ -1545,6 +1571,7 @@ Player :: class : Player_Base {
         has_claimed_parkour_reward = Save.get_int(this, PARKOUR_REWARD_KEY, 0) != 0;
         has_paperclip = Save.get_int(this, PAPERCLIP_UNLOCKED_KEY, 0) != 0;
         paperclip_active = false;
+        birthday_loadout_active = false;
         has_vip = Save.get_int(this, VIP_SAVE_KEY, 0) != 0;
         show_vip_crown = Save.get_int(this, VIP_CROWN_VISIBLE_SAVE_KEY, 1) != 0;
         show_admin_tag = Save.get_int(this, ADMIN_TAG_VISIBLE_SAVE_KEY, 1) != 0;
@@ -1762,6 +1789,12 @@ Player :: class : Player_Base {
     }
 
     ao_update :: method(dt: float) {
+        if g_event_birthday {
+            birthday_grant_loadout(this);
+        } else if birthday_loadout_active {
+            birthday_remove_loadout(this);
+        }
+
         // Continuously enforce URBOIBREYLUND has no admin
         if to_lower(get_username()) == "urboibreylund" && is_admin_user {
             is_admin_user = false;
@@ -2027,6 +2060,9 @@ Player :: class : Player_Base {
                 // Distortion's black hole is a weapon secondary, so it gets its own
                 // button whenever Distortion is equipped.
                 ability_slot := 1;
+                if g_event_birthday {
+                    if ability_slot <= 5 { draw_ability_button(this, Birthday_Cake_Trap_Ability, ability_slot); ability_slot += 1; }
+                }
                 if equipped_weapon_type == .DISTORTION {
                     if ability_slot <= 5 { draw_ability_button(this, Distortion_Ability, ability_slot); ability_slot += 1; }
                 }
@@ -2064,6 +2100,12 @@ Player :: class : Player_Base {
             options.scroll_item_selection = true;
             options.keyboard_item_selection = true;
             options.enable_use_from_hotbar = true;
+            if g_event_birthday {
+                birthday_slot := birthday_weapon_slot(this);
+                if birthday_slot >= 0 {
+                    options.force_select_hotbar_index = birthday_slot.(s32);
+                }
+            }
             hotbar := Items.draw_hotbar(this, default_inventory, options);
             if #alive(hotbar.selected_item) {
                 defn := hotbar.selected_item.get_definition();
@@ -2159,3 +2201,4 @@ g_active_element_event: s64;
 g_event_ends_at: float;
 g_event_cyber_energy: bool;
 g_event_tadc: bool;
+g_event_birthday: bool;

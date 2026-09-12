@@ -59,6 +59,7 @@ Weapon_Type :: enum {
     GLAST_SHARD;
     ENERGY_PISTOLS;
     ENERGY_RIFLE;
+    BIRTHDAY_PAPERCLIP_GUN;
 }
 
 Fire_Mode :: enum {

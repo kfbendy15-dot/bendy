@@ -1036,6 +1036,23 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
             config.shoot_trigger = "shoot_2h_weapon";
             config.use_ik_var = "use_2h_ik";
         }
+        case .BIRTHDAY_PAPERCLIP_GUN: {
+            config.fire_mode = .SPECIAL;
+            config.hand_type = .CUSTOM;
+            config.fire_rate = 2.25;
+            config.base_damage = 0.0;
+            config.ammo_per_shot = 0;
+            config.weapon_skin = "";
+            config.weapon_icon_path = "gun_1fdeee.png";
+            config.item_id = "birthday_paperclip_gun";
+            config.item_name = "Paperclip Gun";
+            config.ammo_type_index = -1;
+            config.ammo_first_pickup = 0;
+            config.shoot_trigger = "";
+            config.shoot_start_trigger = "";
+            config.shoot_end_trigger = "";
+            config.use_ik_var = "";
+        }
     }
 
     return config;

@@ -1,0 +1,399 @@
+// BIRTHDAY! is a short, server-wide chaos event.  The event loadout is
+// inventory-backed so it uses the same reusable-weapons equip, prediction,
+// and reconciliation path as every other gun in the game.
+BIRTHDAY_EVENT_DURATION :: 600.0;
+BIRTHDAY_EVENT_KEY :: "event_birthday";
+BIRTHDAY_BLAST_DAMAGE :: 100000.0;
+BIRTHDAY_BLAST_COOLDOWN :: 2.25;
+BIRTHDAY_CAKE_TRAP_COOLDOWN :: 4.0;
+
+// This tiny synced controller makes the event late-join safe.  The game-save
+// flag restores a session after a restart; the controller is the live state
+// replicated to clients that join after the event has already started.
+Birthday_Event_Manager :: class : Component {
+    active: bool @ao_serialize;
+    ends_at: float @ao_serialize;
+
+    ao_update :: method(dt: float) {
+        if active {
+            g_event_birthday = true;
+            g_event_ends_at = ends_at;
+        } else if g_event_birthday {
+            g_event_birthday = false;
+            g_event_ends_at = 0;
+        }
+    }
+}
+
+get_birthday_event_manager :: proc() -> Birthday_Event_Manager {
+    for manager: component_iterator(Birthday_Event_Manager) {
+        return manager;
+    }
+    return null;
+}
+
+ensure_birthday_event_manager :: proc() -> Birthday_Event_Manager {
+    manager := get_birthday_event_manager();
+    if manager != null {
+        return manager;
+    }
+
+    event_entity := Scene.create_entity();
+    event_entity.set_name("Birthday_Event");
+    manager = event_entity.add_component(Birthday_Event_Manager);
+    manager.active = true;
+    manager.ends_at = g_event_ends_at;
+    return manager;
+}
+
+Birthday_Gun_Visual :: class : Component {
+    owner_user_id: string;
+
+    ao_start :: method() {
+        entity.set_local_scale({1.15, 1.15});
+        sprite := entity.add_component(Sprite_Renderer);
+        sprite.set_texture(get_asset(Texture_Asset, "gun_1fdeee.png"));
+        sprite.layer = 1;
+    }
+
+    ao_update :: method(dt: float) {
+        owner := find_online_player_by_user_id(owner_user_id);
+        if owner == null || !g_event_birthday || owner.is_dead {
+            entity.destroy();
+            return;
+        }
+
+        dir := owner.last_aim_direction;
+        if length(dir) < 0.1 {
+            dir = v2{1, 0};
+        }
+        dir = normalize(dir);
+        entity.set_world_position(owner.entity.world_position + v2{dir.x * 0.7, dir.y * 0.7 + 0.1});
+        entity.set_local_rotation(to_degrees(atan2(dir.y, dir.x)));
+    }
+}
+
+birthday_ensure_gun_visual :: proc(player: Player) {
+    if player == null || player.is_dead {
+        return;
+    }
+
+    owner_user_id := player.get_user_id();
+    for visual: component_iterator(Birthday_Gun_Visual) {
+        if visual.owner_user_id == owner_user_id {
+            return;
+        }
+    }
+
+    visual_entity := Scene.create_entity();
+    visual := visual_entity.add_component(Birthday_Gun_Visual);
+    visual.owner_user_id = owner_user_id;
+}
+
+birthday_destroy_gun_visuals :: proc() {
+    visuals: [..]Birthday_Gun_Visual;
+    for visual: component_iterator(Birthday_Gun_Visual) {
+        visuals.append(visual);
+    }
+    for visual: visuals {
+        if #alive(visual.entity) {
+            visual.entity.destroy();
+        }
+    }
+}
+
+birthday_grant_loadout :: proc(player: Player) {
+    if player == null || !g_event_birthday {
+        return;
+    }
+
+    if !player_has_weapon(player, .BIRTHDAY_PAPERCLIP_GUN) {
+        give_weapon(.BIRTHDAY_PAPERCLIP_GUN, player.default_inventory);
+    }
+
+    if !player.birthday_loadout_active || player.equipped_weapon_type != .BIRTHDAY_PAPERCLIP_GUN {
+        birthday_equip_weapon(player);
+        player.birthday_loadout_active = true;
+        player.play_reward_feedback("Paperclip Gun ready!");
+    }
+
+    birthday_ensure_gun_visual(player);
+}
+
+birthday_equip_weapon :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    wanted := get_weapon_item_def(.BIRTHDAY_PAPERCLIP_GUN);
+    if wanted == null {
+        return;
+    }
+    for i: 0..player.default_inventory.capacity - 1 {
+        item := player.default_inventory.get_item(i);
+        if item != null && item.get_definition() == wanted {
+            if player.equipped_weapon_type != .NONE && player.equipped_weapon_type != .BIRTHDAY_PAPERCLIP_GUN {
+                weapon_unequip(player, player.equipped_weapon_type);
+            }
+            player.last_selected_index = i;
+            player.equipped_weapon_type = .BIRTHDAY_PAPERCLIP_GUN;
+            player.equipped_item_def = item.get_definition();
+            weapon_equip(player, .BIRTHDAY_PAPERCLIP_GUN);
+            player.handle_equipped_item_changing(i);
+            return;
+        }
+    }
+}
+
+birthday_weapon_slot :: proc(player: Player) -> s64 {
+    if player == null {
+        return -1;
+    }
+    wanted := get_weapon_item_def(.BIRTHDAY_PAPERCLIP_GUN);
+    if wanted == null {
+        return -1;
+    }
+    for i: 0..player.default_inventory.capacity - 1 {
+        item := player.default_inventory.get_item(i);
+        if item != null && item.get_definition() == wanted {
+            return i;
+        }
+    }
+    return -1;
+}
+
+birthday_remove_loadout :: proc(player: Player) {
+    if player == null {
+        return;
+    }
+
+    if player.equipped_weapon_type == .BIRTHDAY_PAPERCLIP_GUN {
+        weapon_unequip(player, .BIRTHDAY_PAPERCLIP_GUN);
+        player.equipped_weapon_type = .NONE;
+        player.equipped_item_def = null;
+        player.handle_equipped_item_changing(-1);
+    }
+    destroy_all_weapon_items(player, .BIRTHDAY_PAPERCLIP_GUN);
+    player.birthday_loadout_active = false;
+}
+
+birthday_cleanup_all_players :: proc() {
+    for player: component_iterator(Player) {
+        birthday_remove_loadout(player);
+    }
+    birthday_destroy_gun_visuals();
+    birthday_destroy_cake_traps();
+}
+
+set_birthday_save_state :: proc(active: bool) {
+    current := Save.get_game_int(BIRTHDAY_EVENT_KEY, 0);
+    if active {
+        if current == 0 {
+            Save.increment_game_int(BIRTHDAY_EVENT_KEY, 1);
+        }
+    } else if current != 0 {
+        Save.increment_game_int(BIRTHDAY_EVENT_KEY, -current);
+    }
+}
+
+start_birthday_event :: proc(admin: Player) {
+    if admin == null || !can_access_admin_panel(admin) {
+        return;
+    }
+
+    stop_active_event();
+    g_event_birthday = true;
+    g_event_ends_at = get_time() + BIRTHDAY_EVENT_DURATION;
+    set_birthday_save_state(true);
+    manager := ensure_birthday_event_manager();
+    manager.active = true;
+    manager.ends_at = g_event_ends_at;
+
+    for player: component_iterator(Player) {
+        birthday_grant_loadout(player);
+    }
+
+    admin.play_reward_feedback("BIRTHDAY! Paperclips incoming!");
+    Chat.server_send_message("BIRTHDAY! Paperclip guns are live. Cake traps are armed.");
+}
+
+is_birthday_event_active :: proc() -> bool {
+    return g_event_birthday;
+}
+
+birthday_paperclip_attack :: proc(player: Player) {
+    if player == null || !g_event_birthday || player.is_dead {
+        return;
+    }
+
+    weapon_shoot(player, .BIRTHDAY_PAPERCLIP_GUN);
+
+    // One shot reaches the whole playable map.  The shooter survives so the
+    // event remains playable, while every other living player gets the normal
+    // predicted death flow and kill attribution.
+    blast_pos := player.entity.world_position;
+    for other: component_iterator(Player) {
+        if other == null || other.entity.id == player.entity.id || other.is_dead {
+            continue;
+        }
+        if other.weapon_target != null {
+            weapon_target_apply_damage(other.weapon_target, BIRTHDAY_BLAST_DAMAGE, player.entity.id);
+        }
+    }
+
+    blast_positions: [6]v2;
+    blast_positions[0] = blast_pos;
+    blast_positions[1] = {0, 0};
+    blast_positions[2] = {WORLD_BOUNDS_MIN_X, WORLD_BOUNDS_MIN_Y};
+    blast_positions[3] = {WORLD_BOUNDS_MAX_X, WORLD_BOUNDS_MIN_Y};
+    blast_positions[4] = {WORLD_BOUNDS_MAX_X, WORLD_BOUNDS_MAX_Y};
+    blast_positions[5] = {WORLD_BOUNDS_MIN_X, WORLD_BOUNDS_MAX_Y};
+    for pos: blast_positions {
+        spawn_simple_vfx("fluff_explosion_7d9bf8/fluff_explosion.spine", "default", pos, {2.2, 2.2}, "explosion_with_fluff", 1.25);
+    }
+    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/cannon_explode.wav");
+    desc := SFX.default_sfx_desc();
+    desc.set_position(blast_pos);
+    desc.volume = 1.0;
+    desc.range_multiplier = 5.0;
+    SFX.play(sfx, desc);
+    player.play_reward_feedback("MAP BLAST!");
+}
+
+Birthday_Cake_Trap :: class : Component {
+    owner_user_id: string;
+    lifetime: float;
+    arm_delay: float;
+    trigger_radius: float;
+    max_lifetime: float;
+    armed: bool;
+    detonated: bool;
+
+    ao_update :: method(dt: float) {
+        lifetime += dt;
+        if !armed && lifetime >= arm_delay {
+            armed = true;
+        }
+        if lifetime >= max_lifetime {
+            entity.destroy();
+            return;
+        }
+        if !g_event_birthday {
+            entity.destroy();
+            return;
+        }
+        if !armed || detonated {
+            return;
+        }
+
+        for victim: component_iterator(Player) {
+            if victim == null || victim.is_dead || victim.get_user_id() == owner_user_id {
+                continue;
+            }
+            if length_squared(victim.entity.world_position - entity.world_position) > trigger_radius * trigger_radius {
+                continue;
+            }
+            if is_player_invisible_for_targeting(victim) {
+                continue;
+            }
+
+            detonated = true;
+            birthday_cake_trap_explode(entity.world_position, owner_user_id);
+            entity.destroy();
+            return;
+        }
+    }
+}
+
+birthday_cake_trap_explode :: proc(pos: v2, owner_user_id: string) {
+    owner := find_online_player_by_user_id(owner_user_id);
+    owner_entity_id: u64 = 0;
+    if owner != null {
+        owner_entity_id = owner.entity.id;
+    }
+
+    for victim: component_iterator(Player) {
+        if victim == null || victim.is_dead || victim.get_user_id() == owner_user_id {
+            continue;
+        }
+        if victim.weapon_target != null {
+            weapon_target_apply_damage(victim.weapon_target, BIRTHDAY_BLAST_DAMAGE, owner_entity_id);
+        }
+        apply_weapon_stun(victim, 2.0, format_string("birthday_cake/%", {owner_user_id}));
+    }
+
+    burst := spawn_simple_vfx("fluff_explosion_7d9bf8/fluff_explosion.spine", "default", pos, {1.5, 1.5}, "explosion_with_fluff", 1.0);
+    if burst == null {
+        spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/nuke_vfx/ExplosionNuke.spine", "default", pos, {1.5, 1.5}, "Nuke_explosion", 0.8);
+    }
+    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/dynamite_explode.wav");
+    desc := SFX.default_sfx_desc();
+    desc.set_position(pos);
+    desc.volume = 0.9;
+    desc.range_multiplier = 3.0;
+    SFX.play(sfx, desc);
+}
+
+spawn_birthday_cake_trap :: proc(pos: v2, owner: Player) {
+    if owner == null || !g_event_birthday {
+        return;
+    }
+
+    trap_entity := Scene.create_entity();
+    trap_entity.set_local_position(pos);
+    trap_entity.set_local_scale({1.35, 1.35});
+    sprite := trap_entity.add_component(Sprite_Renderer);
+    sprite.set_texture(get_asset(Texture_Asset, "birthday_cake_4edf3b.png"));
+    sprite.layer = -5;
+
+    trap := trap_entity.add_component(Birthday_Cake_Trap);
+    trap.owner_user_id = owner.get_user_id();
+    trap.arm_delay = 0.45;
+    trap.trigger_radius = 1.55;
+    trap.max_lifetime = 30.0;
+}
+
+birthday_destroy_cake_traps :: proc() {
+    traps: [..]Birthday_Cake_Trap;
+    for trap: component_iterator(Birthday_Cake_Trap) {
+        traps.append(trap);
+    }
+    for trap: traps {
+        if #alive(trap.entity) {
+            trap.entity.destroy();
+        }
+    }
+}
+
+Birthday_Cake_Trap_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Cake Trap";
+        icon = get_asset(Texture_Asset, "birthday_cake_4edf3b.png");
+        is_aimed_ability = true;
+    }
+
+    can_use :: method() -> bool {
+        p := player.(Player);
+        return g_event_birthday && !p.is_dead;
+    }
+
+    on_update :: method(params: ref Ability_Update_Params) {
+        activation := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
+        if !activation.activate || current_cooldown > 0 {
+            return;
+        }
+
+        p := player.(Player);
+        dir := activation.direction;
+        if length(dir) < 0.1 {
+            dir = p.last_aim_direction;
+        }
+        if length(dir) < 0.1 {
+            dir = v2{1, 0};
+        }
+        dir = normalize(dir);
+        spawn_birthday_cake_trap(p.entity.world_position + dir * 1.25, p);
+        current_cooldown = BIRTHDAY_CAKE_TRAP_COOLDOWN;
+        p.play_reward_feedback("Cake trap armed!");
+    }
+}

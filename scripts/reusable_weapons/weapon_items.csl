@@ -72,6 +72,7 @@ weapon_type_to_index :: proc(wt: Weapon_Type) -> s64 {
         case .GLAST_SHARD:            return 56;
         case .ENERGY_PISTOLS:         return 57;
         case .ENERGY_RIFLE:           return 58;
+        case .BIRTHDAY_PAPERCLIP_GUN: return 59;
     }
     return -1;
 }
@@ -230,6 +231,7 @@ init_weapon_items :: proc() {
     register_weapon(.GLAST_SHARD);
     register_weapon(.ENERGY_PISTOLS);
     register_weapon(.ENERGY_RIFLE);
+    register_weapon(.BIRTHDAY_PAPERCLIP_GUN);
 
     // Load fire sounds for each weapon
     load_fire_sounds();
@@ -395,6 +397,7 @@ load_fire_sounds :: proc() {
     load_single_sound(.GLAST_SHARD, "reusable_weapons/sounds/reusable-weapons/katana_slash.wav");
     load_sound_range(.ENERGY_PISTOLS, "reusable_weapons/sounds/reusable-weapons/pistol_shoot_0", 4);
     load_single_sound(.ENERGY_RIFLE, "reusable_weapons/sounds/reusable-weapons/ray_gun_shoot.wav");
+    load_single_sound(.BIRTHDAY_PAPERCLIP_GUN, "reusable_weapons/sounds/reusable-weapons/cannon_explode.wav");
 }
 
 load_sound_range :: proc(wt: Weapon_Type, prefix: string, count: s64) {
@@ -479,7 +482,8 @@ get_weapon_type_for_item :: proc(item_def: Item_Definition) -> Weapon_Type {
                  case 55: return .TECHY_SNIPER;
                  case 56: return .GLAST_SHARD;
                  case 57: return .ENERGY_PISTOLS;
-                 case 58: return .ENERGY_RIFLE;
+                case 58: return .ENERGY_RIFLE;
+                case 59: return .BIRTHDAY_PAPERCLIP_GUN;
             }
         }
         i += 1;
