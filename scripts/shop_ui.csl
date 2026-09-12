@@ -1306,21 +1306,6 @@ draw_admin_panel :: proc(player: Player) {
     island_btn := UIK.button("admin/map_island", "Island Map", island_desc);
     UIK.panel_end();
 
-    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
-    UIK.text("Testing", UIK.text_title());
-    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
-    test_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(test_row);
-    test_tripmine_spawn_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    test_tripmine_spawn_desc.panel.width = UIK.flex(1);
-    test_tripmine_spawn_desc.panel.height = UIK.pixels(52);
-    test_tripmine_spawn_btn := UIK.button("admin/tripmine_spawn", "Spawn Tripmine", test_tripmine_spawn_desc);
-    test_tripmine_trigger_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    test_tripmine_trigger_desc.panel.width = UIK.flex(1);
-    test_tripmine_trigger_desc.panel.height = UIK.pixels(52);
-    test_tripmine_trigger_btn := UIK.button("admin/tripmine_trigger", "Trigger Tripmine", test_tripmine_trigger_desc);
-    UIK.panel_end();
-
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     close_desc.panel.width = UIK.flex(1);
@@ -1453,13 +1438,6 @@ draw_admin_panel :: proc(player: Player) {
         return_player_from_backrooms(admin_target);
     }
 
-    if UIK.clicked(test_tripmine_spawn_btn) {
-        admin_spawn_tripmine_test_only(admin_target);
-    }
-    if UIK.clicked(test_tripmine_trigger_btn) {
-        admin_spawn_tripmine_test_trigger(admin_target);
-    }
-
 }
 
 draw_event_panel :: proc(player: Player) {
@@ -1544,6 +1522,9 @@ draw_event_panel :: proc(player: Player) {
     tadc_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
     tadc_desc.panel.width = UIK.flex(1); tadc_desc.panel.height = UIK.pixels(52);
     tadc_btn := UIK.button("events/start_tadc", "Start TADC Event", tadc_desc);
+    birthday_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
+    birthday_desc.panel.width = UIK.flex(1); birthday_desc.panel.height = UIK.pixels(60);
+    birthday_btn := UIK.button("events/start_birthday", "BIRTHDAY!", birthday_desc);
     stop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     stop_desc.panel.width = UIK.flex(1); stop_desc.panel.height = UIK.pixels(52);
     stop_btn := UIK.button("events/stop", "Stop Event", stop_desc);
@@ -1573,6 +1554,14 @@ draw_event_panel :: proc(player: Player) {
     void2_clicked := UIK.clicked(void2_btn);
     cyber_clicked := UIK.clicked(cyber_btn);
     tadc_clicked := UIK.clicked(tadc_btn);
+    birthday_clicked := UIK.clicked(birthday_btn);
+    if birthday_clicked {
+        start_birthday_event(player);
+        player.show_event_panel = false;
+        player.show_admin_panel = false;
+        player.show_admin_shop = false;
+        player.show_shop = false;
+    }
     if void2_clicked {
         start_void2_event(player);
         player.show_event_panel = false;

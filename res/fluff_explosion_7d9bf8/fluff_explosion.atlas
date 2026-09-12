@@ -1,0 +1,610 @@
+7d9bf8c42f829cee.png
+	size: 1840, 1840
+	filter: Linear, Linear
+effects/fluff bunches/fluff bunches
+	bounds: 2, 1341, 170, 169
+	offsets: 1, 1, 172, 171
+effects/fluff bunches/fluff bunches 2
+	bounds: 175, 1197, 172, 143
+	offsets: 1, 1, 174, 145
+effects/fluff bunches/fluff bunches 3
+	bounds: 213, 393, 120, 84
+	offsets: 1, 1, 122, 86
+effects/fluff bunches/fluff bunches 4
+	bounds: 83, 136, 72, 69
+	offsets: 1, 1, 74, 71
+effects/fluff bunches/fluff bunches 5
+	bounds: 156, 317, 116, 74
+	offsets: 1, 1, 118, 76
+explosion/Explosion_HitSpark_1_Inside
+	bounds: 271, 77, 48, 49
+	offsets: 1, 1, 50, 51
+	rotate: 90
+explosion/Explosion_HitSpark_1_Outside
+	bounds: 98, 457, 108, 113
+	offsets: 1, 1, 110, 115
+	rotate: 90
+explosion/Explosion_HitSpark_2_Inside
+	bounds: 174, 1342, 161, 168
+	offsets: 1, 1, 163, 170
+explosion/Explosion_HitSpark_2_Outside
+	bounds: 2, 1512, 307, 323
+	offsets: 1, 1, 309, 324
+explosion/Explosion_HitSpark_3_Big_1
+	bounds: 2, 489, 94, 147
+	offsets: 1, 1, 96, 149
+explosion/Explosion_HitSpark_3_Big_2
+	bounds: 2, 638, 138, 132
+	offsets: 1, 1, 140, 134
+explosion/Explosion_HitSpark_3_Big_3
+	bounds: 122, 772, 145, 133
+	offsets: 1, 1, 147, 135
+explosion/Explosion_HitSpark_3_Big_4
+	bounds: 2, 842, 118, 177
+	offsets: 1, 1, 120, 179
+explosion/Explosion_HitSpark_3_Big_5
+	bounds: 142, 567, 168, 103
+	offsets: 1, 1, 170, 105
+explosion/Explosion_HitSpark_3_Big_6
+	bounds: 142, 672, 177, 98
+	offsets: 1, 1, 179, 100
+explosion/Explosion_HitSpark_3_Small_1
+	bounds: 339, 1608, 10, 88
+	offsets: 1, 0, 12, 88
+explosion/Explosion_HitSpark_3_Small_2
+	bounds: 327, 1034, 23, 72
+	offsets: 1, 1, 25, 74
+explosion/Explosion_HitSpark_3_Small_3
+	bounds: 321, 649, 103, 27
+	offsets: 1, 1, 105, 29
+	rotate: 90
+explosion/Explosion_HitSpark_3_Small_4
+	bounds: 337, 1342, 87, 15
+	offsets: 1, 1, 89, 17
+	rotate: 90
+explosion/Explosion_HitSpark_3_Small_5
+	bounds: 2, 270, 52, 124
+	offsets: 1, 1, 54, 125
+	rotate: 90
+explosion/Explosion_HitSpark_3_Small_6
+	bounds: 128, 257, 58, 109
+	offsets: 1, 1, 60, 111
+	rotate: 90
+explosion/Explosion_HitSpark_3_Small_7
+	bounds: 324, 226, 72, 23
+	offsets: 1, 1, 74, 25
+	rotate: 90
+explosion/Explosion_HitSpark_3_Small_8
+	bounds: 239, 226, 76, 83
+	offsets: 1, 1, 78, 84
+	rotate: 90
+explosion/Explosion_Smoke_1_1
+	bounds: 311, 1707, 39, 57
+	offsets: 1, 1, 41, 59
+explosion/Explosion_Smoke_1_2
+	bounds: 207, 150, 74, 78
+	offsets: 1, 1, 76, 80
+	rotate: 90
+explosion/Explosion_Smoke_1_3
+	bounds: 329, 47, 21, 15
+	offsets: 1, 1, 23, 17
+explosion/Explosion_Smoke_1_4
+	bounds: 157, 131, 74, 45
+	offsets: 1, 1, 76, 47
+	rotate: 90
+explosion/Explosion_Smoke_2_1
+	bounds: 2, 1021, 171, 127
+	offsets: 1, 1, 173, 129
+	rotate: 90
+explosion/Explosion_Smoke_2_10
+	bounds: 180, 22, 14, 12
+	offsets: 1, 1, 16, 14
+explosion/Explosion_Smoke_2_11
+	bounds: 175, 1047, 150, 148
+	offsets: 2, 1, 153, 150
+explosion/Explosion_Smoke_2_12
+	bounds: 287, 772, 59, 178
+	offsets: 1, 1, 61, 181
+explosion/Explosion_Smoke_2_13
+	bounds: 62, 60, 27, 40
+	offsets: 1, 1, 29, 42
+	rotate: 90
+explosion/Explosion_Smoke_2_2
+	bounds: 280, 20, 11, 13
+	offsets: 1, 1, 13, 15
+	rotate: 90
+explosion/Explosion_Smoke_2_3
+	bounds: 134, 58, 30, 25
+	offsets: 1, 1, 32, 27
+explosion/Explosion_Smoke_2_4
+	bounds: 131, 907, 138, 154
+	offsets: 1, 1, 140, 155
+	rotate: 90
+explosion/Explosion_Smoke_2_5
+	bounds: 83, 207, 48, 122
+	offsets: 1, 1, 50, 124
+	rotate: 90
+explosion/Explosion_Smoke_2_6
+	bounds: 19, 22, 11, 15
+	offsets: 1, 1, 13, 17
+	rotate: 90
+explosion/Explosion_Smoke_2_7
+	bounds: 2, 1194, 145, 171
+	offsets: 1, 1, 147, 172
+	rotate: 90
+explosion/Explosion_Smoke_2_8
+	bounds: 227, 11, 9, 9
+	offsets: 1, 1, 11, 11
+explosion/Explosion_Smoke_2_9
+	bounds: 166, 63, 23, 20
+	offsets: 1, 1, 25, 22
+explosion/Explosion_Smoke_3_1
+	bounds: 2, 324, 66, 108
+	offsets: 1, 1, 70, 110
+	rotate: 90
+explosion/Explosion_Smoke_3_10
+	bounds: 289, 33, 12, 18
+	offsets: 1, 1, 14, 20
+	rotate: 90
+explosion/Explosion_Smoke_3_11
+	bounds: 309, 33, 12, 17
+	offsets: 1, 1, 14, 19
+	rotate: 90
+explosion/Explosion_Smoke_3_12
+	bounds: 343, 18, 9, 14
+	offsets: 1, 1, 11, 16
+explosion/Explosion_Smoke_3_13
+	bounds: 312, 567, 35, 80
+	offsets: 1, 2, 37, 82
+explosion/Explosion_Smoke_3_14
+	bounds: 84, 2, 6, 7
+	offsets: 1, 1, 8, 9
+	rotate: 90
+explosion/Explosion_Smoke_3_15
+	bounds: 2, 191, 77, 79
+	offsets: 1, 1, 79, 81
+	rotate: 90
+explosion/Explosion_Smoke_3_16
+	bounds: 339, 1698, 6, 7
+	offsets: 1, 1, 8, 9
+	rotate: 90
+explosion/Explosion_Smoke_3_17
+	bounds: 2, 86, 58, 43
+	offsets: 1, 1, 60, 45
+explosion/Explosion_Smoke_3_18
+	bounds: 247, 30, 15, 13
+	offsets: 1, 1, 17, 15
+explosion/Explosion_Smoke_3_19
+	bounds: 338, 8, 9, 8
+	offsets: 1, 1, 11, 10
+explosion/Explosion_Smoke_3_2
+	bounds: 328, 21, 13, 11
+	offsets: 1, 1, 15, 13
+explosion/Explosion_Smoke_3_20
+	bounds: 311, 1812, 26, 14
+	offsets: 1, 1, 28, 16
+explosion/Explosion_Smoke_3_21
+	bounds: 141, 29, 15, 12
+	offsets: 1, 1, 17, 14
+explosion/Explosion_Smoke_3_22
+	bounds: 274, 304, 87, 77
+	offsets: 1, 1, 89, 79
+	rotate: 90
+explosion/Explosion_Smoke_3_23
+	bounds: 125, 19, 12, 10
+	offsets: 1, 1, 14, 12
+explosion/Explosion_Smoke_3_24
+	bounds: 163, 35, 15, 15
+	offsets: 1, 1, 17, 17
+explosion/Explosion_Smoke_3_25
+	bounds: 213, 479, 86, 118
+	offsets: 1, 1, 88, 119
+	rotate: 90
+explosion/Explosion_Smoke_3_26
+	bounds: 264, 29, 13, 14
+	offsets: 1, 1, 15, 16
+	rotate: 90
+explosion/Explosion_Smoke_3_27
+	bounds: 325, 12, 7, 11
+	offsets: 1, 1, 9, 13
+	rotate: 90
+explosion/Explosion_Smoke_3_28
+	bounds: 33, 60, 21, 24
+	offsets: 1, 1, 23, 26
+explosion/Explosion_Smoke_3_3
+	bounds: 2, 131, 66, 58
+	offsets: 1, 1, 68, 60
+explosion/Explosion_Smoke_3_4
+	bounds: 205, 47, 22, 14
+	offsets: 1, 1, 24, 16
+explosion/Explosion_Smoke_3_5
+	bounds: 61, 3, 8, 7
+	offsets: 1, 1, 10, 9
+explosion/Explosion_Smoke_3_6
+	bounds: 70, 89, 64, 45
+	offsets: 1, 1, 66, 47
+explosion/Explosion_Smoke_3_7
+	bounds: 79, 45, 13, 20
+	offsets: 1, 1, 15, 22
+	rotate: 90
+explosion/Explosion_Smoke_3_8
+	bounds: 143, 43, 13, 18
+	offsets: 1, 1, 15, 19
+	rotate: 90
+explosion/Explosion_Smoke_3_9
+	bounds: 287, 127, 50, 97
+	offsets: 1, 1, 52, 99
+explosion/Explosion_Sparks_1_1
+	bounds: 153, 11, 10, 9
+	offsets: 1, 1, 12, 11
+explosion/Explosion_Sparks_1_10
+	bounds: 212, 4, 9, 7
+	offsets: 1, 1, 11, 9
+explosion/Explosion_Sparks_1_11
+	bounds: 348, 772, 5, 16
+	offsets: 1, 1, 7, 17
+explosion/Explosion_Sparks_1_12
+	bounds: 230, 69, 38, 26
+	offsets: 1, 1, 40, 28
+explosion/Explosion_Sparks_1_2
+	bounds: 300, 10, 10, 8
+	offsets: 1, 1, 12, 10
+explosion/Explosion_Sparks_1_3
+	bounds: 346, 1188, 7, 6
+	offsets: 1, 1, 9, 8
+explosion/Explosion_Sparks_1_4
+	bounds: 101, 43, 18, 14
+	offsets: 1, 1, 20, 16
+explosion/Explosion_Sparks_1_5
+	bounds: 348, 754, 5, 16
+	offsets: 1, 1, 7, 18
+explosion/Explosion_Sparks_1_6
+	bounds: 337, 1492, 14, 17
+	offsets: 1, 1, 16, 19
+explosion/Explosion_Sparks_1_7
+	bounds: 126, 2, 6, 6
+	offsets: 1, 1, 8, 8
+explosion/Explosion_Sparks_1_8
+	bounds: 14, 11, 11, 9
+	offsets: 1, 1, 13, 11
+explosion/Explosion_Sparks_1_9
+	bounds: 118, 2, 6, 6
+	offsets: 1, 1, 8, 8
+explosion/Explosion_Sparks_2_Big_1
+	bounds: 311, 1766, 32, 44
+	offsets: 1, 1, 34, 46
+explosion/Explosion_Sparks_2_Big_10
+	bounds: 2, 35, 37, 6
+	offsets: 1, 1, 39, 8
+explosion/Explosion_Sparks_2_Big_11
+	bounds: 327, 1108, 78, 19
+	offsets: 1, 1, 80, 21
+	rotate: 90
+explosion/Explosion_Sparks_2_Big_12
+	bounds: 136, 85, 44, 54
+	offsets: 1, 1, 46, 56
+	rotate: 90
+explosion/Explosion_Sparks_2_Big_13
+	bounds: 311, 1512, 40, 94
+	offsets: 1, 1, 42, 95
+explosion/Explosion_Sparks_2_Big_14
+	bounds: 339, 127, 13, 81
+	offsets: 1, 0, 15, 81
+explosion/Explosion_Sparks_2_Big_2
+	bounds: 204, 97, 65, 51
+	offsets: 1, 1, 67, 53
+explosion/Explosion_Sparks_2_Big_3
+	bounds: 311, 1608, 97, 26
+	offsets: 1, 1, 99, 28
+	rotate: 90
+explosion/Explosion_Sparks_2_Big_4
+	bounds: 192, 63, 32, 36
+	offsets: 1, 1, 34, 38
+	rotate: 90
+explosion/Explosion_Sparks_2_Big_5
+	bounds: 287, 952, 48, 80
+	offsets: 1, 1, 50, 82
+explosion/Explosion_Sparks_2_Big_6
+	bounds: 337, 985, 12, 32
+	offsets: 1, 1, 14, 33
+explosion/Explosion_Sparks_2_Big_7
+	bounds: 335, 393, 15, 90
+	offsets: 1, 1, 17, 92
+explosion/Explosion_Sparks_2_Big_8
+	bounds: 2, 392, 63, 152
+	offsets: 1, 1, 65, 153
+	rotate: 90
+explosion/Explosion_Sparks_2_Big_9
+	bounds: 41, 36, 29, 7
+	offsets: 1, 1, 31, 9
+explosion/Explosion_Sparks_2_Small_1
+	bounds: 72, 35, 25, 8
+	offsets: 1, 1, 27, 10
+explosion/Explosion_Sparks_2_Small_10
+	bounds: 120, 31, 10, 19
+	offsets: 1, 1, 12, 21
+	rotate: 90
+explosion/Explosion_Sparks_2_Small_11
+	bounds: 309, 21, 10, 13
+	offsets: 1, 1, 12, 15
+	rotate: 90
+explosion/Explosion_Sparks_2_Small_12
+	bounds: 39, 5, 8, 8
+	offsets: 1, 1, 10, 10
+explosion/Explosion_Sparks_2_Small_13
+	bounds: 339, 210, 14, 13
+	offsets: 1, 1, 16, 15
+explosion/Explosion_Sparks_2_Small_14
+	bounds: 158, 22, 14, 11
+	offsets: 1, 1, 16, 13
+explosion/Explosion_Sparks_2_Small_15
+	bounds: 41, 25, 19, 9
+	offsets: 1, 1, 21, 11
+explosion/Explosion_Sparks_2_Small_16
+	bounds: 134, 4, 6, 4
+	offsets: 1, 1, 8, 6
+explosion/Explosion_Sparks_2_Small_17
+	bounds: 321, 4, 7, 6
+	offsets: 1, 1, 9, 8
+explosion/Explosion_Sparks_2_Small_18
+	bounds: 108, 20, 15, 9
+	offsets: 1, 1, 17, 11
+explosion/Explosion_Sparks_2_Small_19
+	bounds: 268, 44, 19, 12
+	offsets: 1, 1, 21, 14
+explosion/Explosion_Sparks_2_Small_2
+	bounds: 51, 12, 20, 5
+	offsets: 1, 1, 22, 7
+explosion/Explosion_Sparks_2_Small_20
+	bounds: 178, 12, 11, 8
+	offsets: 1, 1, 13, 10
+explosion/Explosion_Sparks_2_Small_21
+	bounds: 110, 2, 6, 6
+	offsets: 1, 1, 8, 8
+explosion/Explosion_Sparks_2_Small_22
+	bounds: 337, 1467, 15, 23
+	offsets: 1, 1, 17, 25
+explosion/Explosion_Sparks_2_Small_23
+	bounds: 312, 12, 7, 11
+	offsets: 1, 1, 9, 13
+	rotate: 90
+explosion/Explosion_Sparks_2_Small_24
+	bounds: 114, 10, 7, 13
+	offsets: 1, 1, 9, 15
+	rotate: 90
+explosion/Explosion_Sparks_2_Small_25
+	bounds: 152, 3, 6, 9
+	offsets: 1, 1, 8, 10
+	rotate: 90
+explosion/Explosion_Sparks_2_Small_26
+	bounds: 145, 5, 5, 11
+	offsets: 1, 1, 7, 13
+explosion/Explosion_Sparks_2_Small_27
+	bounds: 62, 27, 6, 27
+	offsets: 1, 0, 8, 27
+	rotate: 90
+explosion/Explosion_Sparks_2_Small_28
+	bounds: 203, 5, 7, 10
+	offsets: 1, 1, 9, 11
+explosion/Explosion_Sparks_2_Small_29
+	bounds: 262, 8, 9, 8
+	offsets: 1, 1, 11, 10
+explosion/Explosion_Sparks_2_Small_3
+	bounds: 311, 1829, 23, 6
+	offsets: 1, 1, 25, 8
+explosion/Explosion_Sparks_2_Small_30
+	bounds: 231, 22, 13, 11
+	offsets: 1, 1, 15, 13
+explosion/Explosion_Sparks_2_Small_31
+	bounds: 321, 754, 25, 15
+	offsets: 1, 1, 27, 17
+explosion/Explosion_Sparks_2_Small_32
+	bounds: 2, 3, 9, 5
+	offsets: 1, 1, 11, 7
+explosion/Explosion_Sparks_2_Small_4
+	bounds: 27, 6, 10, 7
+	offsets: 1, 1, 12, 9
+explosion/Explosion_Sparks_2_Small_5
+	bounds: 229, 35, 14, 16
+	offsets: 1, 1, 16, 18
+	rotate: 90
+explosion/Explosion_Sparks_2_Small_7
+	bounds: 165, 4, 6, 10
+	offsets: 1, 1, 8, 12
+	rotate: 90
+explosion/Explosion_Sparks_2_Small_8
+	bounds: 129, 10, 6, 14
+	offsets: 1, 1, 8, 16
+	rotate: 90
+explosion/Explosion_Sparks_2_Small_9
+	bounds: 327, 1188, 6, 17
+	offsets: 1, 1, 8, 19
+	rotate: 90
+explosion/Explosion_Sparks_3_1
+	bounds: 104, 59, 28, 28
+	offsets: 1, 1, 30, 30
+explosion/Explosion_Sparks_3_10
+	bounds: 230, 51, 21, 16
+	offsets: 1, 1, 23, 18
+explosion/Explosion_Sparks_3_11
+	bounds: 322, 83, 42, 31
+	offsets: 1, 1, 44, 33
+	rotate: 90
+explosion/Explosion_Sparks_3_12
+	bounds: 312, 4, 7, 6
+	offsets: 1, 1, 9, 8
+explosion/Explosion_Sparks_3_13
+	bounds: 295, 20, 11, 12
+	offsets: 1, 1, 13, 14
+	rotate: 90
+explosion/Explosion_Sparks_3_14
+	bounds: 2, 10, 10, 10
+	offsets: 1, 1, 12, 12
+explosion/Explosion_Sparks_3_15
+	bounds: 2, 22, 11, 15
+	offsets: 1, 1, 13, 16
+	rotate: 90
+explosion/Explosion_Sparks_3_16
+	bounds: 288, 10, 8, 10
+	offsets: 1, 1, 10, 12
+	rotate: 90
+explosion/Explosion_Sparks_3_17
+	bounds: 328, 34, 11, 18
+	offsets: 1, 1, 13, 20
+	rotate: 90
+explosion/Explosion_Sparks_3_18
+	bounds: 49, 4, 6, 10
+	offsets: 1, 1, 8, 12
+	rotate: 90
+explosion/Explosion_Sparks_3_19
+	bounds: 337, 1431, 11, 34
+	offsets: 1, 0, 13, 34
+explosion/Explosion_Sparks_3_2
+	bounds: 2, 43, 19, 13
+	offsets: 1, 1, 21, 15
+explosion/Explosion_Sparks_3_20
+	bounds: 196, 26, 8, 18
+	offsets: 1, 1, 10, 20
+	rotate: 90
+explosion/Explosion_Sparks_3_21
+	bounds: 223, 3, 6, 8
+	offsets: 1, 1, 8, 9
+	rotate: 90
+explosion/Explosion_Sparks_3_22
+	bounds: 166, 52, 9, 37
+	offsets: 1, 0, 11, 37
+	rotate: 90
+explosion/Explosion_Sparks_3_23
+	bounds: 99, 11, 7, 13
+	offsets: 1, 1, 9, 15
+	rotate: 90
+explosion/Explosion_Sparks_3_24
+	bounds: 177, 4, 6, 8
+	offsets: 1, 1, 8, 10
+	rotate: 90
+explosion/Explosion_Sparks_3_25
+	bounds: 85, 10, 8, 12
+	offsets: 1, 1, 10, 13
+	rotate: 90
+explosion/Explosion_Sparks_3_26
+	bounds: 262, 18, 9, 12
+	offsets: 1, 1, 11, 14
+	rotate: 90
+explosion/Explosion_Sparks_3_27
+	bounds: 180, 36, 14, 16
+	offsets: 1, 1, 16, 18
+	rotate: 90
+explosion/Explosion_Sparks_3_28
+	bounds: 2, 58, 29, 26
+	offsets: 1, 1, 31, 28
+explosion/Explosion_Sparks_3_29
+	bounds: 191, 8, 10, 7
+	offsets: 1, 1, 12, 9
+explosion/Explosion_Sparks_3_3
+	bounds: 251, 8, 9, 8
+	offsets: 1, 1, 11, 10
+explosion/Explosion_Sparks_3_30
+	bounds: 71, 2, 6, 5
+	offsets: 1, 1, 8, 7
+explosion/Explosion_Sparks_3_31
+	bounds: 99, 3, 9, 6
+	offsets: 1, 1, 11, 8
+explosion/Explosion_Sparks_3_32
+	bounds: 99, 31, 19, 10
+	offsets: 1, 1, 21, 12
+explosion/Explosion_Sparks_3_33
+	bounds: 62, 19, 21, 6
+	offsets: 1, 1, 23, 8
+explosion/Explosion_Sparks_3_34
+	bounds: 91, 20, 15, 9
+	offsets: 1, 1, 17, 11
+explosion/Explosion_Sparks_3_35
+	bounds: 36, 15, 13, 8
+	offsets: 1, 1, 15, 10
+explosion/Explosion_Sparks_3_36
+	bounds: 329, 64, 24, 17
+	offsets: 1, 1, 26, 19
+explosion/Explosion_Sparks_3_37
+	bounds: 339, 1812, 14, 22
+	offsets: 1, 1, 16, 24
+explosion/Explosion_Sparks_3_38
+	bounds: 333, 530, 19, 28
+	offsets: 1, 1, 21, 30
+explosion/Explosion_Sparks_3_39
+	bounds: 139, 18, 9, 12
+	offsets: 1, 1, 11, 13
+	rotate: 90
+explosion/Explosion_Sparks_3_4
+	bounds: 246, 19, 14, 9
+	offsets: 1, 1, 16, 11
+explosion/Explosion_Sparks_3_40
+	bounds: 276, 10, 8, 10
+	offsets: 1, 1, 10, 12
+	rotate: 90
+explosion/Explosion_Sparks_3_41
+	bounds: 56, 45, 13, 21
+	offsets: 1, 1, 15, 23
+	rotate: 90
+explosion/Explosion_Sparks_3_42
+	bounds: 253, 45, 13, 22
+	offsets: 1, 1, 15, 24
+explosion/Explosion_Sparks_3_43
+	bounds: 33, 45, 13, 21
+	offsets: 1, 1, 15, 22
+	rotate: 90
+explosion/Explosion_Sparks_3_44
+	bounds: 337, 952, 16, 31
+	offsets: 1, 1, 18, 32
+explosion/Explosion_Sparks_3_45
+	bounds: 196, 17, 7, 15
+	offsets: 1, 1, 9, 16
+	rotate: 90
+explosion/Explosion_Sparks_3_46
+	bounds: 213, 13, 7, 12
+	offsets: 1, 1, 9, 14
+	rotate: 90
+explosion/Explosion_Sparks_3_47
+	bounds: 345, 1766, 8, 44
+	offsets: 1, 1, 10, 46
+explosion/Explosion_Sparks_3_48
+	bounds: 198, 36, 9, 24
+	offsets: 1, 1, 11, 25
+	rotate: 90
+explosion/Explosion_Sparks_3_49
+	bounds: 165, 12, 8, 11
+	offsets: 1, 1, 10, 13
+	rotate: 90
+explosion/Explosion_Sparks_3_5
+	bounds: 14, 3, 9, 6
+	offsets: 1, 1, 11, 8
+explosion/Explosion_Sparks_3_50
+	bounds: 333, 485, 16, 43
+	offsets: 1, 1, 18, 45
+explosion/Explosion_Sparks_3_51
+	bounds: 73, 9, 8, 9
+	offsets: 1, 1, 10, 11
+	rotate: 90
+explosion/Explosion_Sparks_3_52
+	bounds: 270, 58, 17, 29
+	offsets: 1, 1, 19, 30
+	rotate: 90
+explosion/Explosion_Sparks_3_53
+	bounds: 301, 58, 17, 26
+	offsets: 1, 1, 19, 27
+	rotate: 90
+explosion/Explosion_Sparks_3_54
+	bounds: 216, 22, 11, 13
+	offsets: 1, 1, 13, 14
+	rotate: 90
+explosion/Explosion_Sparks_3_6
+	bounds: 289, 47, 25, 9
+	offsets: 1, 1, 27, 11
+explosion/Explosion_Sparks_3_7
+	bounds: 238, 10, 11, 7
+	offsets: 1, 1, 13, 9
+explosion/Explosion_Sparks_3_8
+	bounds: 121, 44, 20, 12
+	offsets: 1, 1, 22, 14
+explosion/Explosion_Sparks_3_9
+	bounds: 337, 1019, 16, 11
+	offsets: 1, 1, 18, 13

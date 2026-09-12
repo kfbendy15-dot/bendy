@@ -82,6 +82,9 @@ Special_Ability :: class : Ability_Base {
         if p.equipped_weapon_type == .NONE return false;
         config := get_weapon_config(p.equipped_weapon_type);
         if config.fire_mode != .SPECIAL return false;
+        if p.equipped_weapon_type == .BIRTHDAY_PAPERCLIP_GUN && !is_birthday_event_active() {
+            return false;
+        }
         if is_admin_only_weapon(p.equipped_weapon_type) && !can_access_admin_panel(p) {
             return false;
         }
@@ -96,6 +99,10 @@ Special_Ability :: class : Ability_Base {
         self := ability.(Special_Ability);
         wt := p.equipped_weapon_type;
         config := get_weapon_config(wt);
+
+        if wt == .BIRTHDAY_PAPERCLIP_GUN && !is_birthday_event_active() {
+            return;
+        }
 
         if is_admin_only_weapon(wt) && !can_access_admin_panel(p) {
             if self.was_shooting {
@@ -210,6 +217,9 @@ Special_Ability :: class : Ability_Base {
                 }
                 case .ADMIN_NUKE_GUN: {
                     secret_admin_nuke_attack(p);
+                }
+                case .BIRTHDAY_PAPERCLIP_GUN: {
+                    birthday_paperclip_attack(p);
                 }
                 case .BUILDING_TOOLS: {
                     weapon_shoot(p, wt);
