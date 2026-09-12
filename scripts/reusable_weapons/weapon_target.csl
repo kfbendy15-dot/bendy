@@ -38,6 +38,11 @@ elemental_damage_multiplier :: proc(attacker: s64, defender: s64) -> float {
     // Lightning, and Ice.
     if attacker == 8 && (defender == 1 || defender == 2 || defender == 3 || defender == 5) return 2.0;
     if defender == 8 && (attacker == 4 || attacker == 6 || attacker == 7) return 2.0;
+    // TADC matchup: TADC is vulnerable to Void, Water, Sun and Fire,
+    // while its buffs (Lightning, Leaf, Ice and Cyber) are resisted.
+    // Element 9 is reserved for the TADC/Jester armor.
+    if defender == 9 && (attacker == 5 || attacker == 2 || attacker == 7 || attacker == 1) return 2.0;
+    if defender == 9 && (attacker == 6 || attacker == 3 || attacker == 4 || attacker == 8) return 0.5;
     if g_event_ice && ((attacker == 1 && defender == 4) || (attacker == 4 && defender == 3)) return 2.0;
     return 0.5;
 }
@@ -93,6 +98,7 @@ weapon_target_apply_damage :: proc(target: Weapon_Target, damage: float, attacke
     }
     if player != null {
         defender_element = player.player_element;
+        if defender_element == 0 && player.armor_tier == 10 { defender_element = 9; }
         if defender_element == 0 { defender_element = weapon_element(player.equipped_weapon_type); }
     }
     if player != null && attacker_weapon == .ICE_LAUNCHER {
