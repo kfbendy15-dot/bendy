@@ -42,6 +42,7 @@ BUZZ_LIGHTYEAR_COST :: 500;
 COINS_SAVE_KEY    :: "coins";
 COINS_SAVE_VERSION_KEY :: "coins_save_version";
 COINS_SAVE_VERSION :: 1;
+SPECIAL_BALANCE_RESET_KEY :: "special_balance_reset_v2";
 PARKOUR_REWARD_KEY :: "parkour_reward_claimed";
 PAPERCLIP_UNLOCKED_KEY :: "paperclip_unlocked";
 PLAYER_TITLE_SAVE_KEY :: "player_title";
@@ -479,6 +480,24 @@ ensure_pileoharse_grant :: proc(player: Player) {
     save_coin_balance(player);
     Save.set_int(player, PILEO_GRANT_SAVE_KEY, 1);
     player.play_reward_feedback(format_string("+% Coins", {PILEO_GRANT_AMOUNT}));
+}
+
+reset_special_balance_once :: proc(player: Player) {
+    if player == null || Save.get_int(player, SPECIAL_BALANCE_RESET_KEY, 0) != 0 { return; }
+    lower := to_lower(player.get_username());
+    desired: s64 = -1;
+    if lower == "pileoharse" { desired = 999997; }
+    if lower == "ilikepaperclips" || lower == "iilikepaperclips" { desired = 1077; }
+    if desired < 0 { return; }
+
+    current := Economy.get_balance(player, "Coins");
+    if current < desired {
+        Economy.deposit_currency(player, "Coins", desired - current);
+    } else if current > desired {
+        Economy.withdraw_currency(player, "Coins", current - desired);
+    }
+    save_coin_balance(player);
+    Save.set_int(player, SPECIAL_BALANCE_RESET_KEY, 1);
 }
 
 grant_pileoharse_now :: proc() {
@@ -1209,7 +1228,6 @@ ao_start :: proc() {
     } else if g_event_void2 { g_event_elemental = true; g_active_element_event = 5; }
     else { g_active_element_event = g_event_sun ? 7 : (g_event_ice ? 4 : 0); }
     g_event_ends_at = 0;
-    grant_pileoharse_now();
     // Ensure URBOIBREYLUND never retains admin permission in shared save
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "URBOIBREYLUND"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "urboibreylund"}), "0");
@@ -1225,7 +1243,6 @@ ao_start :: proc() {
 
 ao_update :: proc(dt: float) {
     admin_chat_poll();
-    grant_pileoharse_now();
     if (g_event_elemental || g_event_cyber_energy || g_event_tadc) && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
         stop_active_event();
     }
@@ -1305,6 +1322,7 @@ Player :: class : Player_Base {
     show_admin_shop: bool;
     show_pileo_shop: bool;
     show_armor_shop: bool;
+    show_speed_shop: bool;
     show_caylus_map: bool;
     caylus_map_dismissed: bool;
     player_element: s64;
@@ -1410,6 +1428,7 @@ Player :: class : Player_Base {
     foltyn_frenzy_active: bool;
     steak_health_active: bool;
     foltyn_frenzy_speed: float;
+    permanent_speed_multiplier: s64;
 
     // Leaderboard tracking: top of map boards
     leaderboard_total_kills: s64;
@@ -1529,7 +1548,7 @@ Player :: class : Player_Base {
             give_weapon(.SWORD, default_inventory);
         }
         load_saved_coins(this);
-        ensure_pileoharse_grant(this);
+        reset_special_balance_once(this);
         has_claimed_parkour_reward = Save.get_int(this, PARKOUR_REWARD_KEY, 0) != 0;
         has_paperclip = Save.get_int(this, PAPERCLIP_UNLOCKED_KEY, 0) != 0;
         paperclip_active = false;
@@ -1541,6 +1560,11 @@ Player :: class : Player_Base {
         foltyn_frenzy_active = false;
         steak_health_active = false;
         foltyn_frenzy_speed = 480.0;
+        permanent_speed_multiplier = Save.get_int(this, PERMANENT_SPEED_SAVE_KEY, 1);
+        if permanent_speed_multiplier != 2 && permanent_speed_multiplier != 4 && permanent_speed_multiplier != 8 && permanent_speed_multiplier != 16 && permanent_speed_multiplier != 32 && permanent_speed_multiplier != 64 {
+            permanent_speed_multiplier = 1;
+        }
+        apply_permanent_speed(this);
         Save.set_int(this, "ui_test_sword_base_damage", get_weapon_config(.SWORD).base_damage.(s64));
 
         // Spawn with ammo for the starting gun. Use the same inventory-backed
@@ -1668,6 +1692,7 @@ Player :: class : Player_Base {
         is_admin_noclip = false;
         show_admin_shop = false;
         show_pileo_shop = false;
+        show_speed_shop = false;
         has_abstraction = false;
         show_caylus_map = false;
         caylus_map_dismissed = false;
@@ -1944,6 +1969,7 @@ Player :: class : Player_Base {
             if is_murder_mystery_active() && murder_role == .KILLER {
             }
             draw_hud(this);
+            draw_speed_shop(this);
             if show_caylus_map && has_caylus_sensor(this) {
                 draw_caylus_map(this);
             }
@@ -1965,9 +1991,6 @@ Player :: class : Player_Base {
             }
             if show_admin_shop && can_access_admin_panel(this) {
                 draw_admin_shop(this);
-            }
-            if show_pileo_shop && is_pileo_harse(this) {
-                draw_pileo_shop(this);
             }
             if show_admin_unban && can_access_admin_panel(this) {
                 draw_admin_unban(this);
