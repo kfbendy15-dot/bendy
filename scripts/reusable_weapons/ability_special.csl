@@ -24,6 +24,7 @@ Melee_Ability :: class : Ability_Base {
                 damage = sword_config.base_damage;
                 swing_radius = 2.05;
                 stun_duration = 0.35;
+                p.katana_deflect_until = get_time() + 0.42;
             }
 
             // Trigger melee animation
