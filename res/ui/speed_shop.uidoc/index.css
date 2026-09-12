@@ -1,0 +1,20 @@
+.speed-root { position: fixed; inset: 0; pointer-events: none; }
+.safe-area { position: fixed; inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); pointer-events: none; }
+.speed-open { position: absolute; left: 14px; top: 42%; width: 132px; height: 64px; padding: 10px; background: linear-gradient(135deg, #ffb703, #fb8500); border: 3px solid #fff1a8; border-radius: 18px; box-shadow: 0 8px 18px rgba(0,0,0,0.4); color: #17120a; font-size: 22px; font-weight: 900; pointer-events: auto; }
+.speed-open:hover { background: #ffd447; }
+.speed-open:active, .offer:active, .close:active { transform: scale(0.96); }
+.backdrop { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(4,8,18,0.76); pointer-events: auto; }
+.shop-card { box-sizing: border-box; display: flex; flex-direction: column; width: 100%; max-width: 720px; max-height: 820px; padding: 24px; gap: 16px; background: linear-gradient(145deg, #172554, #0f172a); border: 3px solid #fbbf24; border-radius: 26px; box-shadow: 0 18px 48px rgba(0,0,0,0.55); }
+.header { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
+.title { color: #fff7c2; font-size: 42px; font-weight: 900; }
+.close { width: 64px; height: 64px; padding: 8px; background: #7f1d1d; border: 2px solid #fca5a5; border-radius: 16px; color: white; font-size: 28px; pointer-events: auto; }
+.balances { display: flex; flex-direction: row; justify-content: space-between; gap: 12px; }
+.current, .sparks { width: 48%; color: white; font-size: 24px; font-weight: 700; }
+.sparks { color: #fde047; text-align: right; }
+.offers { display: flex; flex-direction: row; flex-wrap: wrap; gap: 12px; overflow-y: auto; min-height: 0; }
+.offer { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 31%; min-width: 180px; min-height: 150px; padding: 14px; gap: 4px; background: linear-gradient(145deg, #1d4ed8, #312e81); border: 2px solid #60a5fa; border-radius: 18px; color: white; pointer-events: auto; }
+.offer:hover { background: #2563eb; }
+.offer-speed { color: white; font-size: 26px; font-weight: 900; }
+.offer-price { color: #fde047; font-size: 24px; font-weight: 900; }
+.forever { color: #bfdbfe; font-size: 16px; font-weight: 700; }
+@media (max-width: 620px) { .speed-open { width: 104px; height: 58px; font-size: 17px; } .shop-card { max-height: 92%; padding: 16px; } .title { font-size: 32px; } .offer { width: 47%; min-width: 130px; min-height: 120px; } .offer-speed { font-size: 22px; } }

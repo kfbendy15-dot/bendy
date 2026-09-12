@@ -383,7 +383,6 @@ draw_shop :: proc(player: Player) {
     sawblade_handle: Interact_Result;
     lmg_handle: Interact_Result;
     dash_handle: Interact_Result;
-    invis_handle: Interact_Result;
     speed_boost_handle: Interact_Result;
     zoom_out_handle: Interact_Result;
     medkit_handle: Interact_Result;
@@ -695,23 +694,6 @@ draw_shop :: proc(player: Player) {
         }
     }
 
-    if false && UIK.clicked(invis_handle) && !player.has_invisible {
-        if spend_coins(player, INVISIBLE_COST) {
-            player.has_invisible = true;
-            player.powerup_invisible_active = true;
-            effect := new(Invisible_Effect);
-            player.entity.add_passive_effect(effect);
-            player.show_shop = false;
-            play_pickup_feedback(player, "+Invisible");
-            if player.is_local() {
-                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
-                d := SFX.default_sfx_desc();
-                d.volume = 0.6;
-                SFX.play(sfx, d);
-            }
-        }
-    }
-
     if UIK.clicked(speed_boost_handle) && spend_coins(player, SPEED_BOOST_COST) {
         player.has_speed_boost = true;
         // Each purchase also applies a stack immediately
@@ -867,106 +849,6 @@ draw_armor_shop :: proc(player: Player) {
     if UIK.clicked(emerald_h) { buy_armor_tier_offer(player, 6, EMERALD_ARMOR_COST); }
     if UIK.clicked(obsidian_h) { buy_armor_tier_offer(player, 7, OBSIDIAN_ARMOR_COST); }
     if UIK.clicked(netherite_h) { buy_armor_tier_offer(player, 9, NETHERITE_ARMOR_COST); }
-}
-
-draw_pileo_shop :: proc(player: Player) {
-    if player == null || !is_pileo_harse(player) {
-        return;
-    }
-
-    UIK.begin(UIK.modal(UIK.rect_window_large(), 20));
-    shell := UIK.panel_modal(.BLACK);
-    shell.gap = 0;
-    UIK.panel_begin(shell);
-    title_desc := UIK.title_area_desc("Pileo Shop");
-    title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/shopping_cart/shopping_cart_icon.png");
-    exit_handle := UIK.title_area(title_desc);
-
-    content := UIK.layout_column();
-    content.width = UIK.flex(1);
-    content.height = UIK.flex(1);
-    content.padding = v4{12, 16, 12, 16};
-    content.gap = 8;
-    UIK.list_begin("pileo_shop_scroll", content);
-    UIK.text("YouTuber Items", UIK.text_title());
-    UIK.text("PileoHarse only", UIK.text_body());
-
-    techy_handle: Interact_Result;
-    frenzy_handle: Interact_Result;
-    steak_handle: Interact_Result;
-    bench_handle: Interact_Result;
-    glass_handle: Interact_Result;
-    glast_handle: Interact_Result;
-    sensor_handle: Interact_Result;
-    elixir_handle: Interact_Result;
-    emma_handle: Interact_Result;
-
-    row_one := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(row_one);
-    techy_handle = draw_shop_card("pileo/techy_sniper", "Techy Sniper", TECHY_SNIPER_COST, get_asset(Texture_Asset, get_weapon_config(.TECHY_SNIPER).weapon_icon_path), {0.25, 0.75, 1.0, 1}, player_has_weapon(player, .TECHY_SNIPER));
-    frenzy_handle = draw_shop_card("pileo/foltyn_frenzy", "Foltyn Frenzy", FOLTYN_FRENZY_COST, get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png"), {0.7, 0.35, 1.0, 1}, false);
-    UIK.panel_end();
-
-    row_two := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(row_two);
-    steak_handle = draw_shop_card("pileo/steaks_yummy_steak", "Steak's Yummy Steak", STEAKS_YUMMY_STEAK_COST, get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png"), {1.0, 0.45, 0.2, 1}, false);
-    bench_handle = draw_shop_card("pileo/kreekcraft_bench", "Kreekcraft Bench", KREEKCRAFT_BENCH_COST, get_asset(Texture_Asset, "$AO/ui/kit/Icons/shopping_cart/shopping_cart_icon.png"), {0.65, 0.45, 0.25, 1}, false);
-    UIK.panel_end();
-
-    row_three := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(row_three);
-    glass_handle = draw_shop_card("pileo/glass_cannon", "Glass Cannon", GLASS_CANNON_COST, get_asset(Texture_Asset, get_weapon_config(.GLASS_CANNON).weapon_icon_path), {0.95, 0.85, 0.25, 1}, player_has_weapon(player, .GLASS_CANNON));
-    glast_handle = draw_shop_card("pileo/glast_shard", "Glast Shard", GLAST_SHARD_COST, get_asset(Texture_Asset, get_weapon_config(.GLAST_SHARD).weapon_icon_path), {0.4, 0.9, 1.0, 1}, player_has_weapon(player, .GLAST_SHARD));
-    UIK.panel_end();
-
-    row_four := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(row_four);
-    sensor_handle = draw_shop_card("pileo/caylus_sensor", "Caylus Sensor", CAYLUS_SENSOR_COST, get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png"), {0.25, 0.75, 1.0, 1}, has_caylus_sensor(player));
-    elixir_handle = draw_shop_card("pileo/kreekcraft_elixir", "Kreekcraft Elixir", KREEKCRAFT_ELIXIR_COST, get_asset(Texture_Asset, get_weapon_config(.FIRE_RAY).weapon_icon_path), {1.0, 0.3, 0.1, 1}, false);
-    emma_handle = draw_shop_card("pileo/emma_ray", "Emma Ray", EMMA_RAY_COST, get_asset(Texture_Asset, get_weapon_config(.ENERGY_RIFLE).weapon_icon_path), {1.0, 0.2, 0.65, 1}, player_has_weapon(player, .ENERGY_RIFLE));
-    UIK.panel_end();
-
-    UIK.spacer(UIK.pixels(1), UIK.pixels(10));
-    UIK.text("Ammo", UIK.text_title());
-    pileo_ammo_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(pileo_ammo_1);
-    pileo_bullets := draw_shop_card("pileo/buy_bullets", "Buy 10 Bullets", BULLET_COST, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/bullet.png"), {0.3, 0.7, 0.3, 1}, false);
-    pileo_heavy := draw_shop_card("pileo/buy_heavy", "Buy 10 Heavy Ammo", 20, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/cannonball.png"), {0.7, 0.6, 0.35, 1}, false);
-    pileo_explosive := draw_shop_card("pileo/buy_explosive", "Buy 10 Shells", 20, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/shotgunshell.png"), {0.85, 0.6, 0.35, 1}, false);
-    UIK.panel_end();
-    pileo_ammo_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(pileo_ammo_2);
-    pileo_energy := draw_shop_card("pileo/buy_energy", "Buy 30 Energy Cells", 25, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/energycells.png"), {0.4, 0.75, 0.95, 1}, false);
-    pileo_water := draw_shop_card("pileo/buy_water", "Buy 10 Water Balloons", 20, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/waterballoon.png"), {0.3, 0.55, 0.9, 1}, false);
-    pileo_lmg := draw_shop_card("pileo/buy_lmg", "Buy 30 LMG Rounds", 40, get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/bullet_alt.png"), {0.8, 0.8, 0.5, 1}, false);
-    UIK.panel_end();
-
-    UIK.list_end();
-    close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
-    close_desc.panel.width = UIK.flex(1);
-    close_desc.panel.height = UIK.pixels(52);
-    close_btn := UIK.button("pileo/close", "Close", close_desc);
-    UIK.panel_end();
-    UIK.end();
-
-    if UIK.clicked(exit_handle) || UIK.clicked(close_btn) {
-        player.show_pileo_shop = false;
-    }
-    if UIK.clicked(techy_handle) { buy_weapon_offer(player, .TECHY_SNIPER, TECHY_SNIPER_COST, "+Techy Sniper"); }
-    if UIK.clicked(frenzy_handle) { buy_youtuber_item_offer(player, g_foltyn_frenzy_item_def, FOLTYN_FRENZY_COST, "+Foltyn Frenzy", false); }
-    if UIK.clicked(steak_handle) { buy_youtuber_item_offer(player, g_steaks_yummy_steak_item_def, STEAKS_YUMMY_STEAK_COST, "+Steak's Yummy Steak", false); }
-    if UIK.clicked(bench_handle) { buy_youtuber_item_offer(player, g_kreekcraft_bench_item_def, KREEKCRAFT_BENCH_COST, "+Kreekcraft Bench", false); }
-    if UIK.clicked(glass_handle) { buy_weapon_offer(player, .GLASS_CANNON, GLASS_CANNON_COST, "+Glass Cannon"); }
-    if UIK.clicked(glast_handle) { buy_weapon_offer(player, .GLAST_SHARD, GLAST_SHARD_COST, "+Glast Shard"); }
-    if UIK.clicked(sensor_handle) { buy_youtuber_item_offer(player, g_caylus_sensor_item_def, CAYLUS_SENSOR_COST, "+Caylus Sensor", true); }
-    if UIK.clicked(elixir_handle) { buy_youtuber_item_offer(player, g_kreekcraft_elixir_item_def, KREEKCRAFT_ELIXIR_COST, "+Kreekcraft Elixir", false); }
-    if UIK.clicked(emma_handle) { buy_weapon_offer(player, .ENERGY_RIFLE, EMMA_RAY_COST, "+Emma Ray"); }
-    if UIK.clicked(pileo_bullets) { buy_ammo_offer(player, 0, BULLETS_PER_BUY, BULLET_COST, format_string("+% Bullets", {BULLETS_PER_BUY})); }
-    if UIK.clicked(pileo_heavy) { buy_ammo_offer(player, 1, 10, 20, "+10 Heavy Ammo"); }
-    if UIK.clicked(pileo_explosive) { buy_ammo_offer(player, 2, 10, 20, "+10 Shells"); }
-    if UIK.clicked(pileo_energy) { buy_ammo_offer(player, 5, 30, 25, "+30 Energy Cells"); }
-    if UIK.clicked(pileo_water) { buy_ammo_offer(player, 9, 10, 20, "+10 Water Balloons"); }
-    if UIK.clicked(pileo_lmg) { buy_ammo_offer(player, 8, 30, 40, "+30 LMG Rounds"); }
 }
 
 draw_admin_shop :: proc(player: Player) {

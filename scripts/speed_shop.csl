@@ -1,0 +1,87 @@
+PERMANENT_SPEED_SAVE_KEY :: "permanent_speed_multiplier";
+BASE_MOVEMENT_SPEED :: 300.0;
+
+speed_sparks_cost :: proc(multiplier: s64) -> s64 {
+    switch multiplier {
+        case 2: return 29;
+        case 4: return 49;
+        case 8: return 99;
+        case 16: return 149;
+        case 32: return 299;
+        case 64: return 579;
+    }
+    return 0;
+}
+
+apply_permanent_speed :: proc(player: Player) {
+    if player == null { return; }
+    player.agent.movement_speed = BASE_MOVEMENT_SPEED * player.permanent_speed_multiplier.(float);
+}
+
+buy_permanent_speed :: proc(player: Player, multiplier: s64) {
+    if player == null || multiplier <= player.permanent_speed_multiplier { return; }
+    cost := speed_sparks_cost(multiplier);
+    if cost <= 0 { return; }
+    if !Economy.can_withdraw_currency(player, "Sparks", cost) {
+        player.play_reward_feedback(format_string("Need % Sparks", {cost}));
+        return;
+    }
+
+    Economy.withdraw_currency(player, "Sparks", cost);
+    player.permanent_speed_multiplier = multiplier;
+    Save.set_int(player, PERMANENT_SPEED_SAVE_KEY, multiplier);
+    apply_permanent_speed(player);
+    player.play_reward_feedback(format_string("Permanent x% Speed", {multiplier}));
+
+    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+    desc := SFX.default_sfx_desc();
+    desc.entity_to_follow = player.entity.id;
+    desc.specific_to_player = player;
+    desc.volume = 0.7;
+    desc.speed_perturb = 0.08;
+    SFX.play(sfx, desc);
+}
+
+on_speed_shop_event :: proc(event: UIDoc_Event, userdata: Object) {
+    player := userdata.(Player);
+    if player == null { return; }
+    if event.handler == "event:speed:open" { player.show_speed_shop = true; }
+    if event.handler == "event:speed:close" { player.show_speed_shop = false; }
+    if event.handler == "event:speed:buy" {
+        if event.key == "2" { buy_permanent_speed(player, 2); }
+        if event.key == "4" { buy_permanent_speed(player, 4); }
+        if event.key == "8" { buy_permanent_speed(player, 8); }
+        if event.key == "16" { buy_permanent_speed(player, 16); }
+        if event.key == "32" { buy_permanent_speed(player, 32); }
+        if event.key == "64" { buy_permanent_speed(player, 64); }
+    }
+}
+
+add_speed_offer_binding :: proc(multiplier: s64) {
+    key := format_string("%", {multiplier});
+    UI.uidoc_list_item(key);
+    UI.uidoc_list_bind_text("id", key);
+    UI.uidoc_list_bind_text("speed", format_string("x%", {multiplier}));
+    UI.uidoc_list_bind_text("price", format_string("%", {speed_sparks_cost(multiplier)}));
+}
+
+draw_speed_shop :: proc(player: Player) {
+    if !player.is_local_or_server() { return; }
+    document := get_asset(UIDoc_Asset, "ui/speed_shop.uidoc");
+    if document == null { return; }
+
+    UI.uidoc_clear_bindings();
+    UI.uidoc_bind_bool("shopOpen", player.show_speed_shop);
+    UI.uidoc_bind_bool("shopClosed", !player.show_speed_shop);
+    UI.uidoc_bind_text("currentSpeed", format_string("x%", {player.permanent_speed_multiplier}));
+    UI.uidoc_bind_text("sparks", format_string("%", {Economy.get_balance(player, "Sparks")}));
+    UI.uidoc_begin_list("offers");
+    if player.permanent_speed_multiplier < 2 { add_speed_offer_binding(2); }
+    if player.permanent_speed_multiplier < 4 { add_speed_offer_binding(4); }
+    if player.permanent_speed_multiplier < 8 { add_speed_offer_binding(8); }
+    if player.permanent_speed_multiplier < 16 { add_speed_offer_binding(16); }
+    if player.permanent_speed_multiplier < 32 { add_speed_offer_binding(32); }
+    if player.permanent_speed_multiplier < 64 { add_speed_offer_binding(64); }
+    UI.uidoc_end_list();
+    UI.uidoc(document, player.show_speed_shop, player, on_speed_shop_event);
+}

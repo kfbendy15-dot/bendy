@@ -1,0 +1,24 @@
+<div class="speed-root">
+  <div class="safe-area">
+    <button class="speed-open" data-if="shopClosed" data-on-click="event:speed:open" data-key="speed/open">SPEED</button>
+    <div class="backdrop" data-if="shopOpen">
+      <div class="shop-card">
+        <div class="header">
+          <div class="title">SPEED</div>
+          <button class="close" data-on-click="event:speed:close" data-key="speed/close">X</button>
+        </div>
+        <div class="balances">
+          <div class="current" data-text-reserve="Current x64">Current {{currentSpeed}}</div>
+          <div class="sparks" data-text-reserve="999999 Sparks">{{sparks}} Sparks</div>
+        </div>
+        <div class="offers">
+          <button class="offer" data-for="offer in offers" data-for-key="offer.id" data-on-click="event:speed:buy" data-key="speed/offer">
+            <div class="offer-speed" data-text-reserve="x64 SPEED">{{offer.speed}} SPEED</div>
+            <div class="offer-price" data-text-reserve="579 Sparks">{{offer.price}} Sparks</div>
+            <div class="forever">FOREVER</div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
