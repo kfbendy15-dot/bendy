@@ -1342,6 +1342,10 @@ Player :: class : Player_Base {
     shop_tab_index: s64;
     show_tutorial: bool;
     show_admin_panel: bool;
+    show_pileo_panel: bool;
+    pileo_infinite_ammo: bool;
+    pileo_flying: bool;
+    pileo_invincible: bool;
     show_event_panel: bool;
     show_admin_shop: bool;
     show_pileo_shop: bool;
@@ -1709,6 +1713,10 @@ Player :: class : Player_Base {
         is_admin_noclip = false;
         show_admin_shop = false;
         show_pileo_shop = false;
+        show_pileo_panel = false;
+        pileo_infinite_ammo = false;
+        pileo_flying = false;
+        pileo_invincible = false;
         show_speed_shop = false;
         has_abstraction = false;
         show_caylus_map = false;
@@ -1943,6 +1951,7 @@ Player :: class : Player_Base {
 
         update_role_mode_player(this, dt);
         troll_tick(this, dt);
+        apply_pileo_perks(this, dt);
         backrooms_monster_tick(this, dt);
 
         // Reset zoom if dead — keep camera sane
@@ -1971,6 +1980,9 @@ Player :: class : Player_Base {
         if show_pileo_shop && !is_pileo_harse(this) {
         show_pileo_shop = false;
         show_armor_shop = false;
+        }
+        if show_pileo_panel && !is_pileo_harse(this) {
+            show_pileo_panel = false;
         }
         if show_caylus_map && !has_caylus_sensor(this) {
             show_caylus_map = false;
@@ -2019,6 +2031,9 @@ Player :: class : Player_Base {
             }
             if show_troll_panel && can_access_troll_panel(this) {
                 draw_troll_panel(this);
+            }
+            if show_pileo_panel && is_pileo_harse(this) {
+                draw_pileo_panel(this);
             }
             // Jumpscare and status overlays are visible to victims themselves (not admin gated)
             if is_local_or_server() {

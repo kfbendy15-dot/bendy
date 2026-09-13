@@ -383,6 +383,7 @@ draw_shop :: proc(player: Player) {
     sawblade_handle: Interact_Result;
     lmg_handle: Interact_Result;
     dash_handle: Interact_Result;
+    invisible_handle: Interact_Result;
     speed_boost_handle: Interact_Result;
     zoom_out_handle: Interact_Result;
     medkit_handle: Interact_Result;
@@ -555,6 +556,7 @@ draw_shop :: proc(player: Player) {
     dash_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
     inv_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/lock_closed.png");
     dash_handle = draw_shop_card("shop/buy_dash", "Dash", DASH_COST, dash_icon, {0.3, 0.5, 0.9, 1}, player.has_dash);
+    invisible_handle = draw_shop_card("shop/buy_invisible", "Invisible (5s, 12s cd)", INVISIBLE_COST, inv_icon, {0.6, 0.4, 0.85, 1}, player.has_invisible);
     UIK.panel_end();
     powerup_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(powerup_row_2);
@@ -685,6 +687,19 @@ draw_shop :: proc(player: Player) {
         if spend_coins(player, DASH_COST) {
             player.has_dash = true;
             play_pickup_feedback(player, "+Dash");
+            if player.is_local() {
+                sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+                d := SFX.default_sfx_desc();
+                d.volume = 0.6;
+                SFX.play(sfx, d);
+            }
+        }
+    }
+
+    if UIK.clicked(invisible_handle) && !player.has_invisible {
+        if spend_coins(player, INVISIBLE_COST) {
+            player.has_invisible = true;
+            play_pickup_feedback(player, "+Invisible");
             if player.is_local() {
                 sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
                 d := SFX.default_sfx_desc();
@@ -1101,27 +1116,6 @@ draw_admin_panel :: proc(player: Player) {
     }
 
     UIK.list_end();
-
-    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
-    UIK.text("Special Maps", UIK.text_title());
-    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
-    special_map_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(special_map_row);
-    backrooms_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
-    backrooms_desc.panel.width = UIK.flex(1);
-    backrooms_desc.panel.height = UIK.pixels(52);
-    backrooms_btn := UIK.button("admin/map_backrooms", "Send to Backrooms", backrooms_desc);
-    normal_map_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
-    normal_map_desc.panel.width = UIK.flex(1);
-    normal_map_desc.panel.height = UIK.pixels(52);
-    normal_map_btn := UIK.button("admin/map_normal", "Return to Normal Map", normal_map_desc);
-    UIK.panel_end();
-
-    admin_target := find_online_player_by_username(player.admin_target_username);
-    if admin_target == null {
-        admin_target = player;
-    }
-
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     UIK.text("Ammo", UIK.text_title());
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
@@ -1136,6 +1130,11 @@ draw_admin_panel :: proc(player: Player) {
     ammo500_desc.panel.height = UIK.pixels(52);
     ammo500_btn := UIK.button("bonus_bullets/large", "+500 Bullets", ammo500_desc);
     UIK.panel_end();
+
+    admin_target := find_online_player_by_username(player.admin_target_username);
+    if admin_target == null {
+        admin_target = player;
+    }
 
     if UIK.clicked(ammo100_btn) {
         grant_ammo_to_player(admin_target, 0, 100);
@@ -1210,10 +1209,6 @@ draw_admin_panel :: proc(player: Player) {
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     power_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(power_row);
-    inv_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
-    inv_desc.panel.width = UIK.flex(1);
-    inv_desc.panel.height = UIK.pixels(52);
-    inv_btn := UIK.button("admin/make_invincible", "Make Invincible", inv_desc);
     stealth_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
     stealth_desc.panel.width = UIK.flex(1);
     stealth_desc.panel.height = UIK.pixels(52);
@@ -1250,61 +1245,10 @@ draw_admin_panel :: proc(player: Player) {
     fight_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     fight_desc.panel.width = UIK.flex(1); fight_desc.panel.height = UIK.pixels(52);
     fight_btn := UIK.button("admin/start_fight", "Start Fight", fight_desc);
-    rng_init_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
-    rng_init_desc.panel.width = UIK.flex(1); rng_init_desc.panel.height = UIK.pixels(52);
-    rng_init_btn := UIK.button("admin/rng_init", "Get RNG Dice (1-10)", rng_init_desc);
     UIK.panel_end();
-    dice_count: s64 = 0;
-    if g_dice_item_def != null {
-        for i: 0..player.default_inventory.capacity - 1 {
-            it := player.default_inventory.get_item(i);
-            if it != null && it.get_definition() == g_dice_item_def {
-                dice_count += it.quantity;
-            }
-        }
-    }
-    if dice_count > 0 {
-        UIK.text(format_string("Dice in inventory: % - tap dice in hotbar to roll", {dice_count}), UIK.text_body());
-    } else {
-        UIK.text("RNG Dice go to inventory - tap to roll for reward", UIK.text_body());
-    }
-    if UIK.clicked(rng_init_btn) {
-        start_fight_rng(player);
-    }
     if UIK.clicked(fight_btn) {
         start_fight_event(player);
     }
-    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
-    UIK.text("Maps", UIK.text_title());
-    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
-    map_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(map_row);
-    grass_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    grass_desc.panel.width = UIK.flex(1);
-    grass_desc.panel.height = UIK.pixels(48);
-    grass_btn := UIK.button("admin/map_grass", "Grass Map", grass_desc);
-    sand_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    sand_desc.panel.width = UIK.flex(1);
-    sand_desc.panel.height = UIK.pixels(48);
-    sand_btn := UIK.button("admin/map_sand", "Sand Map", sand_desc);
-    lava_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    lava_desc.panel.width = UIK.flex(1);
-    lava_desc.panel.height = UIK.pixels(48);
-    lava_btn := UIK.button("admin/map_lava", "Lava Map", lava_desc);
-    UIK.panel_end();
-
-    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
-    map_row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(map_row_2);
-    ice_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    ice_desc.panel.width = UIK.flex(1);
-    ice_desc.panel.height = UIK.pixels(48);
-    ice_btn := UIK.button("admin/map_ice", "Ice Map", ice_desc);
-    island_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-    island_desc.panel.width = UIK.flex(1);
-    island_desc.panel.height = UIK.pixels(48);
-    island_btn := UIK.button("admin/map_island", "Island Map", island_desc);
-    UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
@@ -1393,11 +1337,6 @@ draw_admin_panel :: proc(player: Player) {
         player.play_reward_feedback("Meteor incoming!");
     }
 
-    if UIK.clicked(inv_btn) {
-        set_player_invincible(admin_target, true);
-        admin_target.play_reward_feedback("Invincible");
-    }
-
     if UIK.clicked(stealth_btn) {
         set_player_invisible(admin_target, !admin_target.admin_invisible_active);
         if admin_target.admin_invisible_active {
@@ -1414,28 +1353,6 @@ draw_admin_panel :: proc(player: Player) {
         } else {
             admin_target.play_reward_feedback("Noclip off");
         }
-    }
-
-    if UIK.clicked(grass_btn) {
-        set_admin_map_destination(admin_target, "grass", {-24, -14}, "Grass Map");
-    }
-    if UIK.clicked(sand_btn) {
-        set_admin_map_destination(admin_target, "sand", {0, -14}, "Sand Map");
-    }
-    if UIK.clicked(lava_btn) {
-        set_admin_map_destination(admin_target, "lava", {24, -14}, "Lava Map");
-    }
-    if UIK.clicked(ice_btn) {
-        set_admin_map_destination(admin_target, "ice", {0, 14}, "Ice Map");
-    }
-    if UIK.clicked(island_btn) {
-        set_admin_map_destination(admin_target, "island", {24, 14}, "Island Map");
-    }
-    if UIK.clicked(backrooms_btn) {
-        send_player_to_backrooms(admin_target);
-    }
-    if UIK.clicked(normal_map_btn) {
-        return_player_from_backrooms(admin_target);
     }
 
 }
