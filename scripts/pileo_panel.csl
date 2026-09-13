@@ -1,0 +1,117 @@
+// PileoHarse-only panel with Infinite Ammo, Flying, and Invincibility.
+
+PILEO_ABILITY_COOLDOWN :: 0.5;
+
+draw_pileo_panel :: proc(player: Player) {
+    if player == null || !is_pileo_harse(player) return;
+
+    UIK.begin(UIK.modal(UIK.rect_window(), 15));
+
+    shell := UIK.panel_modal(.PURPLE);
+    shell.gap = 0;
+    UIK.panel_begin(shell);
+
+    title_desc := UIK.title_area_desc("Pileo Panel");
+    title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png");
+    exit_handle := UIK.title_area(title_desc);
+
+    body := UIK.layout_column();
+    body.width = UIK.flex(1);
+    body.height = UIK.fit();
+    body.padding = v4{12, 16, 12, 16};
+    body.gap = 8;
+    UIK.panel_begin(body);
+
+    UIK.text("Exclusive powers for PileoHarse", UIK.text_body());
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(6));
+
+    ammo_desc := UIK.widget_desc_button_auto_default(player.pileo_infinite_ammo ? .BUTTON_BASIC_GREEN : .BUTTON_BASIC_GREY);
+    ammo_desc.panel.width = UIK.flex(1);
+    ammo_desc.panel.height = UIK.pixels(58);
+    ammo_btn := UIK.button("pileo/infinite_ammo", player.pileo_infinite_ammo ? "Infinite Ammo: ON" : "Infinite Ammo: OFF", ammo_desc);
+
+    fly_desc := UIK.widget_desc_button_auto_default(player.pileo_flying ? .BUTTON_BASIC_GREEN : .BUTTON_BASIC_GREY);
+    fly_desc.panel.width = UIK.flex(1);
+    fly_desc.panel.height = UIK.pixels(58);
+    fly_btn := UIK.button("pileo/flying", player.pileo_flying ? "Flying: ON" : "Flying: OFF", fly_desc);
+
+    invinc_desc := UIK.widget_desc_button_auto_default(player.pileo_invincible ? .BUTTON_BASIC_GREEN : .BUTTON_BASIC_GREY);
+    invinc_desc.panel.width = UIK.flex(1);
+    invinc_desc.panel.height = UIK.pixels(58);
+    invinc_btn := UIK.button("pileo/invincibility", player.pileo_invincible ? "Invincibility: ON" : "Invincibility: OFF", invinc_desc);
+
+    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+
+    close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    close_desc.panel.width = UIK.flex(1);
+    close_desc.panel.height = UIK.pixels(52);
+    close_btn := UIK.button("pileo/close", "Close", close_desc);
+
+    UIK.panel_end();
+    UIK.panel_end();
+    UIK.end();
+
+    if UIK.clicked(exit_handle) || UIK.clicked(close_btn) {
+        player.show_pileo_panel = false;
+    }
+
+    if UIK.clicked(ammo_btn) {
+        player.pileo_infinite_ammo = !player.pileo_infinite_ammo;
+        player.play_reward_feedback(player.pileo_infinite_ammo ? "Infinite Ammo on" : "Infinite Ammo off");
+        play_pileo_toggle_sfx(player);
+    }
+    if UIK.clicked(fly_btn) {
+        set_pileo_flying(player, !player.pileo_flying);
+        player.play_reward_feedback(player.pileo_flying ? "Flying on" : "Flying off");
+        play_pileo_toggle_sfx(player);
+    }
+    if UIK.clicked(invinc_btn) {
+        player.pileo_invincible = !player.pileo_invincible;
+        player.play_reward_feedback(player.pileo_invincible ? "Invincibility on" : "Invincibility off");
+        play_pileo_toggle_sfx(player);
+    }
+}
+
+play_pileo_toggle_sfx :: proc(player: Player) {
+    if player == null || !player.is_local() return;
+    sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
+    desc := SFX.default_sfx_desc();
+    desc.entity_to_follow = player.entity.id;
+    desc.volume = 0.5;
+    desc.speed_perturb = 0.15;
+    SFX.play(sfx, desc);
+}
+
+set_pileo_flying :: proc(player: Player, enabled: bool) {
+    if player == null return;
+    if enabled {
+        player.add_ghost_reason("pileo_flying");
+    } else {
+        player.remove_ghost_reason("pileo_flying");
+    }
+    player.pileo_flying = enabled;
+}
+
+apply_pileo_perks :: proc(player: Player, dt: float) {
+    if player == null return;
+
+    // Invincibility: keep the shared flag in sync with the pileo toggle
+    if player.pileo_invincible != player.is_admin_invincible {
+        set_player_invincible(player, player.pileo_invincible);
+    }
+
+    if player.pileo_infinite_ammo {
+        for i: 0..player.default_inventory.capacity - 1 {
+            item := player.default_inventory.get_item(i);
+            if item == null continue;
+            defn := item.get_definition();
+            if defn == null continue;
+            wt := get_weapon_type_for_item(defn);
+            if wt == .NONE continue;
+            if weapon_get_ammo_count(player, wt) < 100 {
+                set_weapon_ammo_count(player, wt, 100);
+            }
+        }
+    }
+}
