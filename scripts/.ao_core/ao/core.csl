@@ -1,5 +1,4 @@
 import "core:basic"
-import "core:global_leaderboard"
 
 Entity :: class {
     set_local_enabled          :: method(enabled: bool)                                                                                                                 #foreign "entity_set_local_enabled";
@@ -1251,12 +1250,6 @@ core_player_update :: proc(player: Player, dt: float) {
 core_player_late_update :: proc(player: Player, dt: float) {
     if player.entity.effect_data != null && player.entity.effect_data.first_effect != null {
         core_late_update_effects(player.entity, dt);
-    }
-
-    if player.is_local_or_server() {
-        for leaderboard: component_iterator(Global_Leaderboard) {
-            leaderboard.draw();
-        }
     }
 }
 

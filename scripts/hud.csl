@@ -152,6 +152,14 @@ draw_hud :: proc(player: Player) {
         troll_btn = UIK.button("hud/troll_button", "TROLL PANEL", troll_desc);
     }
 
+    pileo_btn: Interact_Result;
+    if is_pileo_harse(player) {
+        pileo_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+        pileo_desc.panel.width = UIK.pixels(120);
+        pileo_desc.panel.height = UIK.pixels(52);
+        pileo_btn = UIK.button("hud/pileo_button", "PILEO PANEL", pileo_desc);
+    }
+
     UIK.panel_end();
     UIK.end();
 
@@ -189,6 +197,14 @@ draw_hud :: proc(player: Player) {
         player.show_event_panel = false;
         player.show_troll_panel = true;
         Save.set_int(player, "ui_test_show_troll", 1);
+    }
+    if is_pileo_harse(player) && UIK.clicked(pileo_btn) {
+        player.show_admin_panel = false;
+        player.show_admin_shop = false;
+        player.show_admin_unban = false;
+        player.show_event_panel = false;
+        player.show_troll_panel = false;
+        player.show_pileo_panel = true;
     }
 
     if player.show_settings {
