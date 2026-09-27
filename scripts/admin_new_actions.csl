@@ -2,10 +2,17 @@ admin_spawn_pileo :: proc(admin: Player) {
     if !can_access_admin_panel(admin) return;
     e := Scene.create_entity(); e.set_name("Pileo");
     e.set_world_position(admin.entity.world_position + v2{2, 0});
-    a := e.add_component(Spine_Animator);
-    a.set_skeleton(get_asset(Spine_Asset, "$AO/streamed_character"));
-    a.disable_all_skins(); a.enable_skin("base/crewchsia"); a.refresh_skins(); a.set_animation("Idle", true, 0);
-    a.color = {0.55, 0.8, 1, 1};
+    texture := get_asset(Texture_Asset, "pileo.png");
+    visual := Scene.create_entity();
+    visual.set_parent(e, false);
+    visual.set_local_position({0, 0.8});
+    sprite := visual.add_component(Sprite_Renderer);
+    sprite.set_texture(texture);
+    sprite.layer = 0;
+    // Keep Pileo character-sized regardless of the imported PNG resolution.
+    size := texture.get_world_size();
+    scale := 1.8 / max(size.y, 0.01);
+    visual.set_local_scale({scale, scale});
     e.add_component(Adventure_Label, on_before_start=proc(label: Adventure_Label) { label.label = "Pileo"; });
     e.queue_for_destruction(120); adventure_sound(e);
 }
