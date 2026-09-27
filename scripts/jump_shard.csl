@@ -1,0 +1,11 @@
+Jump_Shard :: class : Interactable {
+    @ao_serialize shard_index: s64;
+    ao_start :: method() { set_listener(this); set_text("Jump Shard"); radius = 1.5; required_hold_time = 0; }
+    can_use :: method(p: Player) -> bool { return p.adventure_world == 1 && !p.is_dead && !p.jump_crafted && (p.shard_mask & (1 << shard_index)) == 0; }
+    on_interact :: method(p: Player) {
+        if !adventure_give(p, g_jump_shard, 1) return;
+        p.shard_mask |= (1 << shard_index);
+        Save.set_int(p, "splash_shards", p.shard_mask);
+        p.play_reward_feedback(format_string("Jump Shards % / 9", {adventure_rescue_count(p.shard_mask)}));
+    }
+}

@@ -43,6 +43,7 @@ elemental_shop_name :: proc(event: s64) -> string {
     if event == 7 return "Sun";
     if event == 8 return "Cyber Energy";
     if event == 9 return "TADC";
+    if event == 10 return "Wind";
     return "Lightning";
 }
 
@@ -386,7 +387,7 @@ draw_shop :: proc(player: Player) {
     dash_handle: Interact_Result;
     speed_boost_handle: Interact_Result;
     zoom_out_handle: Interact_Result;
-    medkit_handle: Interact_Result;
+    invisible_handle: Interact_Result;
     normal_handle: Interact_Result;
     finger_handle: Interact_Result;
     paper_handle: Interact_Result;
@@ -412,6 +413,10 @@ draw_shop :: proc(player: Player) {
 
     UIK.text("Featured Shop", UIK.text_title());
     event := elemental_shop_event();
+    if event == 10 {
+        wind_storm := draw_shop_card("shop/wind_storm", "Storm's Eye", 150, get_asset(Texture_Asset, get_weapon_config(.STORMS_EYE).weapon_icon_path), {0.5, 0.8, 0.9, 1}, player_has_weapon(player, .STORMS_EYE));
+        if UIK.clicked(wind_storm) { buy_weapon_offer(player, .STORMS_EYE, 150, "+Storm's Eye"); }
+    }
     if g_event_cyber_energy {
         UIK.text("Cyber event: Energy weapons and Cyber armor unlocked", UIK.text_body());
     } else if g_event_sun {
@@ -503,7 +508,7 @@ draw_shop :: proc(player: Player) {
     shop_trowel_icon := get_asset(Texture_Asset, get_weapon_config(.SWORD).weapon_icon_path);
     shop_distortion_icon := get_asset(Texture_Asset, get_weapon_config(.DISTORTION).weapon_icon_path);
     shop_battle_axe_handle = draw_shop_card("shop/scythe", "Scythe", shop_price(player, SCYTHE_COST), shop_battle_axe_icon, {0.65, 0.65, 0.7, 1}, player_has_weapon(player, .BATTLE_AXE));
-    trowel_handle := draw_shop_card("shop/katana", "Katana", shop_price(player, TROWEL_COST), shop_trowel_icon, {0.55, 0.35, 0.2, 1}, player_has_weapon(player, .SWORD));
+    trowel_handle := draw_shop_card("shop/trowel", "Trowel", shop_price(player, TROWEL_COST), shop_trowel_icon, {0.55, 0.35, 0.2, 1}, player_has_weapon(player, .SWORD));
     shop_distortion_handle = draw_shop_card("shop/distortion", "Distortion", void2_price(DISTORTION_COST), shop_distortion_icon, {0.12, 0.05, 0.35, 1}, player_has_weapon(player, .DISTORTION));
     UIK.panel_end();
 
@@ -567,8 +572,8 @@ draw_shop :: proc(player: Player) {
     UIK.panel_end();
     powerup_row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(powerup_row_3);
-    medkit_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
-    medkit_handle = draw_shop_card("shop/medkit", "Medkit", MEDKIT_COST, medkit_icon, {0.9, 0.25, 0.25, 1}, player.has_medkit);
+    invisible_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
+    invisible_handle = draw_shop_card("shop/invisible", "Invisible", INVISIBLE_COST, invisible_icon, {0.9, 0.25, 0.25, 1}, player.has_invisible);
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
@@ -641,7 +646,7 @@ draw_shop :: proc(player: Player) {
         buy_weapon_offer(player, .BATTLE_AXE, SCYTHE_COST, "+Scythe");
     }
     if UIK.clicked(trowel_handle) {
-        buy_weapon_offer(player, .SWORD, TROWEL_COST, "+Katana");
+        buy_weapon_offer(player, .SWORD, TROWEL_COST, "+Trowel");
     }
     if UIK.clicked(shop_distortion_handle) {
         if spend_coins(player, void2_price(DISTORTION_COST)) {
@@ -725,10 +730,10 @@ draw_shop :: proc(player: Player) {
             }
         }
     }
-    if UIK.clicked(medkit_handle) && !player.has_medkit {
-        if spend_coins(player, MEDKIT_COST) {
-            player.has_medkit = true;
-            play_pickup_feedback(player, "+Medkit");
+    if UIK.clicked(invisible_handle) && !player.has_invisible {
+        if spend_coins(player, INVISIBLE_COST) {
+            player.has_invisible = true;
+            play_pickup_feedback(player, "+Invisible");
             if player.is_local() {
                 sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
                 d := SFX.default_sfx_desc();
@@ -879,6 +884,11 @@ draw_admin_shop :: proc(player: Player) {
     content.padding = v4{12, 16, 12, 16};
     content.gap = 8;
     UIK.list_begin("admin_shop_scroll", content);
+    UIK.text("Featured", UIK.text_title());
+    if elemental_shop_event() == 10 {
+        wind_blaster := draw_shop_card("admin_shop/wind_blaster", "Wind Blaster", 150, get_asset(Texture_Asset, get_weapon_config(.WIND_BLASTER).weapon_icon_path), {0.5, 0.8, 0.9, 1}, player_has_weapon(player, .WIND_BLASTER));
+        if UIK.clicked(wind_blaster) { buy_weapon_offer(player, .WIND_BLASTER, 150, "+Wind Blaster"); }
+    }
 
     energy_pistols_btn: Interact_Result;
     energy_rifle_btn: Interact_Result;
@@ -895,6 +905,7 @@ draw_admin_shop :: proc(player: Player) {
         UIK.spacer(UIK.pixels(1), UIK.pixels(8));
     }
 
+    draw_admin_event_featured(player);
     UIK.text("Weapons", UIK.text_title());
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     weapon_row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
@@ -902,9 +913,11 @@ draw_admin_shop :: proc(player: Player) {
     hydro_icon := get_asset(Texture_Asset, get_weapon_config(.HYDRO_CANNON).weapon_icon_path);
     boom_icon := get_asset(Texture_Asset, get_weapon_config(.BOOMWHEEL).weapon_icon_path);
     void_icon := get_asset(Texture_Asset, get_weapon_config(.VOID_SPLITTER).weapon_icon_path);
-    hydro_btn := draw_shop_card("admin_shop/hydro_cannon", "Hydro Cannon", ADMIN_SHOP_GUN_COST, hydro_icon, {0.35, 0.75, 0.9, 1}, player_has_weapon(player, .HYDRO_CANNON));
+    hydro_btn: Interact_Result;
+    if elemental_shop_event() != 2 { hydro_btn = draw_shop_card("admin_shop/hydro_cannon", "Hydro Cannon", ADMIN_SHOP_GUN_COST, hydro_icon, {0.35, 0.75, 0.9, 1}, player_has_weapon(player, .HYDRO_CANNON)); }
     boom_btn := draw_shop_card("admin_shop/boomwheel", "Boomwheel", ADMIN_SHOP_GUN_COST, boom_icon, {0.9, 0.6, 0.25, 1}, player_has_weapon(player, .BOOMWHEEL));
-    void_btn := draw_shop_card("admin_shop/void_splitter", "Void Splitter", ADMIN_SHOP_GUN_COST, void_icon, {0.65, 0.55, 0.95, 1}, player_has_weapon(player, .VOID_SPLITTER));
+    void_btn: Interact_Result;
+    if elemental_shop_event() != 5 { void_btn = draw_shop_card("admin_shop/void_splitter", "Void Splitter", ADMIN_SHOP_GUN_COST, void_icon, {0.65, 0.55, 0.95, 1}, player_has_weapon(player, .VOID_SPLITTER)); }
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
@@ -912,8 +925,8 @@ draw_admin_shop :: proc(player: Player) {
     UIK.panel_begin(weapon_row_2);
     storm_icon := get_asset(Texture_Asset, get_weapon_config(.STORMS_EYE).weapon_icon_path);
     rpg_icon := get_asset(Texture_Asset, get_weapon_config(.WATER_BALLOON_RPG).weapon_icon_path);
-    storm_btn := draw_shop_card("admin_shop/storms_eye", "Storm's Eye", ADMIN_SHOP_GUN_COST, storm_icon, {0.5, 0.8, 0.9, 1}, player_has_weapon(player, .STORMS_EYE));
-    rpg_btn := draw_shop_card("admin_shop/rpg", "RPG", ADMIN_SHOP_GUN_COST, rpg_icon, {0.85, 0.55, 0.25, 1}, player_has_weapon(player, .WATER_BALLOON_RPG));
+
+    rpg_btn := draw_shop_card("admin_shop/rpg", "Water Balloon RPG", ADMIN_SHOP_GUN_COST, rpg_icon, {0.85, 0.55, 0.25, 1}, player_has_weapon(player, .WATER_BALLOON_RPG));
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
@@ -969,9 +982,7 @@ draw_admin_shop :: proc(player: Player) {
     if UIK.clicked(void_btn) {
         buy_weapon_offer(player, .VOID_SPLITTER, ADMIN_SHOP_GUN_COST, "+Void Splitter");
     }
-    if UIK.clicked(storm_btn) {
-        buy_weapon_offer(player, .STORMS_EYE, ADMIN_SHOP_GUN_COST, "+Storm's Eye");
-    }
+
     if UIK.clicked(boom_btn) {
         buy_weapon_offer(player, .BOOMWHEEL, ADMIN_SHOP_GUN_COST, "+Boomwheel");
     }
@@ -994,7 +1005,7 @@ draw_admin_shop :: proc(player: Player) {
         grant_admin_ammo_offer(player, 0, 30, "+30 Normal Bullets");
     }
     if UIK.clicked(rpg_btn) {
-        buy_weapon_offer(player, .WATER_BALLOON_RPG, ADMIN_SHOP_GUN_COST, "+RPG");
+        buy_weapon_offer(player, .WATER_BALLOON_RPG, ADMIN_SHOP_GUN_COST, "+Water Balloon RPG");
     }
     if UIK.clicked(minigun_btn) {
         buy_weapon_offer(player, .GATLING_GUN, ADMIN_SHOP_GUN_COST, "+Minigun");
@@ -1069,13 +1080,23 @@ draw_admin_panel :: proc(player: Player) {
     UIK.text(format_string("Target: %", {player.admin_target_username}), UIK.text_body());
     UIK.text(format_string("Coins: %", {player.admin_grant_amount}), UIK.text_body());
     UIK.text(format_string("Ban duration: % seconds", {player.admin_grant_amount}), UIK.text_body());
-    UIK.text("Reason For Ban", UIK.text_title());
-    UIK.text(player.admin_ban_reason, UIK.text_body());
+
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
     minigames_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     minigames_desc.panel.width = UIK.flex(1);
     minigames_desc.panel.height = UIK.pixels(58);
+    spawn_pileo_btn := UIK.button("admin/spawn_pileo", "Spawn Pileo", minigames_desc);
+    red_sun_btn := UIK.button("admin/red_sun", "Red Sun / Unmorph", minigames_desc);
+    if UIK.clicked(spawn_pileo_btn) { admin_spawn_pileo(player); }
+    if UIK.clicked(red_sun_btn) {
+        morph_target := find_online_player_by_username(player.admin_target_username);
+        if #alive(morph_target) { admin_red_sun(player, morph_target); }
+    }
+    nuke_btn := UIK.button("admin/nuke_all", "Nuke All", minigames_desc);
+    amount_2500_btn := UIK.button("admin/amount_2500", "2,500 seconds / coins", minigames_desc);
+    if UIK.clicked(nuke_btn) { admin_nuke_all(player); }
+    if UIK.clicked(amount_2500_btn) { player.admin_grant_amount = 2500; }
     minigames_btn := UIK.button("admin/start_minigames", "Start MiniGames", minigames_desc);
     UIK.text("Choose Capture the Flag, assign players to teams, and start.", UIK.text_body());
 
@@ -1503,6 +1524,14 @@ draw_event_panel :: proc(player: Player) {
 
     fire_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     fire_desc.panel.width = UIK.flex(1); fire_desc.panel.height = UIK.pixels(52);
+    wind_btn := UIK.button("events/start_wind", "Start Wind Event", fire_desc);
+    if UIK.clicked(wind_btn) {
+        stop_active_event();
+        g_event_elemental = true;
+        g_active_element_event = 10;
+        g_event_ends_at = get_time() + 600;
+        player.show_event_panel = false;
+    }
     fire_btn := UIK.button("events/start_fire", "Start Fire Event", fire_desc);
     water_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     water_desc.panel.width = UIK.flex(1); water_desc.panel.height = UIK.pixels(52);

@@ -36,7 +36,7 @@ Red_Chaser :: class : Component {
         sp.set_skeleton(get_asset(Spine_Asset, "$AO/streamed_character"));
         sp.enable_skin("base/crewchsia");
         sp.refresh_skins();
-        sp.color_multiplier = {2.0, 0.15, 0.15, 1.0};
+        sp.color = {2.0, 0.15, 0.15, 1.0};
         sp.scale = v2{0.7, 0.7};
         spine = sp;
 
@@ -167,7 +167,7 @@ Fun_Mode_Manager :: class : Component {
                 r := sin(t * 3.0 + phase) * 0.5 + 1.0;
                 g := sin(t * 3.0 + phase + 2.094) * 0.5 + 1.0;
                 b := sin(t * 3.0 + phase + 4.189) * 0.5 + 1.0;
-                player.animator.color_multiplier = {r, g, b, 1.0};
+                player.animator.color = {r, g, b, 1.0};
             }
             phase += 1.047;
         }
@@ -184,7 +184,7 @@ Fun_Mode_Manager :: class : Component {
     ao_end :: method() {
         for player: component_iterator(Player) {
             if player.animator != null {
-                player.animator.color_multiplier = {1.0, 1.0, 1.0, 1.0};
+                player.animator.color = {1.0, 1.0, 1.0, 1.0};
             }
         }
         chasers: [..]Red_Chaser;

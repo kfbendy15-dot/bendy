@@ -21,7 +21,7 @@
   "component_type": "Internal_Component",
   "internal_component_type": "Sprite_Renderer",
   "data": {
-    "tint": {
+    "color": {
       "Y": 0.7500000000000000,
       "Z": 0.2000000029802322
     },

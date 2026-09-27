@@ -165,7 +165,7 @@ admin :: proc(player: Player, mode: string = "") {
 
     player.admin_chat_enabled = true;
     player.play_reward_feedback("Admin Chat on");
-} @chat_command @any
+}
 
 normal :: proc(player: Player, mode: string = "") {
     if player == null || !can_access_admin_panel(player) {
@@ -178,7 +178,7 @@ normal :: proc(player: Player, mode: string = "") {
 
     player.admin_chat_enabled = false;
     player.play_reward_feedback("Normal Chat on");
-} @chat_command @any
+}
 
 init_admin_chat :: proc() {
     if g_admin_chat_initialized {

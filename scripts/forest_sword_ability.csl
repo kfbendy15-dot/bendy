@@ -1,0 +1,14 @@
+Forest_Sword_Ability :: class : Ability_Base {
+    on_init :: method() { name = "Sword"; icon = get_asset(Texture_Asset, get_weapon_config(.SWORD).weapon_icon_path); }
+    can_use :: method() -> bool { return player.(Player).adventure_world == 2; }
+    on_update :: method(params: ref Ability_Update_Params) {
+        if !params.clicked || !params.can_use return;
+        current_cooldown = 0.65;
+        for bear: component_iterator(Forest_Bear) {
+            if bear.target.health > 0 && length(bear.entity.world_position - player.entity.world_position) < 2.5 {
+                weapon_target_apply_damage(bear.target, 30, player.entity.id);
+            }
+        }
+        player.animator.state_machine.set_trigger("attack"); adventure_sound(player.entity);
+    }
+}

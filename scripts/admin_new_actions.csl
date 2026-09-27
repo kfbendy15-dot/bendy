@@ -1,0 +1,23 @@
+admin_spawn_pileo :: proc(admin: Player) {
+    if !can_access_admin_panel(admin) return;
+    e := Scene.create_entity(); e.set_name("Pileo");
+    e.set_world_position(admin.entity.world_position + v2{2, 0});
+    a := e.add_component(Spine_Animator);
+    a.set_skeleton(get_asset(Spine_Asset, "$AO/streamed_character"));
+    a.disable_all_skins(); a.enable_skin("base/crewchsia"); a.refresh_skins(); a.set_animation("Idle", true, 0);
+    a.color = {0.55, 0.8, 1, 1};
+    e.add_component(Adventure_Label, on_before_start=proc(label: Adventure_Label) { label.label = "Pileo"; });
+    e.queue_for_destruction(120); adventure_sound(e);
+}
+admin_red_sun :: proc(admin: Player, target: Player) {
+    if !can_access_admin_panel(admin) || !#alive(target) return;
+    if #alive(target.red_sun_visual) {
+        target.red_sun_visual.destroy(); target.red_sun_visual = null;
+        target.remove_invisibility_reason("red_sun"); return;
+    }
+    if target.troll_morph_active return;
+    e := Scene.create_entity(); e.set_parent(target.entity, false); e.set_local_position({0, 0.15}); e.set_local_scale({0.45, 0.45});
+    a := e.add_component(Spine_Animator); a.set_skeleton(get_asset(Spine_Asset, "RedSun_3a75f9/RedSun.spine"));
+    a.disable_all_skins(); a.enable_skin("default"); a.enable_skin("level4"); a.refresh_skins(); a.set_color_replace_color(.RED); a.set_animation("Idle", true, 0);
+    target.red_sun_visual = e; target.add_invisibility_reason("red_sun"); adventure_sound(e);
+}

@@ -220,7 +220,7 @@ spawn_subspace_tripmine_explosion :: proc(pos: v2, owner_id: u64, damage: float,
     if burst != null {
         spine := burst.get_component(Spine_Animator);
         if spine != null {
-            spine.color_multiplier = {1.9, 0.35, 1.75, 1.0};
+            spine.color = {1.9, 0.35, 1.75, 1.0};
         }
     }
 }

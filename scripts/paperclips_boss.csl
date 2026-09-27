@@ -79,7 +79,7 @@ Paperclips_Boss :: class : Component {
         sp.enable_skin("face/cute_eyes");
         sp.refresh_skins();
         sp.scale            = v2{0.9, 0.9};
-        sp.color_multiplier = {1.2, 1.0, 0.2, 1.0};
+        sp.color = {1.2, 1.0, 0.2, 1.0};
         spine = sp;
 
         sm    := State_Machine.create();
@@ -160,9 +160,9 @@ Paperclips_Boss :: class : Component {
 
         if hit_flash_timer > 0 {
             hit_flash_timer -= dt;
-            spine.color_multiplier = {2.5, 0.2, 0.2, 1.0};
+            spine.color = {2.5, 0.2, 0.2, 1.0};
         } else {
-            spine.color_multiplier = {1.2, 1.0, 0.2, 1.0};
+            spine.color = {1.2, 1.0, 0.2, 1.0};
         }
 
         if spawn_timer > 0 {

@@ -1,0 +1,12 @@
+Splash_Bouncer :: class : Component {
+    @ao_serialize radius: float = 2;
+    ao_update :: method(dt: float) {
+        for p: component_iterator(Player) {
+            if p.adventure_world != 1 || p.is_dead || p.entity.has_effect(Bounce_Effect) continue;
+            offset := p.entity.world_position - entity.world_position;
+            if length(offset) > radius continue;
+            e := new(Bounce_Effect); e.direction = length(p.input_this_frame) > 0.1 ? normalize(p.input_this_frame) : v2{0, 1};
+            p.entity.set_active_effect(e);
+        }
+    }
+}

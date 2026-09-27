@@ -1,0 +1,22 @@
+Placed_Jump_Pad :: class : Interactable {
+    owner_user_id: string;
+    used: bool;
+    ao_start :: method() { set_listener(this); set_text("Jump!"); radius = 1.5; required_hold_time = 0; entity.queue_for_destruction(120); }
+    can_use :: method(p: Player) -> bool { return !used && p.get_user_id() == owner_user_id && !p.is_dead && p.adventure_world == 1; }
+    on_interact :: method(p: Player) {
+        used = true;
+        update_adventure_day(p); p.jump_daily_uses += 1;
+        Save.set_int(p, "jump_daily_uses", p.jump_daily_uses);
+        if p.jump_daily_uses >= 9 { p.forest_unlocked = true; Save.set_int(p, "forest_unlocked", 1); }
+        for other: component_iterator(Player) {
+            if other.is_dead || other.adventure_world != 1 continue;
+            offset := other.entity.world_position - entity.world_position;
+            if length(offset) > 4 continue;
+            bounce := new(Bounce_Effect);
+            bounce.direction = other == p ? v2{0, 1} : (length(offset) > 0.1 ? normalize(offset) : v2{1, 0});
+            other.entity.set_active_effect(bounce);
+        }
+        p.play_reward_feedback(format_string("Jump Pads % / 9", {p.jump_daily_uses}));
+        entity.destroy();
+    }
+}

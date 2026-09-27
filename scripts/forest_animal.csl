@@ -1,0 +1,14 @@
+Forest_Animal :: class : Interactable {
+    @ao_serialize rescue_index: s64;
+    ao_start :: method() { set_listener(this); set_text("Rescue animal"); set_subtitle("Defeat its bear"); radius = 2; required_hold_time = 0.4; }
+    can_use :: method(p: Player) -> bool { return p.adventure_world == 2 && !p.is_dead && (p.rescue_mask & (1 << rescue_index)) == 0; }
+    on_interact :: method(p: Player) {
+        for bear: component_iterator(Forest_Bear) {
+            if bear.rescue_index == rescue_index && bear.target.health > 0 { p.play_reward_feedback("Defeat the bear first"); return; }
+        }
+        p.rescue_mask |= (1 << rescue_index); Save.set_int(p, "forest_rescues", p.rescue_mask);
+        p.weapon_target.health = min(p.weapon_target.max_health, p.weapon_target.health + 25);
+        adventure_sound(entity);
+        p.play_reward_feedback(format_string("Animals saved % / 10", {adventure_rescue_count(p.rescue_mask)}));
+    }
+}

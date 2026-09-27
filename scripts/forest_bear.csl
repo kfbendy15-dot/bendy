@@ -1,0 +1,28 @@
+Forest_Bear :: class : Component {
+    @ao_serialize rescue_index: s64;
+    target: Weapon_Target;
+    next_attack: float;
+    respawn_at: float;
+    home: v2;
+    ao_start :: method() {
+        home = entity.world_position;
+        target = entity.add_component(Weapon_Target); target.health = 90; target.max_health = 90;
+    }
+    ao_draw :: method(dt: float) {
+        if #alive(target) && target.health > 0 { World_Progress_Bar.draw(entity.world_position, clamp(target.health / target.max_health, 0, 1), World_Progress_Bar.default_options()); }
+    }
+    ao_update :: method(dt: float) {
+        if target.health <= 0 {
+            if respawn_at == 0 { respawn_at = get_time() + 25; entity.get_component(Spine_Animator).color = {1, 1, 1, 0.2}; }
+            if get_time() >= respawn_at { target.health = 90; respawn_at = 0; entity.get_component(Spine_Animator).color = {1, 1, 1, 1}; }
+            return;
+        }
+        if get_time() < next_attack return;
+        for p: component_iterator(Player) {
+            if p.adventure_world == 2 && !p.is_dead && length(p.entity.world_position - home) < 3 {
+                weapon_target_apply_damage(p.weapon_target, 15, entity.id);
+                adventure_sound(entity); next_attack = get_time() + 1.2; break;
+            }
+        }
+    }
+}

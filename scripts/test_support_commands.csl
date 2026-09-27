@@ -25,7 +25,7 @@ reset_test_shop_state :: proc(player: Player) {
     Save.set_int(player, "ui_test_monetization_passes_granted", 0);
     Save.set_int(player, "ui_test_monetization_mode", 0);
     save_coin_balance(player);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 hb_test_drop_target :: proc(player: Player) {
     if !#alive(player) {
@@ -35,7 +35,7 @@ hb_test_drop_target :: proc(player: Player) {
     player.weapon_target = null;
     player.ui_test_restore_weapon_target_at = get_time() + 2.0;
     player.ui_test_health_bar_target_restored = false;
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 vip_test_grant :: proc(player: Player) {
     player.has_vip = true;
@@ -46,7 +46,7 @@ vip_test_grant :: proc(player: Player) {
     } else if current > 100 {
         Economy.withdraw_currency(player, "Coins", current - 100);
     }
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 open_test_shop :: proc(player: Player) {
     if player == null {
@@ -56,7 +56,7 @@ open_test_shop :: proc(player: Player) {
     player.shop_tab_index = 0;
     player.show_shop = true;
     Save.set_int(player, "ui_test_show_shop", 1);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 open_test_monetization_tab :: proc(player: Player) {
     if player == null {
@@ -67,7 +67,7 @@ open_test_monetization_tab :: proc(player: Player) {
     player.show_shop = true;
     Save.set_int(player, "ui_test_monetization_mode", 1);
     Save.set_int(player, "ui_test_show_shop", 1);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 monetization_test_grant_coin_passes :: proc(player: Player) {
     if player == null {
@@ -77,7 +77,7 @@ monetization_test_grant_coin_passes :: proc(player: Player) {
     Economy.deposit_currency(player, "Coins", 1925);
     save_coin_balance(player);
     Save.set_int(player, "ui_test_monetization_passes_granted", 1);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 prepare_admin_shop_test :: proc(player: Player) {
     if player == null {
@@ -95,7 +95,7 @@ prepare_admin_shop_test :: proc(player: Player) {
     Save.set_int(player, "ui_test_killer_fish_used", 0);
     Save.set_int(player, "ui_test_giant_gun_used", 0);
     Save.set_int(player, "ui_test_meteor_boss_spawned", 0);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 g_admin_unban_test_player: Player;
 
@@ -146,7 +146,7 @@ prepare_admin_list_test :: proc(player: Player) {
 
     player.admin_unban_test_fixture_count = 2;
     player.admin_unban_test_prepare_at = get_time() + 2.0;
-} @chat_command @any
+}
 
 prepare_admin_single_list_test :: proc(player: Player) {
     if player == null || !can_access_admin_panel(player) {
@@ -155,7 +155,7 @@ prepare_admin_single_list_test :: proc(player: Player) {
 
     player.admin_unban_test_fixture_count = 1;
     player.admin_unban_test_prepare_at = get_time() + 2.0;
-} @chat_command @any
+}
 
 admin_list_test_replay_last :: proc(player: Player) {
     if player == null || !can_access_admin_panel(player) || player.admin_unban_last_user_id == "" {
@@ -163,15 +163,15 @@ admin_list_test_replay_last :: proc(player: Player) {
     }
 
     admin_unban_user(player, player.admin_unban_last_user_id);
-} @chat_command @any
+}
 
 admin_backrooms_test_send :: proc(player: Player) {
     send_player_to_backrooms(player);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 admin_backrooms_test_return :: proc(player: Player) {
     return_player_from_backrooms(player);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 admin_shop_test_select_maps :: proc(player: Player) {
     if player == null {
@@ -188,7 +188,7 @@ admin_shop_test_select_maps :: proc(player: Player) {
     Save.set_int(player, "ui_test_map_ice", 1);
     set_admin_map_destination(player, "island", {24, 14}, "Island Map");
     Save.set_int(player, "ui_test_map_island", 1);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 admin_shop_test_buy_new_items :: proc(player: Player) {
     if player == null {
@@ -203,7 +203,7 @@ admin_shop_test_buy_new_items :: proc(player: Player) {
     buy_weapon_offer(player, .SPOON, 1000, "+Spoon");
     buy_weapon_offer(player, .KILLER_FISH, 2000, "+Killer Fish");
     buy_weapon_offer(player, .GIANT_GUN, giant_gun_admin_cost(player), "+Giant Gun");
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 normal_shop_test_buy_support_items :: proc(player: Player) {
     if player == null {
@@ -217,7 +217,7 @@ normal_shop_test_buy_support_items :: proc(player: Player) {
     save_coin_balance(player);
 
     buy_armor_offer(player);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 prepare_normal_shop_test :: proc(player: Player) {
     if player == null {
@@ -241,7 +241,7 @@ prepare_normal_shop_test :: proc(player: Player) {
     Save.set_int(player, "ui_test_show_shop", 1);
     Save.set_int(player, "ui_test_current_health", 60);
     Save.set_int(player, "ui_test_armor_health", PLAYER_MAX_HEALTH.(s64));
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 admin_shop_test_grant_new_items :: proc(player: Player) {
     if player == null {
@@ -259,7 +259,7 @@ admin_shop_test_grant_new_items :: proc(player: Player) {
     grant_weapon_with_ammo(player, .GIANT_GUN, 1);
     apply_armor_bonus(player, ARMOR_BONUS_HP);
     fully_heal_player(player);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 admin_shop_test_grant_massive_bullets :: proc(player: Player) {
     if player == null {
@@ -268,7 +268,7 @@ admin_shop_test_grant_massive_bullets :: proc(player: Player) {
 
     grant_ammo_to_player(player, 0, 600);
     Save.set_int(player, "ui_test_massive_bullets_granted", 1);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 admin_shop_test_use_spoon :: proc(player: Player) {
     if player == null {
@@ -278,7 +278,7 @@ admin_shop_test_use_spoon :: proc(player: Player) {
     grant_weapon_with_ammo(player, .SPOON, 0);
     equip_weapon_item_if_present(player, .SPOON);
     spoon_attack(player);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 admin_shop_test_use_killer_fish :: proc(player: Player) {
     if player == null {
@@ -288,7 +288,7 @@ admin_shop_test_use_killer_fish :: proc(player: Player) {
     grant_weapon_with_ammo(player, .KILLER_FISH, 0);
     equip_weapon_item_if_present(player, .KILLER_FISH);
     killer_fish_attack(player);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 admin_shop_test_use_giant_gun :: proc(player: Player) {
     if player == null {
@@ -298,7 +298,7 @@ admin_shop_test_use_giant_gun :: proc(player: Player) {
     grant_weapon_with_ammo(player, .GIANT_GUN, 1);
     equip_weapon_item_if_present(player, .GIANT_GUN);
     giant_gun_attack(player, {1, 0});
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 admin_shop_test_use_specials :: proc(player: Player) {
     if player == null {
@@ -316,7 +316,7 @@ admin_shop_test_use_specials :: proc(player: Player) {
     grant_weapon_with_ammo(player, .GIANT_GUN, 1);
     equip_weapon_item_if_present(player, .GIANT_GUN);
     giant_gun_attack(player, {1, 0});
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 backrooms_monster_test_touch :: proc(player: Player) {
     if player == null {
@@ -348,5 +348,5 @@ backrooms_monster_test_touch :: proc(player: Player) {
     Save.set_int(player, "ui_test_backrooms_monster_invulnerable", invulnerable ? 1 : 0);
     Save.set_int(player, "ui_test_backrooms_monster_touch_kill", killed ? 1 : 0);
     troll_do_unmorph(player, player);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 

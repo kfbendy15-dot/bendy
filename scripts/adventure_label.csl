@@ -1,0 +1,9 @@
+Adventure_Label :: class : Component {
+    @ao_serialize label: string;
+    ao_draw :: method(dt: float) {
+        UI.push_world_draw_context(); defer UI.pop_draw_context();
+        pos := entity.world_position + v2{0, 1.5};
+        ts := UI.default_text_settings(); ts.size = 0.38;
+        UI.text(Rect{pos - v2{2.5, 0.3}, pos + v2{2.5, 0.3}}, ts, label);
+    }
+}

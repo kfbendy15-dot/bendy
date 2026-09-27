@@ -1,0 +1,14 @@
+draw_admin_event_featured :: proc(p: Player) {
+    event := elemental_shop_event();
+    wt := Weapon_Type.NONE;
+    if event == 1 { wt = .FIRE_RAY; }
+    if event == 2 { wt = .HYDRO_CANNON; }
+    if event == 3 { wt = .SHURIKEN; }
+    if event == 4 { wt = .GLACIATOR; }
+    if event == 5 { wt = .VOID_SPLITTER; }
+    if event == 6 { wt = .RAY_GUN; }
+    if wt == .NONE return;
+    config := get_weapon_config(wt);
+    handle := draw_shop_card("admin_shop/event_featured", config.item_name, ADMIN_SHOP_GUN_COST, get_asset(Texture_Asset, config.weapon_icon_path), event_map_color(event), player_has_weapon(p, wt));
+    if UIK.clicked(handle) { buy_weapon_offer(p, wt, ADMIN_SHOP_GUN_COST, config.item_name); }
+}

@@ -214,8 +214,8 @@ stop_stranger_mode :: proc(player: Player = null) {
 
 strangeron :: proc(player: Player) {
     start_stranger_mode(player);
-} @chat_command @any
+}
 
 strangeroff :: proc(player: Player) {
     stop_stranger_mode(player);
-} @chat_command @any
+}

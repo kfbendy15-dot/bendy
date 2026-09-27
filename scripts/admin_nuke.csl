@@ -1,0 +1,21 @@
+admin_nuke_all :: proc(admin: Player) {
+    if !#alive(admin) || !can_access_admin_panel(admin) return;
+    if get_time() < admin.nuke_ready_at return;
+    admin.nuke_ready_at = get_time() + 5;
+    deaths: s64;
+    for target: component_iterator(Player) {
+        if target == admin || target.is_dead || !#alive(target.weapon_target) continue;
+        target.weapon_target.health = 0;
+        target.entity.set_active_effect(new(Death_Effect));
+        deaths += 1;
+    }
+    if deaths > 0 {
+        Economy.deposit_currency(admin, "Coins", deaths * 20);
+        save_coin_balance(admin);
+        admin.play_reward_feedback(format_string("+% Coins", {deaths * 20}));
+    }
+    desc := SFX.default_sfx_desc();
+    desc.entity_to_follow = admin.entity.id;
+    desc.volume = 0.8;
+    SFX.play(get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/cannon_explode.wav"), desc);
+}

@@ -1,0 +1,20 @@
+Adventure_Portal :: class : Interactable {
+    @ao_serialize destination: s64;
+    ao_start :: method() {
+        set_listener(this); radius = 2; required_hold_time = 0.3;
+        set_text(destination == 1 ? "Splash" : (destination == 2 ? "Forest" : "Home"));
+        if destination == 1 { set_subtitle("1,000,000 Coins · permanent entry"); }
+        if destination == 2 { set_subtitle("9 Jump Pad uses in one day"); }
+    }
+    can_use :: method(p: Player) -> bool { return !p.is_dead; }
+    on_interact :: method(p: Player) {
+        if destination == 1 && !p.splash_unlocked {
+            if !spend_coins(p, 1000000) return;
+            p.splash_unlocked = true; Save.set_int(p, "splash_unlocked", 1);
+        }
+        if destination == 2 && !p.forest_unlocked {
+            p.play_reward_feedback(format_string("Jump Pads: % / 9 today", {p.jump_daily_uses})); return;
+        }
+        adventure_travel(p, destination);
+    }
+}

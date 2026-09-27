@@ -8,7 +8,7 @@ set_my_title :: proc(player: Player, title: string = "") {
     player.user_tag = title;
     Save.set_string(player, PLAYER_TITLE_SAVE_KEY, title);
     player.play_reward_feedback(title.count > 0 ? format_string("Title: %", {title}) : "Title cleared");
-} @chat_command @any
+}
 
 set_player_title :: proc(player: Player, target: Player, title: string = "") {
     if player == null || target == null || !can_access_admin_panel(player) {
@@ -19,4 +19,4 @@ set_player_title :: proc(player: Player, target: Player, title: string = "") {
     Save.set_string(target, PLAYER_TITLE_SAVE_KEY, title);
     target.play_reward_feedback(title.count > 0 ? format_string("Title: %", {title}) : "Title cleared");
     player.play_reward_feedback(format_string("Updated %", {target.get_username()}));
-} @chat_command @any
+}
