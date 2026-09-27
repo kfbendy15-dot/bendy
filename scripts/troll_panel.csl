@@ -787,6 +787,19 @@ draw_troll_panel :: proc(admin: Player) {
     caine_label := caine_active ? "Unmorph Caine" : "Caine • TADC Event";
     caine_btn := UIK.button("troll/morph_caine", caine_label, caine_desc);
 
+    special_morph_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(special_morph_row);
+    red_sun_active := selected_morph_target != null && #alive(selected_morph_target.red_sun_visual);
+    red_sun_desc := UIK.widget_desc_button_auto_default(red_sun_active ? .BUTTON_BASIC_YELLOW : .BUTTON_BASIC_RED);
+    red_sun_desc.panel.width = UIK.flex(1);
+    red_sun_desc.panel.height = UIK.pixels(54);
+    red_sun_btn := UIK.button("troll/morph_red_sun", red_sun_active ? "Unmorph Red Sun" : "Red Sun", red_sun_desc);
+    pileo_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    pileo_desc.panel.width = UIK.flex(1);
+    pileo_desc.panel.height = UIK.pixels(54);
+    pileo_btn := UIK.button("troll/spawn_pileo", "Spawn Pileo", pileo_desc);
+    UIK.panel_end();
+
     if backrooms_active {
         UIK.text("Touch players to eliminate them.", UIK.text_body());
     }
@@ -1033,6 +1046,18 @@ draw_troll_panel :: proc(admin: Player) {
         } else {
             troll_do_caine(admin, real_target);
         }
+    }
+
+    if UIK.clicked(red_sun_btn) {
+        if real_target == null {
+            admin.play_reward_feedback("Select a target");
+        } else {
+            admin_red_sun(admin, real_target);
+        }
+    }
+
+    if UIK.clicked(pileo_btn) {
+        admin_spawn_pileo(admin);
     }
 
 }

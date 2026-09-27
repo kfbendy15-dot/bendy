@@ -11,6 +11,25 @@ update_health_bar_visibility_test_state :: proc(player: Player) {
     }
 }
 
+draw_player_role_tag :: proc(player: Player, label: string, slot: s64, color: v4) {
+    tag_rect := player.username_rect.top_center_rect().offset(0, 26.0 + slot.(float) * 22.0);
+    tag_rect = tag_rect.grow(10, 34, 10, 34);
+
+    tag_ts := UI.default_text_settings();
+    tag_ts.size = 24;
+    tag_ts.color = color;
+    tag_ts.do_drop_shadow = true;
+    tag_ts.drop_shadow_offset = {1, -1};
+    tag_ts.drop_shadow_color = {0, 0, 0, 0.75};
+    tag_ts.do_outline = true;
+    tag_ts.outline_thickness = 2.2;
+    tag_ts.outline_color = {0.08, 0.05, 0.0, 0.95};
+    tag_ts.halign = .CENTER;
+    tag_ts.valign = .CENTER;
+
+    UI.text(tag_rect, tag_ts, label);
+}
+
 draw_health_bar :: proc(player: Player) {
     if !#alive(player) || !#alive(player.entity) {
         return;
@@ -30,6 +49,8 @@ draw_health_bar :: proc(player: Player) {
 
     UI.push_world_draw_context();
     defer UI.pop_draw_context();
+    UI.push_interpolation_anchor(player.entity);
+    defer UI.pop_interpolation_anchor();
 
     pos := player.entity.world_position;
     UI.push_z(pos.y - 0.0001);
@@ -78,23 +99,27 @@ draw_health_bar :: proc(player: Player) {
         i += 1;
     }
 
-    if player.user_tag.count > 0 && !player.troll_morph_active && (!can_access_admin_panel(player) || player.show_admin_tag) {
-        // Wider tag rect for wider text graphics
-        tag_rect := player.username_rect.top_center_rect().offset(0, 26);
-        tag_rect = tag_rect.grow(10, 34, 10, 34);
-
-        tag_ts := UI.default_text_settings();
-        tag_ts.size = 24;
-        tag_ts.color = {1.0, 0.86, 0.18, 1.0};
-        tag_ts.do_drop_shadow = true;
-        tag_ts.drop_shadow_offset = {1, -1};
-        tag_ts.drop_shadow_color = {0, 0, 0, 0.75};
-        tag_ts.do_outline = true;
-        tag_ts.outline_thickness = 2.2;
-        tag_ts.outline_color = {0.08, 0.05, 0.0, 0.95};
-        tag_ts.halign = .CENTER;
-        tag_ts.valign = .CENTER;
-
-        UI.text(tag_rect, tag_ts, player.user_tag);
+    if !player.troll_morph_active {
+        tag_slot: s64 = 0;
+        paperclip_admin := player.is_admin_user && (to_lower(player.get_username()) == "ilikepaperclips" || to_lower(player.get_username()) == "ilikealtaccounts");
+        if player.is_admin_user && player.show_admin_tag {
+            draw_player_role_tag(player, "Admin", tag_slot, {1.0, 0.86, 0.18, 1.0});
+            tag_slot += 1;
+        }
+        if paperclip_admin {
+            draw_player_role_tag(player, "paperclip", tag_slot, {0.55, 0.86, 1.0, 1.0});
+            tag_slot += 1;
+        }
+        // A saved custom title may contain several role tags separated by '|'.
+        if player.user_tag.count > 0 {
+            for raw_tag: string_split(player.user_tag, "|") {
+                tag := string_trim(raw_tag);
+                if tag.count == 0 continue;
+                if player.is_admin_user && to_lower(tag) == "admin" continue;
+                if paperclip_admin && to_lower(tag) == "paperclip" continue;
+                draw_player_role_tag(player, tag, tag_slot, {1.0, 0.86, 0.18, 1.0});
+                tag_slot += 1;
+            }
+        }
     }
 }

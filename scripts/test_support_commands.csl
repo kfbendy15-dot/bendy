@@ -35,7 +35,7 @@ hb_test_drop_target :: proc(player: Player) {
     player.weapon_target = null;
     player.ui_test_restore_weapon_target_at = get_time() + 2.0;
     player.ui_test_health_bar_target_restored = false;
-}  @owner_or_editor
+} @chat_command @owner_or_editor
 
 vip_test_grant :: proc(player: Player) {
     player.has_vip = true;
@@ -95,7 +95,7 @@ prepare_admin_shop_test :: proc(player: Player) {
     Save.set_int(player, "ui_test_killer_fish_used", 0);
     Save.set_int(player, "ui_test_giant_gun_used", 0);
     Save.set_int(player, "ui_test_meteor_boss_spawned", 0);
-}  @owner_or_editor
+} @chat_command @owner_or_editor
 
 g_admin_unban_test_player: Player;
 
@@ -146,7 +146,7 @@ prepare_admin_list_test :: proc(player: Player) {
 
     player.admin_unban_test_fixture_count = 2;
     player.admin_unban_test_prepare_at = get_time() + 2.0;
-}
+} @chat_command @owner_or_editor
 
 prepare_admin_single_list_test :: proc(player: Player) {
     if player == null || !can_access_admin_panel(player) {
@@ -155,7 +155,7 @@ prepare_admin_single_list_test :: proc(player: Player) {
 
     player.admin_unban_test_fixture_count = 1;
     player.admin_unban_test_prepare_at = get_time() + 2.0;
-}
+} @chat_command @owner_or_editor
 
 admin_list_test_replay_last :: proc(player: Player) {
     if player == null || !can_access_admin_panel(player) || player.admin_unban_last_user_id == "" {
@@ -163,7 +163,7 @@ admin_list_test_replay_last :: proc(player: Player) {
     }
 
     admin_unban_user(player, player.admin_unban_last_user_id);
-}
+} @chat_command @owner_or_editor
 
 admin_backrooms_test_send :: proc(player: Player) {
     send_player_to_backrooms(player);

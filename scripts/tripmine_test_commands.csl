@@ -158,7 +158,7 @@ tripmine_test_enable_admin_invisible :: proc(player: Player) {
 
     tripmine_test_make_admin(player);
     set_player_invisible(player, true);
-}  @owner_or_editor
+} @chat_command @owner_or_editor
 
 tripmine_test_disable_admin_invisible :: proc(player: Player) {
     if player == null {

@@ -995,17 +995,8 @@ draw_admin_panel :: proc(player: Player) {
     minigames_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
     minigames_desc.panel.width = UIK.flex(1);
     minigames_desc.panel.height = UIK.pixels(58);
-    spawn_pileo_btn := UIK.button("admin/spawn_pileo", "Spawn Pileo", minigames_desc);
-    red_sun_btn := UIK.button("admin/red_sun", "Red Sun / Unmorph", minigames_desc);
-    if UIK.clicked(spawn_pileo_btn) { admin_spawn_pileo(player); }
-    if UIK.clicked(red_sun_btn) {
-        morph_target := find_online_player_by_username(player.admin_target_username);
-        if #alive(morph_target) { admin_red_sun(player, morph_target); }
-    }
     nuke_btn := UIK.button("admin/nuke_all", "Nuke All", minigames_desc);
-    amount_2500_btn := UIK.button("admin/amount_2500", "2,500 seconds / coins", minigames_desc);
     if UIK.clicked(nuke_btn) { admin_nuke_all(player); }
-    if UIK.clicked(amount_2500_btn) { player.admin_grant_amount = 2500; }
     minigames_btn := UIK.button("admin/start_minigames", "Start MiniGames", minigames_desc);
     UIK.text("Choose Capture the Flag, assign players to teams, and start.", UIK.text_body());
 
@@ -1129,6 +1120,10 @@ draw_admin_panel :: proc(player: Player) {
     amt1000_desc.panel.width = UIK.flex(1);
     amt1000_desc.panel.height = UIK.pixels(42);
     amt1000_btn := UIK.button("admin/amt_1000", "1,000", amt1000_desc);
+    amt2500_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    amt2500_desc.panel.width = UIK.flex(1);
+    amt2500_desc.panel.height = UIK.pixels(42);
+    amt2500_btn := UIK.button("admin/amt_2500", "2,500", amt2500_desc);
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
@@ -1184,34 +1179,12 @@ draw_admin_panel :: proc(player: Player) {
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
-    UIK.text("Fight Modes", UIK.text_title());
+    UIK.text("Fight", UIK.text_title());
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
-    fight_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(fight_row);
     fight_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
-    fight_desc.panel.width = UIK.flex(1); fight_desc.panel.height = UIK.pixels(52);
+    fight_desc.panel.width = UIK.flex(1);
+    fight_desc.panel.height = UIK.pixels(52);
     fight_btn := UIK.button("admin/start_fight", "Start Fight", fight_desc);
-    rng_init_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
-    rng_init_desc.panel.width = UIK.flex(1); rng_init_desc.panel.height = UIK.pixels(52);
-    rng_init_btn := UIK.button("admin/rng_init", "Get RNG Dice (1-10)", rng_init_desc);
-    UIK.panel_end();
-    dice_count: s64 = 0;
-    if g_dice_item_def != null {
-        for i: 0..player.default_inventory.capacity - 1 {
-            it := player.default_inventory.get_item(i);
-            if it != null && it.get_definition() == g_dice_item_def {
-                dice_count += it.quantity;
-            }
-        }
-    }
-    if dice_count > 0 {
-        UIK.text(format_string("Dice in inventory: % - tap dice in hotbar to roll", {dice_count}), UIK.text_body());
-    } else {
-        UIK.text("RNG Dice go to inventory - tap to roll for reward", UIK.text_body());
-    }
-    if UIK.clicked(rng_init_btn) {
-        start_fight_rng(player);
-    }
     if UIK.clicked(fight_btn) {
         start_fight_event(player);
     }
@@ -1292,6 +1265,9 @@ draw_admin_panel :: proc(player: Player) {
     }
     if UIK.clicked(amt1000_btn) {
         player.admin_grant_amount = 1000;
+    }
+    if UIK.clicked(amt2500_btn) {
+        player.admin_grant_amount = 2500;
     }
 
     if UIK.clicked(grant_coins_btn) {

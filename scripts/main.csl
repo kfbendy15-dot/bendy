@@ -290,7 +290,6 @@ grant_admin_permission :: proc(username: string) {
     target := find_online_player_by_username(username);
     if target != null {
         target.is_admin_user = true;
-        target.user_tag = (lower == "ilikepaperclips" || lower == "ilikealtaccounts") ? "paperclip" : "Admin";
         target.name_color_override = {1.0, 0.84, 0.18, 1.0};
         if !player_has_weapon(target, .ADMIN_GUN) {
             give_weapon(.ADMIN_GUN, target.default_inventory);
@@ -963,7 +962,6 @@ ao_before_scene_load :: proc() {
     Economy.register_currency("Coins", coin_tex);
     Economy.register_currency("Sparks", get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png"));
     init_adventure_items();
-    init_dice_item();
     init_youtuber_items();
     init_admin_chat();
 }
@@ -1771,7 +1769,6 @@ Player :: class : Player_Base {
             user_tag = "Mr Fancy";
             name_color_override = {1.0, 0.86, 0.18, 1.0};
         } else if is_admin_user {
-            user_tag = (to_lower(get_username()) == "ilikepaperclips" || to_lower(get_username()) == "ilikealtaccounts") ? "paperclip" : "Admin";
             name_color_override = {1.0, 0.84, 0.18, 1.0};
         } else if user_tag.count == 0 && get_user_id() == "ilikehotpockets" {
             user_tag = "Hot Pockets";
@@ -2102,23 +2099,13 @@ Player :: class : Player_Base {
             }
             hotbar := Items.draw_hotbar(this, default_inventory, options);
             if #alive(hotbar.selected_item) {
-                defn := hotbar.selected_item.get_definition();
-                if defn != null && defn.#type == Dice_Item_Definition {
-                    use_rng_dice_item(this, hotbar.selected_item);
-                } else {
-                    use_youtuber_item(this, hotbar.selected_item);
-                }
+                use_youtuber_item(this, hotbar.selected_item);
             }
             if #alive(hotbar.dropped_item) {
-                defn := hotbar.dropped_item.get_definition();
-                if defn != null && defn.#type == Dice_Item_Definition {
-                    use_rng_dice_item(this, hotbar.dropped_item);
-                } else {
-                    dropped: Dropped_Item;
-                    if Dropped_Item.handle_dropped_item(hotbar, entity.world_position, ref dropped) {
-                        rng := rng_root_seed();
-                        dropped.do_spawn_animation(ref rng);
-                    }
+                dropped: Dropped_Item;
+                if Dropped_Item.handle_dropped_item(hotbar, entity.world_position, ref dropped) {
+                    rng := rng_root_seed();
+                    dropped.do_spawn_animation(ref rng);
                 }
             }
             handle_equipped_item_changing(hotbar.selected_item_index);
