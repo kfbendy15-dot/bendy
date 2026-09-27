@@ -17,7 +17,7 @@ tripmine_test_make_admin :: proc(player: Player) {
     if !player_has_weapon(player, .BUILDING_TOOLS) {
         give_weapon(.BUILDING_TOOLS, player.default_inventory);
     }
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 tripmine_test_reset :: proc(player: Player) {
     if player == null {
@@ -36,7 +36,7 @@ tripmine_test_reset :: proc(player: Player) {
     Save.set_int(player, "ui_test_tripmine_placed", 0);
     Save.set_int(player, "ui_test_health_bar_hidden", 0);
     set_player_invisible(player, false);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 tripmine_test_clear_flags :: proc(player: Player) {
     if player == null {
@@ -46,7 +46,7 @@ tripmine_test_clear_flags :: proc(player: Player) {
     Save.set_int(player, "ui_test_tripmine_detonated", 0);
     Save.set_int(player, "ui_test_tripmine_placed", 0);
     Save.set_int(player, "ui_test_health_bar_hidden", 0);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 tripmine_test_spawn_trigger_scenario :: proc(player: Player) {
     if player == null {
@@ -65,7 +65,7 @@ tripmine_test_spawn_trigger_scenario :: proc(player: Player) {
         other.entity.mark_teleported();
         break;
     }
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 tripmine_test_spawn_only :: proc(player: Player) {
     if player == null {
@@ -74,7 +74,7 @@ tripmine_test_spawn_only :: proc(player: Player) {
 
     mine_pos := v2{player.entity.world_position.x + 3.0, player.entity.world_position.y};
     spawn_subspace_tripmine(mine_pos, player.entity.id, 90.0);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 tripmine_test_prepare_tripmine_weapon :: proc(player: Player) {
     if player == null {
@@ -110,7 +110,7 @@ tripmine_test_prepare_tripmine_weapon :: proc(player: Player) {
     if selected_slot >= 0 {
         player.handle_equipped_item_changing(selected_slot);
     }
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 tripmine_test_move_other_player_near_self :: proc(player: Player) {
     if player == null {
@@ -127,7 +127,7 @@ tripmine_test_move_other_player_near_self :: proc(player: Player) {
         other.entity.mark_teleported();
         break;
     }
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 tripmine_test_grant_invisible_powerup :: proc(player: Player) {
     if player == null {
@@ -138,7 +138,7 @@ tripmine_test_grant_invisible_powerup :: proc(player: Player) {
     player.powerup_invisible_active = true;
     effect := new(Invisible_Effect);
     player.entity.add_passive_effect(effect);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 tripmine_test_force_powerup_invisible :: proc(player: Player) {
     if player == null {
@@ -149,7 +149,7 @@ tripmine_test_force_powerup_invisible :: proc(player: Player) {
     player.powerup_invisible_active = true;
     effect := new(Invisible_Effect);
     player.entity.add_passive_effect(effect);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 tripmine_test_enable_admin_invisible :: proc(player: Player) {
     if player == null {
@@ -158,7 +158,7 @@ tripmine_test_enable_admin_invisible :: proc(player: Player) {
 
     tripmine_test_make_admin(player);
     set_player_invisible(player, true);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 tripmine_test_disable_admin_invisible :: proc(player: Player) {
     if player == null {
@@ -166,7 +166,7 @@ tripmine_test_disable_admin_invisible :: proc(player: Player) {
     }
 
     set_player_invisible(player, false);
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 tripmine_test_spawn_powerup_invisible :: proc(player: Player) {
     if player == null {
@@ -178,4 +178,4 @@ tripmine_test_spawn_powerup_invisible :: proc(player: Player) {
     }
     effect := new(Invisible_Effect);
     player.entity.add_passive_effect(effect);
-} @chat_command @owner_or_editor
+}  @owner_or_editor

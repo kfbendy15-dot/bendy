@@ -1,0 +1,17 @@
+Forest_Crossbow_Ability :: class : Ability_Base {
+    on_init :: method() { name = "Crossbow"; is_aimed_ability = true; icon = get_asset(Texture_Asset, "crossbow_0b6184.png"); }
+    can_use :: method() -> bool { return player.(Player).adventure_world == 2; }
+    on_update :: method(params: ref Ability_Update_Params) {
+        result := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
+        if !result.activate return;
+        current_cooldown = 2.5;
+        p := player.(Player);
+        e := Scene.create_entity(); e.set_world_position(p.entity.world_position + result.direction * 1.2 + v2{0, 0.5});
+        e.set_local_scale({0.5, 0.15}); e.set_local_rotation(to_degrees(atan2(result.direction.y, result.direction.x)));
+        sprite := e.add_component(Sprite_Renderer); sprite.set_texture(get_asset(Texture_Asset, "$AO/circle.png")); sprite.color = {0.8, 0.6, 0.3, 1};
+        e.add_component(Standard_Projectile, on_before_start=proc(bolt: Standard_Projectile) {
+            bolt.owner_id = p.entity.id; bolt.direction = result.direction; bolt.damage = 45; bolt.speed = 18; bolt.max_lifetime = 1.2;
+        });
+        adventure_sound(p.entity);
+    }
+}

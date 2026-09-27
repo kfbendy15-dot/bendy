@@ -172,7 +172,7 @@ start_roles :: proc(player: Player) {
     e := Scene.create_entity();
     e.set_name("Role_Mode");
     e.add_component(Role_Mode_Manager);
-} @chat_command @any
+}
 
 vote_role_mode :: proc(player: Player, username: string) {
     if player == null || !is_role_mode_active() return;
@@ -193,7 +193,7 @@ vote_role_mode :: proc(player: Player, username: string) {
             Chat.server_send_message(format_string("% was voted out.", {username}));
         }
     }
-} @chat_command @any
+}
 
 end_role_mode_round :: proc(message: string) {
     for mgr: component_iterator(Role_Mode_Manager) {

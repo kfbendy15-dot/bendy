@@ -1,0 +1,12 @@
+Bounce_Effect :: class : Effect_Base {
+    direction: v2;
+    old_friction: float;
+    effect_start :: method() {
+        player_specific.disable_movement_inputs = true;
+        old_friction = player.agent.friction; player.agent.friction = 0;
+        set_duration(0.4);
+        adventure_sound(entity);
+    }
+    effect_update :: method(dt: float) { player.agent.velocity = direction * 13; }
+    effect_end :: method(interrupt: bool) { player.agent.friction = old_friction; player.agent.velocity = {0, 0}; }
+}

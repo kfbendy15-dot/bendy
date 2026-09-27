@@ -1,0 +1,16 @@
+Jump_Workbench :: class : Interactable {
+    ao_start :: method() { set_listener(this); set_text("Craft Jump Pads"); set_subtitle("9 shards to unlock · 3 uses / 10 Coins"); radius = 2; }
+    can_use :: method(p: Player) -> bool { return p.adventure_world == 1 && !p.is_dead; }
+    on_interact :: method(p: Player) {
+        shards := adventure_item(p, g_jump_shard);
+        if !p.jump_crafted && p.shard_mask != 511 { p.play_reward_feedback("Collect all 9 Jump Shards"); return; }
+        if !Economy.can_withdraw_currency(p, "Coins", 10) { p.play_reward_feedback("Need 10 Coins"); return; }
+        if !adventure_give(p, g_jump_pad, 3) return;
+        spend_coins(p, 10);
+        if !p.jump_crafted {
+            if #alive(shards) { Items.destroy_item_instance(shards); }
+            p.jump_crafted = true; Save.set_int(p, "jump_crafted", 1);
+        }
+        p.play_reward_feedback("+3 Jump Pads");
+    }
+}

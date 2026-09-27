@@ -44,10 +44,11 @@ Invisible_Ability :: class : Ability_Base {
             effect := new(Invisible_Effect);
             player.entity.add_passive_effect(effect);
 
-            if player.is_local() {
+            {
                 sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
                 desc := SFX.default_sfx_desc();
                 desc.entity_to_follow = player.entity.id;
+                desc.specific_to_player = player;
                 desc.volume = 0.4;
                 desc.speed_perturb = 0.2;
                 SFX.play(sfx, desc);

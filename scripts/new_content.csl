@@ -1,11 +1,10 @@
-// New content for requested features: TADC, Medkit, Battle Axe, Distortion, Cyber, Void2, Fight modes
-MEDKIT_COST :: 50000;
+// New content for requested features: TADC, Battle Axe, Distortion, Cyber, Void2, Fight modes
 DISTORTION_COST :: 1000;
 FLAMETHROWER_COST :: 45;
 MOLOTOV_COST :: 50;
 BATTLE_AXE_COST :: 2000;
-TROWEL_COST :: 500;
-SCYTHE_COST :: 2000;
+TROWEL_COST :: 3000;
+SCYTHE_COST :: 200;
 EMMA_RAY_COST :: 100000;
 ABSTRACTION_COST :: 100000;
 KINGERS_SHOTGUN_COST :: 1000;
@@ -216,70 +215,6 @@ Dice_Item_Definition :: class : Item_Definition {
 
 g_dice_item_def: Dice_Item_Definition;
 g_dice_initialized: bool;
-
-// Medkit
-Medkit_Effect :: class : Effect_Base {
-    heal_reason: string;
-
-    effect_start :: method() {
-        if heal_reason == "" {
-            heal_reason = format_string("medkit_bandage/%/%", {player.get_user_id(), get_frame_number()});
-        }
-        player.add_freeze_reason(heal_reason);
-        player.add_disable_movement_input_reason(heal_reason);
-        set_duration(7.0);
-        spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/Heal_Effect/heal_effect.spine", "default", player.entity.world_position, {0.9, 0.9}, "Swirl", 7.0);
-        if player.is_local() {
-            sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/heal_oneshot.wav");
-            desc := SFX.default_sfx_desc();
-            desc.entity_to_follow = player.entity.id;
-            desc.volume = 0.5;
-            SFX.play(sfx, desc);
-        }
-    }
-    effect_update :: method(dt: float) {
-        if #alive(player) {
-            player.agent.velocity = {0, 0};
-            player.agent.input_this_frame = {0, 0};
-        }
-    }
-    effect_end :: method(interrupt: bool) {
-        player.remove_freeze_reason(heal_reason);
-        player.remove_disable_movement_input_reason(heal_reason);
-        if !interrupt && #alive(player) {
-            p := player.(Player);
-            if p.weapon_target != null {
-                p.weapon_target.health += 40;
-                if p.weapon_target.health > p.weapon_target.max_health { p.weapon_target.health = p.weapon_target.max_health; }
-                p.play_reward_feedback("+40 HP");
-                Save.set_int(p, "ui_test_medkit_healed", 1);
-            }
-        }
-    }
-}
-
-Medkit_Ability :: class : Ability_Base {
-    on_init :: method() {
-        name = "Medkit";
-        icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
-    }
-    can_use :: method() -> bool {
-        p := player.(Player);
-        if !p.has_medkit return false;
-        if p.entity.has_effect(Medkit_Effect) return false;
-        return true;
-    }
-    on_update :: method(params: ref Ability_Update_Params) {
-        if params.clicked && params.can_use {
-            current_cooldown = 67.0; // 7 + 60
-            player.entity.add_passive_effect(new(Medkit_Effect));
-            if player.is_local() {
-                p := player.(Player);
-                p.play_reward_feedback("Bandaging 7s");
-            }
-        }
-    }
-}
 
 // Battle Axe leap
 Battle_Axe_Leap_Effect :: class : Effect_Base {
@@ -718,7 +653,7 @@ grant_rng_dice :: proc(player: Player, count: s64) -> bool {
 }
 
 rng_reward_pool :: proc(idx: s64) -> string {
-    pool: [9]string = {"Assault Rifle", "SMG", "Blunderbuss", "Flamethrower", "Molotov", "Battle Axe", "Distortion", "Medkit", "Glass Cannon"};
+    pool: [9]string = {"Assault Rifle", "SMG", "Blunderbuss", "Flamethrower", "Molotov", "Battle Axe", "Distortion", "Water Gun", "Glass Cannon"};
     if idx < 0 || idx >= 9 {
         return pool[0];
     }
@@ -733,7 +668,7 @@ grant_rng_reward :: proc(player: Player, reward: string) {
     else if reward == "Molotov" { give_weapon(.MOLOTOV, player.default_inventory); }
     else if reward == "Battle Axe" { give_weapon(.BATTLE_AXE, player.default_inventory); }
     else if reward == "Distortion" { give_weapon(.DISTORTION, player.default_inventory); }
-    else if reward == "Medkit" { player.has_medkit = true; }
+    else if reward == "Water Gun" { give_weapon(.WATER_GUN, player.default_inventory); }
     else if reward == "Glass Cannon" { give_weapon(.GLASS_CANNON, player.default_inventory); }
 }
 
@@ -826,7 +761,7 @@ do_rng_roll :: proc(player: Player) -> string {
     }
     g_rng_rolls_left -= 1;
     rng: u64 = rng_root_seed() ^ cast(u64)(get_frame_number() * 9973);
-    pool: [9]string = {"Assault Rifle", "SMG", "Blunderbuss", "Flamethrower", "Molotov", "Battle Axe", "Distortion", "Medkit", "Glass Cannon"};
+    pool: [9]string = {"Assault Rifle", "SMG", "Blunderbuss", "Flamethrower", "Molotov", "Battle Axe", "Distortion", "Water Gun", "Glass Cannon"};
     idx := rng_range_int(ref rng, 0, 8);
     reward := pool[idx];
     grant_rng_reward(player, reward);

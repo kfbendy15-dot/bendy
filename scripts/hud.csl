@@ -15,7 +15,7 @@ draw_settings :: proc(player: Player) {
 
     UIK.text(UIK.text_title(), "Gameplay");
     if player.has_vip {
-        crown_result := UIK.toggle("settings/vip_crown", "Show VIP crown", (&player.show_vip_crown).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW));
+        #unsafe crown_result := UIK.toggle("settings/vip_crown", "Show VIP crown", (&player.show_vip_crown).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW));
         if crown_result.clicked {
             Save.set_int(player, VIP_CROWN_VISIBLE_SAVE_KEY, player.show_vip_crown ? 1 : 0);
             if !player.show_vip_crown && #alive(player.vip_crown_entity) {
@@ -29,7 +29,7 @@ draw_settings :: proc(player: Player) {
     if can_access_admin_panel(player) {
         UIK.divider();
         UIK.text(UIK.text_title(), "Admin Settings");
-        admin_tag_result := UIK.toggle("settings/admin_tag", "Show admin tag", (&player.show_admin_tag).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW));
+        #unsafe admin_tag_result := UIK.toggle("settings/admin_tag", "Show admin tag", (&player.show_admin_tag).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW));
         if admin_tag_result.clicked {
             Save.set_int(player, ADMIN_TAG_VISIBLE_SAVE_KEY, player.show_admin_tag ? 1 : 0);
         }
@@ -37,9 +37,9 @@ draw_settings :: proc(player: Player) {
 
     UIK.divider();
     UIK.text(UIK.text_title(), "Interface");
-    UIK.toggle("settings/reward_popups", "Show reward popups", (&player.show_reward_popups).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY));
+    #unsafe UIK.toggle("settings/reward_popups", "Show reward popups", (&player.show_reward_popups).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY));
     Save.set_int(player, "show_reward_popups", player.show_reward_popups ? 1 : 0);
-    UIK.toggle("settings/tutorial_button", "Show tutorial button", (&player.show_tutorial_button).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY));
+    #unsafe UIK.toggle("settings/tutorial_button", "Show tutorial button", (&player.show_tutorial_button).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY));
     Save.set_int(player, "show_tutorial_button", player.show_tutorial_button ? 1 : 0);
     UIK.text(UIK.text_body(), "Your settings are saved automatically.");
 
@@ -74,6 +74,13 @@ draw_hud :: proc(player: Player) {
     UIK.panel_begin(bar);
 
 
+    if player.adventure_world != 0 {
+        home := UIK.button("adventure/home", "Home", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE));
+        if UIK.clicked(home) { adventure_travel(player, 0); }
+        if player.adventure_world == 1 {
+            UIK.text(format_string("Splash · Shards %/9 · Jumps %/9", {adventure_rescue_count(player.shard_mask), player.jump_daily_uses}), UIK.text_body());
+        } else { UIK.text(format_string("Rescued %/10", {adventure_rescue_count(player.rescue_mask)}), UIK.text_body()); }
+    }
     // Coin balance
     coin_tex := get_asset(Texture_Asset, "Gold_Coin_Icon_d3f0f3.png");
     balance := Economy.get_balance(player, "Coins");
@@ -195,6 +202,7 @@ draw_hud :: proc(player: Player) {
         draw_settings(player);
     }
 }
+
 
 
 

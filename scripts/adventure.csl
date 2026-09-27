@@ -1,0 +1,49 @@
+g_jump_shard: Item_Definition;
+g_jump_pad: Item_Definition;
+
+init_adventure_items :: proc() {
+    icon := get_asset(Texture_Asset, "generated_6ab9165e_22da2e.png");
+    g_jump_shard = Items.register_item_definition({"jump_shard", "Jump Shard", icon, 9, .RARE});
+    g_jump_pad = Items.register_item_definition({"jump_pad", "Jump Pad", get_asset(Texture_Asset, "generated_6ab9165e_ea2119.png"), 99, .RARE});
+}
+adventure_item :: proc(p: Player, definition: Item_Definition) -> Item_Instance {
+    for item, slot: p.adventure_inventory.slots() {
+        if #alive(item) && item.get_definition() == definition return item;
+    }
+    return null;
+}
+adventure_give :: proc(p: Player, definition: Item_Definition, count: s64) -> bool {
+    item := Items.create_item_instance(definition, count);
+    merged: bool;
+    if Items.can_move_item_to_inventory(item, p.adventure_inventory, ref merged) {
+        Items.move_item_to_inventory(item, p.adventure_inventory);
+        adventure_sound(p.entity);
+        return true;
+    }
+    Items.destroy_item_instance(item);
+    return false;
+}
+adventure_sound :: proc(e: Entity) {
+    desc := SFX.default_sfx_desc(); desc.entity_to_follow = e.id; desc.volume = 0.5;
+    SFX.play(get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav"), desc);
+}
+update_adventure_day :: proc(p: Player) {
+    today := get_nanoseconds_since_epoch() / 1000000000 / 86400;
+    if today != p.jump_day {
+        p.jump_day = today; p.jump_daily_uses = 0;
+        Save.set_int(p, "jump_day", today); Save.set_int(p, "jump_daily_uses", 0);
+    }
+}
+adventure_travel :: proc(p: Player, world: s64) {
+    p.adventure_world = world;
+    p.agent.velocity = {0, 0};
+    p.entity.set_world_position(world == 1 ? v2{100, -10} : (world == 2 ? v2{200, -13} : get_spawn_point(0)));
+    p.entity.mark_teleported();
+    p.out_of_bounds_respawn_active = false;
+    adventure_sound(p.entity);
+}
+adventure_rescue_count :: proc(mask: s64) -> s64 {
+    count: s64;
+    for i: 0..<10 { if (mask & (1 << i)) != 0 { count += 1; } }
+    return count;
+}

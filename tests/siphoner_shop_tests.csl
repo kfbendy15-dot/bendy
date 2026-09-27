@@ -4,9 +4,9 @@ test_siphoners_are_purchasable_from_their_shops :: proc() {
 
     Test.click_button("hud/shop_button");
     Test.click_button("shop/solar_siphoner");
-    Test.assert_player_has_item("solar siphoner purchased from the shop", "solar_siphoner");
+    Test.assert_inventory_item_count("solar siphoner purchased from the shop", "", "solar_siphoner", 1);
 
     Test.click_button("hud/admin_shop_button");
     Test.click_button("admin_shop/octo_siphoner");
-    Test.assert_player_has_item("octo siphoner purchased from the admin shop", "octo_siphoner");
+    Test.assert_inventory_item_count("octo siphoner purchased from the admin shop", "", "octo_siphoner", 1);
 }

@@ -1,0 +1,450 @@
+3a75f9e511689f12.png
+	size: 4096, 4096
+	filter: Linear, Linear
+images/Impact/0
+	bounds: 3893, 2492, 500, 185
+	offsets: 1, 1, 502, 187
+	rotate: 90
+images/Impact/1
+	bounds: 1272, 821, 458, 501
+	offsets: 1, 1, 460, 502
+	rotate: 90
+images/Impact/2
+	bounds: 726, 822, 540, 583
+	offsets: 1, 1, 542, 585
+images/Impact/3
+	bounds: 796, 256, 436, 363
+	offsets: 1, 1, 438, 365
+	rotate: 90
+images/REDSUN UPDATE/red sun form 1/eyebackblinkl
+	bounds: 2736, 1367, 216, 51
+images/REDSUN UPDATE/red sun form 1/eyebackr
+	bounds: 2941, 1065, 96, 91
+	offsets: 1, 1, 98, 93
+	rotate: 90
+images/REDSUN UPDATE/red sun form 1/eyeblinkglowl
+	bounds: 2325, 6, 122, 48
+	offsets: 1, 1, 124, 50
+images/REDSUN UPDATE/red sun form 1/eyeblinkglowr
+	bounds: 2607, 710, 117, 62
+	offsets: 1, 1, 119, 64
+images/REDSUN UPDATE/red sun form 1/eyeblinkl
+	bounds: 412, 7, 102, 20
+	offsets: 1, 1, 104, 22
+images/REDSUN UPDATE/red sun form 1/eyeblinkr
+	bounds: 2922, 841, 96, 38
+	offsets: 1, 1, 98, 40
+images/REDSUN UPDATE/red sun form 1/eyeglowl
+	bounds: 2998, 89, 146, 145
+	offsets: 1, 1, 148, 147
+	rotate: 90
+images/REDSUN UPDATE/red sun form 1/eyeglowr
+	bounds: 2871, 689, 146, 145
+	offsets: 1, 1, 148, 147
+	rotate: 90
+images/REDSUN UPDATE/red sun form 1/eyel
+	bounds: 3084, 607, 80, 75
+	offsets: 1, 1, 82, 77
+	rotate: 90
+images/REDSUN UPDATE/red sun form 1/eyer
+	bounds: 3102, 521, 75, 80
+	offsets: 1, 1, 77, 82
+images/REDSUN UPDATE/red sun form 1/fire1
+	bounds: 6, 1447, 385, 689
+	offsets: 1, 1, 387, 691
+images/REDSUN UPDATE/red sun form 1/fire2
+	bounds: 3487, 1411, 378, 724
+	offsets: 1, 1, 380, 726
+images/REDSUN UPDATE/red sun form 1/fire3
+	bounds: 796, 1708, 388, 637
+	offsets: 1, 1, 390, 639
+	rotate: 90
+images/REDSUN UPDATE/red sun form 1/fire4
+	bounds: 397, 1454, 389, 682
+	offsets: 1, 1, 391, 684
+images/REDSUN UPDATE/red sun form 1/head
+	bounds: 1802, 530, 294, 294
+	offsets: 1, 1, 296, 296
+images/REDSUN UPDATE/red sun form 1/mouthback
+	bounds: 1215, 710, 223, 105
+	offsets: 1, 1, 225, 107
+images/REDSUN UPDATE/red sun form 1/mouthfront
+	bounds: 1802, 140, 256, 99
+	offsets: 1, 1, 258, 101
+images/REDSUN UPDATE/red sun form 2/eyebackblinkl
+	bounds: 1459, 11, 297, 119
+	offsets: 1, 1, 299, 121
+images/REDSUN UPDATE/red sun form 2/eyebackblinkr
+	bounds: 1762, 8, 288, 122
+	offsets: 1, 1, 290, 124
+images/REDSUN UPDATE/red sun form 2/eyebackl
+	bounds: 584, 2142, 266, 189
+	offsets: 1, 1, 268, 191
+	rotate: 90
+images/REDSUN UPDATE/red sun form 2/eyebackr
+	bounds: 2730, 1122, 230, 189
+	offsets: 1, 1, 232, 191
+	rotate: 90
+images/REDSUN UPDATE/red sun form 2/eyeblinkglowl
+	bounds: 796, 138, 249, 112
+	offsets: 1, 1, 251, 114
+images/REDSUN UPDATE/red sun form 2/eyeblinkglowr
+	bounds: 2756, 2164, 247, 118
+	offsets: 1, 1, 249, 120
+images/REDSUN UPDATE/red sun form 2/eyeblinkl
+	bounds: 2509, 9, 206, 64
+	offsets: 1, 1, 208, 66
+	rotate: 90
+images/REDSUN UPDATE/red sun form 2/eyeblinkr
+	bounds: 6, 2146, 205, 70
+	offsets: 1, 1, 207, 72
+images/REDSUN UPDATE/red sun form 2/eyeglowl
+	bounds: 1480, 2143, 265, 213
+	offsets: 1, 1, 267, 215
+	rotate: 90
+images/REDSUN UPDATE/red sun form 2/eyeglowr
+	bounds: 1960, 264, 260, 218
+	offsets: 1, 1, 262, 220
+	rotate: 90
+images/REDSUN UPDATE/red sun form 2/eyel
+	bounds: 2925, 1167, 185, 129
+	offsets: 1, 1, 187, 131
+	rotate: 90
+images/REDSUN UPDATE/red sun form 2/eyer
+	bounds: 2731, 593, 179, 134
+	offsets: 1, 1, 181, 136
+	rotate: 90
+images/REDSUN UPDATE/red sun form 2/head
+	bounds: 1439, 1285, 539, 539
+	offsets: 1, 1, 541, 541
+images/REDSUN UPDATE/red sun form 2/mouthback
+	bounds: 1779, 830, 449, 199
+	offsets: 1, 1, 451, 201
+	rotate: 90
+images/REDSUN UPDATE/red sun form 2/mouthbottom
+	bounds: 3871, 1686, 449, 199
+	offsets: 1, 1, 451, 201
+	rotate: 90
+images/REDSUN UPDATE/red sun form 2/mouthtop
+	bounds: 726, 698, 483, 117
+	offsets: 1, 1, 485, 119
+images/REDSUN UPDATE/red sun form 2/puffed cheeks/cheekl
+	bounds: 2184, 313, 253, 253
+	offsets: 1, 1, 255, 255
+images/REDSUN UPDATE/red sun form 2/puffed cheeks/cheekr
+	bounds: 2064, 7, 251, 255
+	offsets: 1, 1, 253, 257
+	rotate: 90
+images/REDSUN UPDATE/red sun form 2/puffed cheeks/mouthblow
+	bounds: 2782, 841, 134, 177
+	offsets: 1, 1, 136, 179
+images/REDSUN UPDATE/red sun form 2/spikysurround
+	bounds: 2756, 1438, 697, 725
+	offsets: 1, 1, 699, 727
+	rotate: 90
+images/REDSUN UPDATE/red sun form 3/eyeblinkl
+	bounds: 2579, 21, 194, 92
+	offsets: 1, 1, 196, 94
+	rotate: 90
+images/REDSUN UPDATE/red sun form 3/eyeblinkr
+	bounds: 2747, 1024, 188, 92
+	offsets: 1, 1, 190, 94
+images/REDSUN UPDATE/red sun form 3/eyeglowl
+	bounds: 2506, 1117, 235, 218
+	offsets: 1, 1, 237, 220
+	rotate: 90
+images/REDSUN UPDATE/red sun form 3/eyeglowr
+	bounds: 2509, 221, 235, 218
+	offsets: 1, 1, 237, 220
+	rotate: 90
+images/REDSUN UPDATE/red sun form 3/eyel
+	bounds: 2677, 22, 193, 169
+	offsets: 1, 1, 195, 171
+	rotate: 90
+images/REDSUN UPDATE/red sun form 3/eyer
+	bounds: 2607, 778, 190, 169
+	offsets: 1, 1, 192, 171
+	rotate: 90
+images/REDSUN UPDATE/red sun form 3/head
+	bounds: 6, 689, 716, 714
+	offsets: 1, 1, 718, 716
+	rotate: 90
+images/REDSUN UPDATE/red sun form 3/mouthback
+	bounds: 6, 12, 671, 400
+	rotate: 90
+images/REDSUN UPDATE/red sun form 3/mouthbottom
+	bounds: 412, 33, 650, 378
+	rotate: 90
+images/REDSUN UPDATE/red sun form 3/mouthtop
+	bounds: 2168, 1465, 671, 294
+	rotate: 90
+images/REDSUN UPDATE/red sun form 3/puffed cheeks/cheekl
+	bounds: 1460, 478, 336, 337
+	offsets: 1, 1, 338, 339
+images/REDSUN UPDATE/red sun form 3/puffed cheeks/cheekr
+	bounds: 1460, 136, 336, 336
+	offsets: 1, 1, 338, 338
+images/REDSUN UPDATE/red sun form 3/puffed cheeks/mouthblow
+	bounds: 2278, 704, 178, 238
+	offsets: 1, 1, 180, 240
+images/REDSUN UPDATE/red sun form 3/spikysurround
+	bounds: 3034, 2998, 1050, 1092
+	offsets: 1, 1, 1052, 1094
+images/REDSUN UPDATE/red sun form 4/eyebackl
+	bounds: 1165, 306, 386, 289
+	offsets: 1, 1, 388, 291
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/eyebackl2
+	bounds: 1802, 245, 279, 152
+	offsets: 1, 1, 281, 154
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/eyebackr
+	bounds: 3871, 1358, 322, 202
+	offsets: 1, 1, 324, 204
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/eyebackr2
+	bounds: 2325, 60, 247, 178
+	offsets: 1, 1, 249, 180
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/eyebacktop
+	bounds: 796, 10, 333, 120
+	offsets: 1, 1, 335, 122
+images/REDSUN UPDATE/red sun form 4/eyeblinkglowr
+	bounds: 1984, 835, 277, 107
+	offsets: 1, 1, 279, 109
+images/REDSUN UPDATE/red sun form 4/eyeblinkmid
+	bounds: 1165, 257, 228, 43
+	offsets: 1, 1, 230, 45
+images/REDSUN UPDATE/red sun form 4/eyeblinkr
+	bounds: 2506, 1364, 224, 54
+	offsets: 1, 1, 226, 56
+images/REDSUN UPDATE/red sun form 4/eyeglowl
+	bounds: 3893, 2203, 283, 186
+	offsets: 1, 1, 285, 188
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/eyeglowr
+	bounds: 6, 2222, 283, 186
+	offsets: 1, 1, 285, 188
+images/REDSUN UPDATE/red sun form 4/eyel
+	bounds: 2443, 462, 236, 139
+	offsets: 1, 1, 238, 141
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/eyer
+	bounds: 2462, 706, 236, 139
+	offsets: 1, 1, 238, 141
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head 2/extrahead2
+	bounds: 295, 2198, 210, 283
+	offsets: 1, 1, 212, 285
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head 2/eyebackl
+	bounds: 2782, 778, 83, 57
+	offsets: 1, 1, 85, 59
+images/REDSUN UPDATE/red sun form 4/head 2/eyebackr
+	bounds: 385, 2147, 45, 61
+	offsets: 1, 1, 47, 63
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head 2/eyeglowl
+	bounds: 3015, 337, 70, 67
+	offsets: 1, 1, 72, 69
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head 2/eyeglowr
+	bounds: 3088, 339, 63, 68
+	offsets: 1, 1, 65, 70
+images/REDSUN UPDATE/red sun form 4/head 2/eyel
+	bounds: 397, 1411, 36, 37
+	offsets: 1, 1, 38, 39
+images/REDSUN UPDATE/red sun form 4/head 2/eyer
+	bounds: 439, 1412, 31, 36
+	offsets: 1, 1, 33, 38
+images/REDSUN UPDATE/red sun form 4/head 2/mouth
+	bounds: 1272, 1295, 160, 90
+	offsets: 1, 1, 162, 92
+images/REDSUN UPDATE/red sun form 4/head 3/extrahead3
+	bounds: 2506, 1718, 240, 322
+	offsets: 1, 1, 242, 324
+images/REDSUN UPDATE/red sun form 4/head 3/eyebackl
+	bounds: 2733, 411, 128, 176
+	offsets: 1, 1, 130, 178
+images/REDSUN UPDATE/red sun form 4/head 3/eyebackr
+	bounds: 3012, 499, 89, 84
+	offsets: 1, 1, 91, 86
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head 3/eyeglowl
+	bounds: 3012, 413, 85, 80
+	offsets: 1, 1, 87, 82
+images/REDSUN UPDATE/red sun form 4/head 3/eyeglowr
+	bounds: 2985, 594, 93, 89
+	offsets: 1, 1, 95, 91
+images/REDSUN UPDATE/red sun form 4/head 3/eyel
+	bounds: 452, 2142, 49, 50
+	offsets: 1, 1, 51, 52
+images/REDSUN UPDATE/red sun form 4/head 3/eyer
+	bounds: 2453, 8, 46, 50
+	offsets: 1, 1, 48, 52
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head1/extrahead1
+	bounds: 2756, 2534, 270, 274
+	offsets: 1, 1, 272, 276
+images/REDSUN UPDATE/red sun form 4/head1/eyebackl
+	bounds: 2871, 600, 108, 83
+	offsets: 1, 1, 110, 85
+images/REDSUN UPDATE/red sun form 4/head1/eyebackr
+	bounds: 3083, 7, 76, 91
+	offsets: 1, 1, 78, 93
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head1/eyeglowl
+	bounds: 3022, 743, 92, 91
+	offsets: 1, 1, 94, 93
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head1/eyeglowr
+	bounds: 3038, 1068, 93, 91
+	offsets: 1, 1, 95, 93
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head1/eyel
+	bounds: 507, 2144, 48, 47
+	offsets: 1, 1, 50, 49
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head1/eyer
+	bounds: 2052, 1471, 48, 48
+	offsets: 1, 1, 50, 50
+images/REDSUN UPDATE/red sun form 4/head1/mouth
+	bounds: 2184, 266, 41, 56
+	offsets: 1, 1, 43, 58
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head4/extrahead5
+	bounds: 2102, 572, 170, 257
+	offsets: 1, 1, 172, 259
+images/REDSUN UPDATE/red sun form 4/head4/eyebackl
+	bounds: 2278, 580, 118, 157
+	offsets: 1, 1, 120, 159
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head4/eyeglowl
+	bounds: 4011, 2142, 55, 67
+	offsets: 1, 1, 57, 69
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head4/eyeglowr
+	bounds: 3015, 261, 70, 67
+	offsets: 1, 1, 72, 69
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head4/eyel
+	bounds: 2102, 530, 36, 45
+	offsets: 1, 1, 38, 47
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/head4/eyer
+	bounds: 2246, 266, 41, 46
+	offsets: 1, 1, 43, 48
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/headbase
+	bounds: 3034, 2141, 853, 851
+	offsets: 1, 1, 855, 853
+images/REDSUN UPDATE/red sun form 4/mouthback
+	bounds: 792, 2102, 682, 306
+	offsets: 1, 1, 684, 308
+images/REDSUN UPDATE/red sun form 4/mouthbottom
+	bounds: 1480, 1830, 682, 306
+	offsets: 1, 1, 684, 308
+images/REDSUN UPDATE/red sun form 4/mouthtop
+	bounds: 2470, 2046, 762, 280
+	offsets: 1, 1, 764, 282
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/spikysurround
+	bounds: 1701, 2814, 1276, 1327
+	offsets: 1, 1, 1278, 1329
+	rotate: 90
+images/REDSUN UPDATE/red sun form 4/spikysurroundback
+	bounds: 6, 2414, 1689, 1676
+	offsets: 1, 1, 1691, 1678
+images/bright_aura
+	bounds: 1701, 2142, 666, 763
+	offsets: 1, 1, 668, 765
+	rotate: 90
+images/bright_aura_glow
+	bounds: 1984, 948, 516, 511
+	offsets: 1, 1, 518, 513
+images/fireball/particle_burst_A
+	bounds: 2756, 2288, 240, 263
+	offsets: 1, 1, 242, 265
+	rotate: 90
+images/fireball/particle_burst_B
+	bounds: 2733, 234, 106, 171
+	offsets: 1, 1, 108, 173
+images/fireball/particle_burst_C
+	bounds: 2867, 432, 155, 139
+	offsets: 1, 1, 157, 141
+	rotate: 90
+images/fireball/particle_burst_D
+	bounds: 2852, 82, 140, 153
+	offsets: 1, 1, 142, 155
+images/fireball/particle_burst_E
+	bounds: 2922, 885, 133, 130
+	offsets: 1, 1, 135, 132
+	rotate: 90
+images/fireball/particle_burst_F
+	bounds: 2970, 15, 107, 61
+	offsets: 1, 1, 109, 63
+images/fireball/particle_burst_G
+	bounds: 6, 1411, 30, 115
+	offsets: 1, 1, 32, 117
+	rotate: 90
+images/fireball/particle_burst_H
+	bounds: 3893, 2141, 112, 56
+	offsets: 1, 1, 114, 58
+images/fireball/particle_burst_I
+	bounds: 2845, 241, 164, 164
+	offsets: 1, 1, 166, 166
+images/fireball/particle_burst_J
+	bounds: 1051, 138, 48, 112
+	offsets: 1, 1, 50, 113
+images/fireball/particle_burst_K
+	bounds: 2958, 1360, 72, 107
+	offsets: 1, 1, 74, 108
+	rotate: 90
+images/fireball/particle_burst_L
+	bounds: 217, 2143, 49, 162
+	offsets: 1, 1, 51, 164
+	rotate: 90
+images/fireball/particle_burst_M
+	bounds: 2852, 9, 67, 112
+	offsets: 1, 1, 69, 114
+	rotate: 90
+images/lava splash fx/lavasplash1
+	bounds: 3022, 693, 89, 44
+	offsets: 1, 1, 91, 46
+images/lava splash fx/lavasplash2
+	bounds: 1105, 224, 26, 24
+	offsets: 1, 1, 28, 26
+	rotate: 90
+images/lava splash fx/lavasplash3
+	bounds: 2747, 976, 42, 29
+	offsets: 1, 1, 44, 31
+	rotate: 90
+images/lava splash fx/lavasplash4
+	bounds: 1984, 1468, 62, 51
+	offsets: 1, 1, 64, 53
+images/ray
+	bounds: 792, 1414, 288, 444
+	offsets: 1, 1, 290, 446
+	rotate: 90
+images/red sun/eyebackblinkl
+	bounds: 1984, 1525, 299, 163
+	offsets: 1, 1, 301, 165
+	rotate: 90
+images/red sun/eyebackblinkr
+	bounds: 1272, 1391, 311, 160
+	offsets: 1, 1, 313, 162
+	rotate: 90
+images/red sun/eyebackl
+	bounds: 2506, 1424, 288, 239
+	offsets: 1, 1, 290, 241
+	rotate: 90
+images/red sun/eyebackr
+	bounds: 1135, 18, 318, 232
+	offsets: 1, 1, 320, 234
+images/red sun/eyeblinkglowl
+	bounds: 2588, 465, 235, 137
+	offsets: 1, 1, 237, 139
+	rotate: 90
+images/red sun/eyeblinkglowr
+	bounds: 2506, 974, 235, 137
+	offsets: 1, 1, 237, 139

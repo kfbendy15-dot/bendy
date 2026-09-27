@@ -1,0 +1,28 @@
+07d00af86af31b20.png
+	size: 860, 860
+	filter: Linear, Linear
+	scale: 0.5
+images/body
+	bounds: 674, 685, 169, 119
+	rotate: 90
+images/eyes
+	bounds: 712, 628, 72, 51
+images/feet_1
+	bounds: 786, 596, 55, 61
+	rotate: 180
+images/feet_2
+	bounds: 799, 662, 55, 60
+	rotate: 180
+images/feet_3
+	bounds: 506, 596, 55, 61
+	rotate: 90
+images/hair_tuft
+	bounds: 799, 728, 44, 43
+images/head
+	bounds: 468, 640, 201, 214
+images/shadow
+	bounds: 6, 619, 456, 235
+	offsets: 10, 7, 476, 249
+images/tail
+	bounds: 624, 599, 80, 82
+	rotate: 90

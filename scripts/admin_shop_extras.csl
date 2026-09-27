@@ -136,7 +136,7 @@ givemeadmingunplz :: proc(player: Player) {
     if !player_has_weapon(player, .BATTLEPASS_GUN) {
         give_weapon(.BATTLEPASS_GUN, player.default_inventory);
     }
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 Meteor_Boss :: class : Component {
     weapon_target: Weapon_Target;
@@ -206,9 +206,9 @@ Meteor_Boss :: class : Component {
 
         if hit_flash_timer > 0 {
             hit_flash_timer -= dt;
-            spine.color_multiplier = {2.5, 0.35, 0.25, 1.0};
+            spine.color = {2.5, 0.35, 0.25, 1.0};
         } else {
-            spine.color_multiplier = {1.0, 1.0, 1.0, 1.0};
+            spine.color = {1.0, 1.0, 1.0, 1.0};
         }
 
         nearest: Player;

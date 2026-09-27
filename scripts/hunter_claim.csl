@@ -1,0 +1,8 @@
+Hunter_Claim :: class : Interactable {
+    ao_start :: method() { set_listener(this); set_text("Claim Hunter"); set_subtitle("Rescue all 10 animals"); radius = 2; }
+    can_use :: method(p: Player) -> bool { return p.adventure_world == 2 && p.rescue_mask == 1023; }
+    on_interact :: method(p: Player) {
+        p.user_tag = "Hunter"; Save.set_string(p, PLAYER_TITLE_SAVE_KEY, "Hunter");
+        Save.set_int(p, "hunter_unlocked", 1); p.play_reward_feedback("Hunter"); adventure_sound(entity);
+    }
+}

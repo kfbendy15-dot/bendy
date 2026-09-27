@@ -194,4 +194,4 @@ is_survive_mode_active :: proc() -> bool {
 
 survivemode :: proc(player: Player) {
     toggle_survive_mode(player);
-} @chat_command @any
+}

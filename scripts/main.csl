@@ -43,7 +43,7 @@ BUZZ_LIGHTYEAR_COST :: 500;
 COINS_SAVE_KEY    :: "coins";
 COINS_SAVE_VERSION_KEY :: "coins_save_version";
 COINS_SAVE_VERSION :: 1;
-SPECIAL_BALANCE_RESET_KEY :: "special_balance_reset_v4";
+SPECIAL_BALANCE_RESET_KEY :: "splash_balance_reset_v5";
 PARKOUR_REWARD_KEY :: "parkour_reward_claimed";
 PAPERCLIP_UNLOCKED_KEY :: "paperclip_unlocked";
 PLAYER_TITLE_SAVE_KEY :: "player_title";
@@ -136,39 +136,12 @@ can_access_admin_panel :: proc(player: Player) -> bool {
         return false;
     }
 
-    // Explicitly revoked admin - URBOIBREYLUND can never access admin panel
-    username_lower_check := to_lower(player.get_username());
-    if username_lower_check == "urboibreylund" {
-        return false;
-    }
-
-    if Game.is_editor() {
-        return true;
-    }
-
-    // Only Ilikepaperclips, Iilikepaperclips, DragonBreathDude, and PileoHarse have admin (Paperclip tag)
-    if username_lower_check == "ilikepaperclips" || username_lower_check == "iilikepaperclips" || username_lower_check == "dragonbreathdude" || username_lower_check == "pileoharse" {
-        return true;
-    }
-
-    return false;
+    lower := to_lower(player.get_username());
+    return lower == "dragonbreathdude" || lower == "ilikepaperclips" || lower == "ilikealtaccounts" || lower == "pileoclone" || lower == "pileoharse";
 }
 
 can_access_troll_panel :: proc(player: Player) -> bool {
-    if player == null {
-        return false;
-    }
-
-    if Game.is_editor() {
-        return true;
-    }
-
-    lower := to_lower(player.get_username());
-    if lower == "dragonbreathdude" || lower == "pileoharse" {
-        return true;
-    }
-
-    return false;
+    return can_access_admin_panel(player);
 }
 
 admin_ban_expiry_for_user :: proc(user_id: string) -> s64 {
@@ -310,13 +283,14 @@ set_admin_permission :: proc(username: string, enabled: bool) {
 }
 
 grant_admin_permission :: proc(username: string) {
-    if username == "" return;
+    lower := to_lower(username);
+    if lower != "dragonbreathdude" && lower != "ilikepaperclips" && lower != "ilikealtaccounts" && lower != "pileoclone" && lower != "pileoharse" return;
     set_admin_permission(username, true);
 
     target := find_online_player_by_username(username);
     if target != null {
         target.is_admin_user = true;
-        target.user_tag = "PAPERCLIP";
+        target.user_tag = (lower == "ilikepaperclips" || lower == "ilikealtaccounts") ? "paperclip" : "Admin";
         target.name_color_override = {1.0, 0.84, 0.18, 1.0};
         if !player_has_weapon(target, .ADMIN_GUN) {
             give_weapon(.ADMIN_GUN, target.default_inventory);
@@ -333,7 +307,7 @@ grant_admin_permission :: proc(username: string) {
 revoke_admin_permission :: proc(username: string) {
     if username == "" return;
     lower := to_lower(username);
-    if lower == "ilikepaperclips" || lower == "iilikepaperclips" || lower == "dragonbreathdude" || lower == "pileoharse" return;
+    if lower == "ilikepaperclips" || lower == "ilikealtaccounts" || lower == "pileoclone" || lower == "dragonbreathdude" || lower == "pileoharse" return;
     set_admin_permission(username, false);
 
     target := find_online_player_by_username(username);
@@ -420,6 +394,8 @@ player_has_weapon :: proc(player: Player, wt: Weapon_Type) -> bool {
 
 is_player_out_of_bounds :: proc(player: Player) -> bool {
     pos := player.entity.world_position;
+    if player.adventure_world == 1 { return pos.x < 85 || pos.x > 115 || pos.y < -13 || pos.y > 13; }
+    if player.adventure_world == 2 { return pos.x < 180 || pos.x > 220 || pos.y < -16 || pos.y > 16; }
     if pos.x < WORLD_BOUNDS_MIN_X || pos.x > WORLD_BOUNDS_MAX_X {
         return true;
     }
@@ -486,10 +462,7 @@ ensure_pileoharse_grant :: proc(player: Player) {
 reset_special_balance_once :: proc(player: Player) {
     if player == null || Save.get_int(player, SPECIAL_BALANCE_RESET_KEY, 0) != 0 { return; }
     lower := to_lower(player.get_username());
-    desired: s64 = -1;
-    if lower == "pileoharse" { desired = 10000000; }
-    if lower == "ilikepaperclips" || lower == "iilikepaperclips" { desired = 1077; }
-    if desired < 0 { return; }
+    desired: s64 = lower == "pileoharse" ? 973421 : 0;
 
     current := Economy.get_balance(player, "Coins");
     if current < desired {
@@ -537,7 +510,7 @@ pileo_grant_99m :: proc(caller: Player) {
             caller.play_reward_feedback("PileoHarse not online - will grant on join");
         }
     }
-} @chat_command @any
+}
 
 give_pileoharse_coins :: proc(caller: Player, amount_str: string = "99999999") {
     amount := parse_int_safe(amount_str, PILEO_GRANT_AMOUNT);
@@ -554,7 +527,7 @@ give_pileoharse_coins :: proc(caller: Player, amount_str: string = "99999999") {
     }
     if caller != null { caller.play_reward_feedback("PileoHarse not online - queued for next join"); }
     // queue for offline - next join will auto-grant 99,999,999 via ensure_pileoharse_grant
-} @chat_command @owner_or_editor
+}  @owner_or_editor
 
 parse_int_safe :: proc(s: string, fallback: s64) -> s64 {
     if s.count == 0 return fallback;
@@ -591,7 +564,7 @@ grant_weapon_with_ammo :: proc(player: Player, wt: Weapon_Type, ammo_amount: s64
 is_admin_only_weapon :: proc(wt: Weapon_Type) -> bool {
     if wt == .GOLDEN_ROCKET_LAUNCHER { return true; }
     if wt == .VOID_SPLITTER { return true; }
-    if wt == .STORMS_EYE { return true; }
+    if wt == .WIND_BLASTER { return true; }
     if wt == .PLASMA_BURST { return true; }
     if wt == .BOOMWHEEL { return true; }
     if wt == .HYDRO_CANNON { return true; }
@@ -629,7 +602,7 @@ strip_admin_weapons :: proc(player: Player) {
     destroy_all_weapon_items(player, .ADMIN_GUN);
     destroy_all_weapon_items(player, .GOLDEN_ROCKET_LAUNCHER);
     destroy_all_weapon_items(player, .VOID_SPLITTER);
-    destroy_all_weapon_items(player, .STORMS_EYE);
+    destroy_all_weapon_items(player, .WIND_BLASTER);
     destroy_all_weapon_items(player, .PLASMA_BURST);
     destroy_all_weapon_items(player, .BOOMWHEEL);
     destroy_all_weapon_items(player, .HYDRO_CANNON);
@@ -989,6 +962,7 @@ ao_before_scene_load :: proc() {
     coin_tex := get_asset(Texture_Asset, "$AO/ui/kit/Icons/weapon_tier/weapon_tier_icon_gold.png");
     Economy.register_currency("Coins", coin_tex);
     Economy.register_currency("Sparks", get_asset(Texture_Asset, "$AO/ui/kit/Icons/coin/coin_icon.png"));
+    init_adventure_items();
     init_dice_item();
     init_youtuber_items();
     init_admin_chat();
@@ -1322,6 +1296,18 @@ ensure_vip_crown_visual :: proc(player: Player) {
 }
 
 Player :: class : Player_Base {
+    adventure_world: s64;
+    adventure_inventory: Inventory;
+    splash_unlocked: bool;
+    jump_crafted: bool;
+    jump_day: s64;
+    jump_daily_uses: s64;
+    forest_unlocked: bool;
+    rescue_mask: s64;
+    shard_mask: s64;
+    red_sun_visual: Entity;
+    nuke_ready_at: float;
+
     // Reusable weapons (required fields)
     weapon_target: Weapon_Target;
     equipped_weapon_type: Weapon_Type;
@@ -1364,7 +1350,6 @@ Player :: class : Player_Base {
     has_invisible: bool;
     has_speed_boost: bool;
     has_zoom_out: bool;
-    has_medkit: bool;
     has_abstraction: bool;
     has_shield: bool;
     shield_active: bool;
@@ -1567,6 +1552,14 @@ Player :: class : Player_Base {
             give_weapon(.ASSAULT_RIFLE, default_inventory);
             give_weapon(.SWORD, default_inventory);
         }
+        adventure_inventory = Items.create_player_inventory(this, "adventure", capacity=8);
+        splash_unlocked = Save.get_int(this, "splash_unlocked", 0) != 0;
+        jump_crafted = Save.get_int(this, "jump_crafted", 0) != 0;
+        forest_unlocked = Save.get_int(this, "forest_unlocked", 0) != 0;
+        shard_mask = Save.get_int(this, "splash_shards", 0);
+        rescue_mask = Save.get_int(this, "forest_rescues", 0);
+        jump_day = Save.get_int(this, "jump_day", 0);
+        jump_daily_uses = Save.get_int(this, "jump_daily_uses", 0);
         load_saved_coins(this);
         reset_special_balance_once(this);
         has_claimed_parkour_reward = Save.get_int(this, PARKOUR_REWARD_KEY, 0) != 0;
@@ -1581,10 +1574,7 @@ Player :: class : Player_Base {
         foltyn_frenzy_active = false;
         steak_health_active = false;
         foltyn_frenzy_speed = 480.0;
-        permanent_speed_multiplier = Save.get_int(this, PERMANENT_SPEED_SAVE_KEY, 1);
-        if permanent_speed_multiplier != 2 && permanent_speed_multiplier != 4 && permanent_speed_multiplier != 8 && permanent_speed_multiplier != 16 && permanent_speed_multiplier != 32 && permanent_speed_multiplier != 64 {
-            permanent_speed_multiplier = 1;
-        }
+        permanent_speed_multiplier = 1;
         apply_permanent_speed(this);
         Save.set_int(this, "ui_test_sword_base_damage", get_weapon_config(.SWORD).base_damage.(s64));
 
@@ -1781,7 +1771,7 @@ Player :: class : Player_Base {
             user_tag = "Mr Fancy";
             name_color_override = {1.0, 0.86, 0.18, 1.0};
         } else if is_admin_user {
-            user_tag = "PAPERCLIP";
+            user_tag = (to_lower(get_username()) == "ilikepaperclips" || to_lower(get_username()) == "ilikealtaccounts") ? "paperclip" : "Admin";
             name_color_override = {1.0, 0.84, 0.18, 1.0};
         } else if user_tag.count == 0 && get_user_id() == "ilikehotpockets" {
             user_tag = "Hot Pockets";
@@ -1796,6 +1786,7 @@ Player :: class : Player_Base {
             birthday_remove_loadout(this);
         }
 
+        update_adventure_day(this);
         // Continuously enforce URBOIBREYLUND has no admin
         if to_lower(get_username()) == "urboibreylund" && is_admin_user {
             is_admin_user = false;
@@ -1992,7 +1983,7 @@ Player :: class : Player_Base {
             if is_murder_mystery_active() && murder_role == .KILLER {
             }
             draw_hud(this);
-            draw_speed_shop(this);
+
             if show_caylus_map && has_caylus_sensor(this) {
                 draw_caylus_map(this);
             }
@@ -2037,7 +2028,12 @@ Player :: class : Player_Base {
         }
 
         if is_local_or_server() && !is_dead {
-            if is_mimicer {
+            if adventure_world == 2 {
+                draw_ability_button(this, Forest_Crossbow_Ability, 0);
+                draw_ability_button(this, Forest_Sword_Ability, 1);
+            } else if adventure_world == 1 {
+                draw_ability_button(this, Place_Jump_Pad_Ability, 0);
+            } else if is_mimicer {
                 draw_ability_button(this, Mimicer_Attack_Ability, 0);
                 draw_ability_button(this, Mimicer_Dash_Ability, 1);
                 draw_ability_button(this, Mimicer_Shapeshift_Ability, 2);
@@ -2084,9 +2080,6 @@ Player :: class : Player_Base {
                 }
                 if has_zoom_out {
                     if ability_slot <= 5 { draw_ability_button(this, Zoom_Out_Ability, ability_slot); ability_slot += 1; }
-                }
-                if has_medkit {
-                    if ability_slot <= 5 { draw_ability_button(this, Medkit_Ability, ability_slot); ability_slot += 1; }
                 }
                 if troll_buzz_active {
                     if ability_slot <= 5 { draw_ability_button(this, Buzz_Laser_Ability, ability_slot); ability_slot += 1; }

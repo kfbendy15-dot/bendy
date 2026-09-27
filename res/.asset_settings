@@ -1,5 +1,29 @@
 [
   {
+    "id": "forest_ground_4_ea36b5.png",
+    "texture": {
+      "wrap_repeat": true
+    }
+  },
+  {
+    "id": "water1_ac0690.png",
+    "texture": {
+      "wrap_repeat": true
+    }
+  },
+  {
+    "id": "rubber_mat_36e890.png",
+    "texture": {
+      "wrap_repeat": true
+    }
+  },
+  {
+    "id": "generated_6ab91536_45e4d1.png",
+    "texture": {
+      "wrap_repeat": true
+    }
+  },
+  {
     "id": "full_ice_90898d.png",
     "texture": {
       "wrap_repeat": true

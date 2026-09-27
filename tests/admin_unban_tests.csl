@@ -24,7 +24,7 @@ test_admin_unban_selected_user :: proc() {
     Test.wait_frames(30);
 
     Test.assert_var_int("selected user is unbanned once", "g_admin_unban_test_player.admin_unban_action_count", 1);
-    Test.assert_var_str("the requested row was selected", "g_admin_unban_test_player.admin_unban_last_user_id", "ui-test-banned-user-b");
+    Test.assert_var("the requested row was selected", "g_admin_unban_test_player.admin_unban_last_user_id", "ui-test-banned-user-b");
     Test.assert_var_int("selected ban expiry is cleared", "g_admin_unban_test_player.admin_unban_last_expiry_after", 0);
     Test.assert_var_int("unbanned user leaves the active list", "g_admin_unban_test_player.admin_unban_visible_ban_count", 0);
     Test.assert_var_int("one global announcement was emitted", "g_admin_unban_test_player.admin_unban_announcement_count", 1);
