@@ -5,8 +5,12 @@ test_siphoners_are_purchasable_from_their_shops :: proc() {
     Test.click_button("hud/shop_button");
     Test.click_button("shop/solar_siphoner");
     Test.assert_inventory_item_count("solar siphoner purchased from the shop", "", "solar_siphoner", 1);
+    Test.wait_seconds(2.0);
+    Test.assert_component_bool("shop closes after purchase", "", "Player.show_shop", false);
 
     Test.click_button("hud/admin_shop_button");
+    Test.wait_frames(10);
+    Test.assert_component_bool("admin shop opened", "", "Player.show_admin_shop", true);
     Test.click_button("admin_shop/octo_siphoner");
     Test.assert_inventory_item_count("octo siphoner purchased from the admin shop", "", "octo_siphoner", 1);
 }
