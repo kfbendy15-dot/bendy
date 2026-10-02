@@ -1,0 +1,3 @@
+Badge_Item :: class : Item_Instance {
+    @ao_serialize label: string;
+}

@@ -3,6 +3,7 @@ Bouncing_Projectile :: class : Component {
     lifetime: float;
     direction: v2;
     owner_id: u64;
+    weapon_type: Weapon_Type;
     speed: float;
     max_lifetime: float;
     max_bounces: s64;
@@ -35,7 +36,7 @@ Bouncing_Projectile :: class : Component {
                 }
             }
             if hit_target != null && hit_target.entity.id != owner_id && hit_target.entity.id != last_hit_id {
-                weapon_target_apply_damage(hit_target, damage, owner_id);
+                weapon_target_apply_damage(hit_target, damage, owner_id, weapon_type);
 
                 hit_sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/buzzshot_projectile_ricochet.wav");
                 sfx_desc := SFX.default_sfx_desc();
@@ -131,6 +132,7 @@ spawn_bouncing_projectile :: proc(player: Player, direction: v2, wt: Weapon_Type
     proj.damage = config.base_damage;
     proj.direction = normalize(direction);
     proj.owner_id = player.entity.id;
+    proj.weapon_type = wt;
     proj.speed = config.projectile_speed;
     proj.max_lifetime = 5.0;
     proj.max_bounces = config.max_bounces;

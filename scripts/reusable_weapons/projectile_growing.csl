@@ -3,6 +3,7 @@ Growing_Projectile :: class : Component {
     lifetime: float;
     direction: v2;
     owner_id: u64;
+    weapon_type: Weapon_Type;
     speed: float;
     max_lifetime: float;
     hit_count: s64;
@@ -54,7 +55,7 @@ Growing_Projectile :: class : Component {
                 hit_id_count += 1;
             }
 
-            weapon_target_apply_damage(hit_target, damage, owner_id);
+            weapon_target_apply_damage(hit_target, damage, owner_id, weapon_type);
 
             // Grow on hit
             hit_count += 1;
@@ -95,6 +96,7 @@ spawn_growing_projectile :: proc(player: Player, direction: v2, wt: Weapon_Type)
     proj.damage = config.base_damage;
     proj.direction = normalize(direction);
     proj.owner_id = player.entity.id;
+    proj.weapon_type = wt;
     proj.speed = config.projectile_speed;
     proj.max_lifetime = 5.0;
     proj.max_hits = 10;

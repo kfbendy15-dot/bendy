@@ -31,7 +31,7 @@ Standard_Projectile :: class : Component {
                     entity.add_local_position(v2{direction.x * 0.5, direction.y * 0.5});
                     return;
                 }
-                weapon_target_apply_damage(hit_target, damage, owner_id);
+                weapon_target_apply_damage(hit_target, damage, owner_id, weapon_type);
                 if weapon_type == .RAY_GUN {
                     target_player := hit_target.entity.get_component(Player);
                     if target_player != null {

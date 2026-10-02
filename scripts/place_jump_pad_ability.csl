@@ -1,15 +1,26 @@
+shop_jump_pad_item :: proc(p: Player) -> Item_Instance {
+    for item, slot: p.default_inventory.slots() { if #alive(item) && item.get_definition() == g_jump_pad { return item; } }
+    return null;
+}
+usable_jump_pad_item :: proc(p: Player) -> Item_Instance {
+    item := shop_jump_pad_item(p);
+    if #alive(item) { return item; }
+    if p.adventure_world == 1 { return adventure_item(p, g_jump_pad); }
+    return null;
+}
 Place_Jump_Pad_Ability :: class : Ability_Base {
     on_init :: method() { name = "Place Pad"; icon = get_asset(Texture_Asset, "generated_6ab9165e_ea2119.png"); }
-    can_use :: method() -> bool { p := player.(Player); return p.adventure_world == 1 && #alive(adventure_item(p, g_jump_pad)); }
+    can_use :: method() -> bool { p := player.(Player); return #alive(usable_jump_pad_item(p)); }
     on_update :: method(params: ref Ability_Update_Params) {
         if !params.clicked || !params.can_use return;
         p := player.(Player);
-        item := adventure_item(p, g_jump_pad);
+        item := usable_jump_pad_item(p);
         e := Scene.create_entity(); e.set_name("Crafted Jump Pad"); e.set_world_position(p.entity.world_position + v2{0, 1});
         e.set_local_scale({0.9, 0.9});
         sr := e.add_component(Sprite_Renderer); sr.set_texture(get_asset(Texture_Asset, "generated_6ab9165e_ea2119.png")); sr.color = {1, 1, 1, 1}; sr.layer = -1;
-        e.add_component(Placed_Jump_Pad, on_before_start=proc(pad: Placed_Jump_Pad) { pad.owner_user_id = p.get_user_id(); });
+        e.add_component(Placed_Jump_Pad, on_before_start=proc(pad: Placed_Jump_Pad) { pad.owner_user_id = p.get_user_id(); pad.world = p.adventure_world; });
         Items.destroy_item_instance(item, 1); current_cooldown = 1;
         adventure_sound(e);
+        Tutorial.report_ability_used(this);
     }
 }

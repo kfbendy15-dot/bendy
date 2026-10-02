@@ -373,8 +373,10 @@ backrooms_monster_tick :: proc(player: Player, dt: float) {
         if other == null || other == player || other.is_dead {
             continue;
         }
+        other.last_damage_weapon = .NONE;
         other.weapon_target.health = 0;
         effect := new(Death_Effect);
+        effect.attacker_id = player.entity.id;
         other.entity.set_active_effect(effect);
         other.play_reward_feedback("Killed by the Backrooms Monster");
     }
@@ -527,7 +529,8 @@ troll_do_unmorph :: proc(admin: Player, target: Player) -> bool {
         target.troll_caine_entity.destroy();
         target.troll_caine_entity = null;
     }
-    if target.backrooms_monster_active || target.troll_caine_active {
+    if #alive(target.troll_verity_entity) { target.troll_verity_entity.destroy(); target.troll_verity_entity = null; }
+    if target.backrooms_monster_active || target.troll_caine_active || target.troll_verity_active {
         target.remove_invisibility_reason("troll_morph_hide_player");
     }
     if target.troll_buzz_active {
@@ -578,6 +581,7 @@ troll_do_unmorph :: proc(admin: Player, target: Player) -> bool {
     target.troll_buzz_active = false;
     target.backrooms_monster_active = false;
     target.troll_caine_active = false;
+    target.troll_verity_active = false;
     target.play_reward_feedback("Unmorphed");
     if target != admin {
         admin.play_reward_feedback(format_string("Unmorphed %", {target.get_username()}));
@@ -786,6 +790,10 @@ draw_troll_panel :: proc(admin: Player) {
     caine_desc.panel.height = UIK.pixels(58);
     caine_label := caine_active ? "Unmorph Caine" : "Caine • TADC Event";
     caine_btn := UIK.button("troll/morph_caine", caine_label, caine_desc);
+    verity_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_PURPLE);
+    verity_desc.panel.width = UIK.flex(1); verity_desc.panel.height = UIK.pixels(54);
+    verity_active := selected_morph_target != null && selected_morph_target.troll_verity_active;
+    verity_btn := UIK.button("troll/morph_verity", verity_active ? "Unmorph Verity" : "Verity", verity_desc);
 
     special_morph_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(special_morph_row);
@@ -798,6 +806,8 @@ draw_troll_panel :: proc(admin: Player) {
     pileo_desc.panel.width = UIK.flex(1);
     pileo_desc.panel.height = UIK.pixels(54);
     pileo_btn := UIK.button("troll/spawn_pileo", "Spawn Pileo", pileo_desc);
+    meteor_btn := UIK.button("troll/spawn_meteor", "Spawn Meteor", pileo_desc);
+    paperclips_btn := UIK.button("troll/spawn_paperclips", "Spawn Paperclips", pileo_desc);
     UIK.panel_end();
 
     if backrooms_active {
@@ -1056,6 +1066,13 @@ draw_troll_panel :: proc(admin: Player) {
         }
     }
 
+    if UIK.clicked(verity_btn) {
+        if real_target == null { admin.play_reward_feedback("Select a target"); }
+        else if real_target.troll_verity_active { troll_do_unmorph(admin, real_target); }
+        else { troll_do_verity(admin, real_target); }
+    }
+    if UIK.clicked(meteor_btn) { spawn_meteor_boss(); adventure_sound(admin.entity); }
+    if UIK.clicked(paperclips_btn) { spawn_paperclips_boss(); adventure_sound(admin.entity); }
     if UIK.clicked(pileo_btn) {
         admin_spawn_pileo(admin);
     }

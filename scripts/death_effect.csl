@@ -9,20 +9,24 @@ respawn_player :: proc(player: Player) {
     player.agent.input_this_frame = {0, 0};
     player.weapon_target.health = player.weapon_target.max_health;
     player.is_dead = false;
+    player.damage_contributors.clear();
+    player.last_damage_weapon = .NONE;
     player.out_of_bounds_respawn_active = false;
 }
 
 Death_Effect :: class : Effect_Base {
     death_reason: string;
+    attacker_id: u64;
     lock_respawn_until_survive_mode_ends: bool;
 
     effect_start :: method() {
         player_specific.freeze_player = true;
+        player_specific.disable_movement_inputs = true;
+        player.(Player).death_started_at = get_time();
+        publish_player_death(player.(Player), attacker_id);
         if death_reason == "" {
             death_reason = format_string("death/%/%", {player.get_user_id(), get_frame_number()});
         }
-        player.add_freeze_reason(death_reason);
-        player.add_disable_movement_input_reason(death_reason);
         player.add_name_invisibility_reason(death_reason);
         lock_respawn_until_survive_mode_ends = player.(Player).survive_mode_killed_by_creature || player.(Player).murder_permadead;
         player.(Player).survive_mode_death_reason = death_reason;
@@ -38,22 +42,6 @@ Death_Effect :: class : Effect_Base {
             }
         }
 
-        if player.is_local() && !lock_respawn_until_survive_mode_ends {
-            UI.push_screen_draw_context();
-            defer UI.pop_draw_context();
-
-            ts := UI.default_text_settings();
-            ts.size = 60;
-            ts.halign = .CENTER;
-            ts.valign = .CENTER;
-            ts.color = {1, 0.3, 0.3, 1};
-            ts.do_outline = true;
-            ts.outline_thickness = 3;
-            ts.outline_color = {0, 0, 0, 1};
-
-            rect := UI.get_screen_rect().center_rect().grow(50);
-            UI.text(rect, ts, "Respawning in %", {time_left.(int) + 1});
-        }
         if time_left <= 0 {
             remove_effect(false);
             return;
@@ -62,8 +50,6 @@ Death_Effect :: class : Effect_Base {
 
     effect_end :: method(interrupt: bool) {
         if death_reason != "" {
-            player.remove_freeze_reason(death_reason);
-            player.remove_disable_movement_input_reason(death_reason);
             player.remove_name_invisibility_reason(death_reason);
         }
 

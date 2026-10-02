@@ -1,0 +1,44 @@
+.safe { position: fixed; inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); pointer-events: none; }
+.quick { position: absolute; left: 14px; top: 28%; display: flex; flex-direction: column; gap: 8px; width: 150px; }
+.quick button { display: flex; align-items: center; justify-content: center; gap: 8px; height: 66px; background: #14243c; border: 1px solid #6386b4; border-radius: 12px; color: #edf2fa; font-size: 24px; pointer-events: auto; }
+.quick img { width: 26px; height: 26px; object-fit: contain; }
+.armor-status { color: #e6d4a3; font-size: 12px; text-align: center; }
+.feed { position: absolute; right: 14px; top: 96px; width: 620px; max-width: 48%; display: flex; flex-direction: column; gap: 5px; }
+.kill { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; padding: 8px 12px; background: rgba(8,16,30,0.88); border: 1px solid #ee6178; border-radius: 7px; font-size: 20px; }
+.killer { color: #8ddcc1; }
+.victim { color: #ffa0aa; }
+.weapon { display: flex; align-items: center; gap: 5px; color: #dbe5f5; }
+.weapon img { width: 32px; height: 20px; object-fit: contain; }
+.death { position: absolute; left: 30%; top: 38%; width: 40%; box-sizing: border-box; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; background: rgba(10,16,30,0.94); border: 2px solid #f0647c; border-radius: 18px; }
+.eliminated { color: #ff8193; font-size: 40px; font-weight: 900; letter-spacing: 3px; }
+.death-weapon { display: flex; flex-direction: row; align-items: center; gap: 18px; }
+.death-weapon img { width: 120px; height: 96px; object-fit: contain; }
+.death-weapon div { display: flex; flex-direction: column; gap: 6px; }
+.death-name { font-size: 32px; font-weight: 700; color: white; }
+.death-by { font-size: 26px; color: #9be2cf; }
+.assist { color: #bacce5; font-size: 20px; }
+.respawn { color: #e2e9f5; font-size: 24px; }
+.backdrop { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(4,8,16,0.82); pointer-events: auto; }
+.panel { width: 100%; max-width: 900px; max-height: 88%; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; padding: 22px; border: 2px solid #6089c1; border-radius: 20px; background: #111e32; }
+.header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.title { color: #edf2fa; font-size: 28px; font-weight: 900; }
+.close { width: 44px; height: 44px; background: #6b263c; border: 1px solid #ec8398; border-radius: 10px; color: white; font-size: 24px; pointer-events: auto; }
+.summary { display: flex; justify-content: space-between; gap: 10px; color: #fbd37b; font-size: 17px; }
+.hint { color: #99adc9; font-size: 13px; }
+.scroll { flex-grow: 1; min-height: 0; overflow-y: scroll; display: flex; flex-direction: column; gap: 10px; }
+.category { color: #d3e0f4; font-size: 16px; font-weight: 700; padding-top: 8px; }
+.offers { display: flex; flex-direction: column; gap: 8px; }
+.offer, .badge { box-sizing: border-box; display: flex; align-items: center; flex-direction: row; gap: 14px; width: 100%; min-height: 112px; padding: 12px; background: #1c304c; border: 1px solid #36587e; border-radius: 12px; pointer-events: auto; }
+.offer:hover, .badge:hover { background: #294361; }
+.offer img { width: 48px; height: 48px; object-fit: contain; }
+.details { display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }
+.name { font-size: 26px; font-weight: 700; }
+.reduction { color: #9ac6e0; font-size: 20px; }
+.price { color: #fbd37b; font-size: 22px; }
+.state { font-size: 20px; color: #d3e0f4; }
+.badge .name { flex-grow: 1; }
+.badge-icon { width: 32px; height: 32px; object-fit: contain; }
+@media (max-width: 700px) { .quick { width: 130px; left: 8px; top: 24%; } .quick button { height: 66px; font-size: 20px; } .feed { right: 8px; top: 80px; max-width: 58%; } .kill { font-size: 11px; gap: 5px; padding: 6px 8px; } .weapon img { width: 24px; height: 18px; } .death { left: 15%; width: 70%; top: 35%; padding: 14px; } .death-name { font-size: 18px; } .panel { padding: 14px; max-height: 92%; } .title { font-size: 23px; } .summary { font-size: 14px; } .offer { gap: 9px; } .name { font-size: 24px; } }
+
+
+.feedback { position: absolute; top: 18%; left: 25%; width: 50%; height: 42px; text-align: center; font-size: 26px; font-weight: 700; color: #8de1ac; }

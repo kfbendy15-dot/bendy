@@ -37,7 +37,7 @@ Poison_Cloud :: class : Component {
         tick_timer += dt;
         if tick_timer >= tick_rate {
             tick_timer = 0;
-            apply_aoe_damage(entity.world_position, owner_id, radius, damage_per_tick);
+            apply_aoe_damage(entity.world_position, owner_id, radius, damage_per_tick, .POISON_GRENADE);
         }
     }
 
@@ -142,7 +142,7 @@ Cluster_Bomb :: class : Component {
         entity.set_local_position({current_x, current_y + arc_height});
 
         if t >= 1.0 {
-            apply_aoe_damage(target_pos, owner_id, aoe_radius, damage);
+            apply_aoe_damage(target_pos, owner_id, aoe_radius, damage, .BOOMWHEEL);
 
             sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/dynamite_explode.wav");
             desc := SFX.default_sfx_desc();

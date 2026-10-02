@@ -1,0 +1,46 @@
+// Temporary streamed-character look until the original Verity reference is supplied.
+Verity_Visual :: class : Component {
+    owner_user_id: string;
+    animator: Spine_Animator;
+    running: bool;
+    ao_start :: method() {
+        animator = entity.add_component(Spine_Animator);
+        animator.set_skeleton(get_asset(Spine_Asset, "$AO/streamed_character"));
+        animator.disable_all_skins();
+        animator.enable_skin("base/crewchsia");
+        animator.enable_skin("body/food_wizard_body");
+        animator.enable_skin("face/food_wizard_face");
+        animator.enable_skin("hat/food_wizard_hat");
+        animator.refresh_skins();
+        animator.set_animation("Idle", true, 0);
+    }
+    ao_update :: method(dt: float) {
+        p := find_online_player_by_user_id(owner_user_id);
+        if p == null || !p.troll_verity_active { entity.destroy(); return; }
+        moving := length(p.input_this_frame) > 0.1;
+        if moving != running { running = moving; animator.set_animation(running ? "Run" : "Idle", true, 0); }
+    }
+}
+
+update_verity_visual :: proc(p: Player) {
+    if !p.troll_verity_active { return; }
+    if #alive(p.animator) { p.animator.set_tint({1, 1, 1, 0}); }
+    if #alive(p.troll_verity_entity) { return; }
+    e := Scene.create_entity(); e.set_parent(p.entity, false); e.set_local_scale({1, 1});
+    e.add_component(Verity_Visual, on_before_start=proc(visual: Verity_Visual) { visual.owner_user_id = p.get_user_id(); });
+    p.troll_verity_entity = e;
+}
+
+troll_do_verity :: proc(admin: Player, target: Player) -> bool {
+    if !can_access_troll_panel(admin) || !#alive(target) { return false; }
+    if target.troll_morph_active { admin.play_reward_feedback("Already transformed"); return false; }
+    troll_save_morph_original(target);
+    target.troll_morph_active = true; target.troll_verity_active = true;
+    target.add_invisibility_reason("troll_morph_hide_player");
+    target.set_name_override("Verity"); target.do_name_color_override = true;
+    target.name_color_override = {0.7, 0.5, 1, 1}; target.user_tag = ""; target.show_vip_crown = false;
+    update_verity_visual(target); adventure_sound(target.entity);
+    target.play_reward_feedback("Verity");
+    Save.set_string(admin, "ui_test_troll_morph_name", "Verity");
+    return true;
+}

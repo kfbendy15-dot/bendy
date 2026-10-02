@@ -1,0 +1,69 @@
+test_armor_badges_and_jump_pads :: proc() {
+    Test.wait_seconds(1);
+    Test.run_admin_command("progression_test_setup");
+    Test.click_button("open-armor");
+    Test.click_button("armor-offer#armor_1:0");
+    Test.assert_balance("Wood costs 5", "Coins", 95);
+    Test.assert_component_int("Wood equipped", "", "Player.armor_tier", 1);
+    Test.run_admin_command("progression_test_hit");
+    Test.assert_component_float("Wood divides 80 by 2", "", "Player.weapon_target.health", 60);
+    Test.click_button("armor-offer#armor_2:1");
+    Test.assert_balance("Stone costs 10", "Coins", 85);
+    Test.run_admin_command("progression_test_hit");
+    Test.assert_component_float("Stone divides 80 by 4", "", "Player.weapon_target.health", 80);
+    Test.click_button("armor-offer#armor_1:0");
+    Test.assert_balance("Reequipping is free", "Coins", 85);
+    Test.assert_component_int("Can equip lower owned armor", "", "Player.armor_tier", 1);
+    Test.run_admin_command("progression_test_break");
+    Test.wait_seconds(0.2);
+    Test.assert_component_int("Broken armor has no protection", "", "Player.armor_tier", 0);
+    Test.run_admin_command("progression_test_hit");
+    Test.assert_component_float("Full damage after break", "", "Player.weapon_target.health", 20);
+    Test.click_button("armor-offer#armor_1:0");
+    Test.assert_balance("Replace wood for 5", "Coins", 80);
+    Test.assert_component_float_range("New wear timer", "", "Player.equipped_armor.seconds_left", 1190, 1200);
+    Test.click_button("close-armor");
+    Test.wait_frames(10);
+    Test.run_admin_command("progression_test_badges");
+    Test.assert_save_int("Cannot equip a fourth badge", "progress_test_badge_count", 3);
+    Test.wait_frames(10);
+    Test.click_button("shop_button");
+    Test.assert_component_bool("Shop opens", "", "Player.show_shop", true);
+    Test.wait_frames(5);
+    Test.click_button("jump_pad");
+    Test.assert_balance("Jump pad costs 10", "Coins", 70);
+    Test.assert_inventory_has_item("Pad in persistent hotbar", "", "jump_pad");
+    Test.wait_frames(5);
+    Test.assert_ability_available("Pad place ability in arena", 1);
+    Test.use_ability(1);
+    Test.assert_entity_exists("Placed pad", "Crafted Jump Pad");
+    Test.assert_inventory_item_count("Pad consumed once", "", "jump_pad", 0);
+}
+
+test_kill_and_assist_rewards :: proc() {
+    Test.wait_seconds(1);
+    Test.run_admin_command("progression_test_setup");
+    Test.spawn_dummy_players(2);
+    Test.wait_seconds(5);
+    Test.assert_entity_count("Three real players", "Player", 3);
+    Test.run_admin_command("progression_test_combat");
+    Test.assert_balance("Assist earns exactly ten", "Coins", 110);
+    Test.assert_save_int("Killer earns exactly twenty", "progress_test_killer_coins", 20);
+    Test.assert_save_string("Weapon captured on death", "progress_test_death_weapon", "Submachine Gun");
+    Test.assert_entity_count("One death feed entry", "Kill_Feed_Entry", 1);
+    Test.wait_seconds(3.5);
+    Test.run_admin_command("progression_test_combat 1");
+    Test.assert_balance("Kill earns exactly twenty, no duplicate reward", "Coins", 130);
+    Test.assert_entity_count("Both deaths in feed", "Kill_Feed_Entry", 2);
+}
+
+test_all_armor_prices_and_reduction :: proc() {
+    Test.wait_seconds(1);
+    Test.run_admin_command("progression_test_setup");
+    Test.click_button("open-armor");
+    Test.assert_button_not_clickable("Sun unavailable without event", "armor-offer#armor_8");
+    Test.assert_button_not_clickable("Jester unavailable without event", "armor-offer#armor_10");
+    Test.click_button("close-armor");
+    Test.run_admin_command("progression_test_catalog");
+    Test.assert_save_int("All twelve prices and divisors exact", "progress_test_catalog_matches", 12);
+}

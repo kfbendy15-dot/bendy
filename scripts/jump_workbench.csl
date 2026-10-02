@@ -1,5 +1,5 @@
 Jump_Workbench :: class : Interactable {
-    ao_start :: method() { set_listener(this); set_text("Craft Jump Pads"); set_subtitle("9 shards to unlock · 3 uses / 10 Coins"); radius = 2; }
+    ao_start :: method() { set_listener(this); set_text("Craft Jump Pads"); set_subtitle("9 shards to unlock Â· 3 uses / 10 Coins"); radius = 2; }
     can_use :: method(p: Player) -> bool { return p.adventure_world == 1 && !p.is_dead; }
     on_interact :: method(p: Player) {
         shards := adventure_item(p, g_jump_shard);

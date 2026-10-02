@@ -200,9 +200,7 @@ grant_admin_ammo_offer :: proc(player: Player, ammo_index: s64, amount: s64, fee
 }
 
 buy_armor_offer :: proc(player: Player) {
-    if spend_coins(player, 750) {
-        buy_armor_progression(player);
-    }
+    purchase_or_equip_armor(player, 1);
 }
 
 draw_coin_pass_card :: proc(player: Player, product_id: string, amount: s64) -> Interact_Result {
@@ -256,7 +254,7 @@ draw_vip_pass_card :: proc(product_id: string) -> Interact_Result {
     UIK.card_zone(.BODY);
     UIK.text(UIK.text_body(), "VIP");
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
-    UIK.text(UIK.text_body(), "Crown + half-price shops + double kill coins");
+    UIK.text(UIK.text_body(), "Crown + half-price weapon shops");
     if !available {
         UIK.spacer(UIK.pixels(1), UIK.pixels(2));
         UIK.text(UIK.text_body(), "Unavailable");
@@ -277,7 +275,7 @@ draw_monetization_tab :: proc(player: Player) {
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     UIK.text(UIK.text_body(), "Buy or gift a pass. Repeat purchases grant more coins.");
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
-    UIK.text(UIK.text_body(), "VIP: crown hat, half-price shops, double kill coins");
+    UIK.text(UIK.text_body(), "VIP: crown hat, half-price weapon shops");
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
 
     vip_product := Purchasing.get_product(VIP_PRODUCT_ID);
@@ -397,6 +395,7 @@ draw_shop :: proc(player: Player) {
     mystery_bundle_handle: Interact_Result;
     tabs := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(tabs);
+    armor_tab := UIK.button("shop/armor", "Armor Shop", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE));
     normal_tab := UIK.button("shop/tab_normal", "Shop", UIK.widget_desc_button_auto_default(player.shop_tab_index == 0 ? .BUTTON_BASIC_GREEN : .BUTTON_BASIC_GREY));
     UIK.panel_end();
     content := UIK.layout_column();
@@ -408,6 +407,8 @@ draw_shop :: proc(player: Player) {
 
     UIK.text("Featured", UIK.text_title());
     event_cards := draw_event_featured(player, false);
+    jump_handle := draw_shop_card("shop/jump_pad", "Jump Pad", 10, get_asset(Texture_Asset, "generated_6ab9165e_ea2119.png"), {0.25, 0.7, 0.85, 1}, false);
+
     if player.has_vip {
         UIK.text("VIP: 50% off shop prices", UIK.text_body());
     }
@@ -556,6 +557,8 @@ draw_shop :: proc(player: Player) {
         player.show_shop = false;
     }
     if UIK.clicked(normal_tab) { player.shop_tab_index = 0; }
+    if UIK.clicked(armor_tab) { player.show_shop = false; player.show_armor_shop = true; }
+    if UIK.clicked(jump_handle) { buy_jump_pad(player); }
     process_event_featured(player, event_cards);
 
     if UIK.clicked(shop_gun_cutter_handle) && !player_has_weapon(player, .MEGA_BLADE) {
@@ -629,6 +632,7 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(dash_handle) && !player.has_dash {
         if spend_coins(player, DASH_COST) {
             player.has_dash = true;
+            Save.set_int(player, "powerup_dash", 1);
             play_pickup_feedback(player, "+Dash");
             if player.is_local() {
                 sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
@@ -641,6 +645,7 @@ draw_shop :: proc(player: Player) {
 
     if UIK.clicked(speed_boost_handle) && spend_coins(player, SPEED_BOOST_COST) {
         player.has_speed_boost = true;
+        Save.set_int(player, "powerup_speed_boost", 1);
         // Each purchase also applies a stack immediately
         player.entity.add_passive_effect(new(Speed_Boost_Effect));
         play_pickup_feedback(player, "+Speed Boost");
@@ -655,6 +660,7 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(zoom_out_handle) && !player.has_zoom_out {
         if spend_coins(player, ZOOM_OUT_COST) {
             player.has_zoom_out = true;
+            Save.set_int(player, "powerup_zoom_out", 1);
             play_pickup_feedback(player, "+Zoom Out");
             if player.is_local() {
                 sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
@@ -667,6 +673,7 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(invisible_handle) && !player.has_invisible {
         if spend_coins(player, INVISIBLE_COST) {
             player.has_invisible = true;
+            Save.set_int(player, "powerup_invisible", 1);
             play_pickup_feedback(player, "+Invisible");
             if player.is_local() {
                 sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
@@ -707,93 +714,6 @@ draw_shop :: proc(player: Player) {
         }
     }
 
-}
-
-draw_armor_shop :: proc(player: Player) {
-    if player == null {
-        return;
-    }
-
-    UIK.begin(UIK.modal(UIK.rect_window_large(), 16));
-    shell := UIK.panel_modal(.BLACK);
-    shell.gap = 0;
-    UIK.panel_begin(shell);
-    title_desc := UIK.title_area_desc("Armor Shop");
-    title_desc.icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
-    exit_handle := UIK.title_area(title_desc);
-
-    content := UIK.layout_column();
-    content.width = UIK.flex(1);
-    content.height = UIK.flex(1);
-    content.padding = v4{12, 16, 12, 16};
-    content.gap = 8;
-    UIK.list_begin("armor_shop_scroll", content);
-
-    armor_icon := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
-    sun_armor_handle: Interact_Result;
-    jester_armor_handle: Interact_Result;
-    cyber_armor_handle: Interact_Result;
-
-    UIK.text("Featured", UIK.text_title());
-    if g_event_sun || g_event_tadc || g_event_cyber_energy {
-        feat_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-        UIK.panel_begin(feat_row);
-        if g_event_sun {
-            sun_armor_handle = draw_shop_card("armor_shop/sun_armor", "Sun Armor", shop_price(player, SUN_ARMOR_COST), armor_icon, {1.0, 0.58, 0.08, 1.0}, player.armor_tier >= 8);
-        }
-        if g_event_tadc {
-            jester_armor_handle = draw_shop_card("armor_shop/jester_armor", "Jester Armor", shop_price(player, JESTER_ARMOR_COST), armor_icon, {1.0, 0.2, 0.65, 1.0}, player.armor_tier >= 10);
-        }
-        if g_event_cyber_energy {
-            cyber_armor_handle = draw_shop_card("armor_shop/cyber_armor", "Cyber Armor", shop_price(player, CYBER_ARMOR_COST), armor_icon, {0.1, 0.85, 1.0, 1}, player.cyber_armor_active);
-        }
-        UIK.panel_end();
-    } else {
-        UIK.text("Sun, Jester, and Cyber armor unlock during their events", UIK.text_body());
-    }
-
-    UIK.spacer(UIK.pixels(1), UIK.pixels(8));
-    UIK.text("Armor", UIK.text_title());
-    row_1 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(row_1);
-    wood_h := draw_shop_card("armor_shop/wood", "Wood Armor", shop_price(player, WOOD_ARMOR_COST), armor_icon, {0.55, 0.32, 0.15, 1}, player.armor_tier >= 1);
-    stone_h := draw_shop_card("armor_shop/stone", "Stone Armor", shop_price(player, STONE_ARMOR_COST), armor_icon, {0.55, 0.55, 0.58, 1}, player.armor_tier >= 2);
-    iron_h := draw_shop_card("armor_shop/iron", "Iron Armor", shop_price(player, IRON_ARMOR_COST), armor_icon, {0.75, 0.82, 0.9, 1}, player.armor_tier >= 3);
-    UIK.panel_end();
-    row_2 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(row_2);
-    gold_h := draw_shop_card("armor_shop/gold", "Gold Armor", shop_price(player, GOLD_ARMOR_COST), armor_icon, {1.0, 0.72, 0.15, 1}, player.armor_tier >= 4);
-    diamond_h := draw_shop_card("armor_shop/diamond", "Diamond Armor", shop_price(player, DIAMOND_ARMOR_COST), armor_icon, {0.3, 0.85, 1.0, 1}, player.armor_tier >= 5);
-    emerald_h := draw_shop_card("armor_shop/emerald", "Emerald Armor", shop_price(player, EMERALD_ARMOR_COST), armor_icon, {0.2, 1.0, 0.45, 1}, player.armor_tier >= 6);
-    UIK.panel_end();
-    row_3 := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(row_3);
-    obsidian_h := draw_shop_card("armor_shop/obsidian", "Obsidian Armor", shop_price(player, OBSIDIAN_ARMOR_COST), armor_icon, {0.18, 0.12, 0.25, 1}, player.armor_tier >= 7);
-    netherite_h := draw_shop_card("armor_shop/netherite", "Netherite Armor", shop_price(player, NETHERITE_ARMOR_COST), armor_icon, {0.35, 0.4, 0.48, 1}, player.armor_tier >= 9);
-    UIK.panel_end();
-
-    UIK.list_end();
-    close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
-    close_desc.panel.width = UIK.flex(1);
-    close_desc.panel.height = UIK.pixels(52);
-    close_btn := UIK.button("armor_shop/close", "Close", close_desc);
-    UIK.panel_end();
-    UIK.end();
-
-    if UIK.clicked(exit_handle) || UIK.clicked(close_btn) {
-        player.show_armor_shop = false;
-    }
-    if UIK.clicked(sun_armor_handle) && g_event_sun { buy_sun_armor(player); }
-    if UIK.clicked(jester_armor_handle) && g_event_tadc { buy_armor_tier_offer(player, 10, JESTER_ARMOR_COST); }
-    if UIK.clicked(cyber_armor_handle) && g_event_cyber_energy { buy_cyber_armor(player); }
-    if UIK.clicked(wood_h) { buy_armor_tier_offer(player, 1, WOOD_ARMOR_COST); }
-    if UIK.clicked(stone_h) { buy_armor_tier_offer(player, 2, STONE_ARMOR_COST); }
-    if UIK.clicked(iron_h) { buy_armor_tier_offer(player, 3, IRON_ARMOR_COST); }
-    if UIK.clicked(gold_h) { buy_armor_tier_offer(player, 4, GOLD_ARMOR_COST); }
-    if UIK.clicked(diamond_h) { buy_armor_tier_offer(player, 5, DIAMOND_ARMOR_COST); }
-    if UIK.clicked(emerald_h) { buy_armor_tier_offer(player, 6, EMERALD_ARMOR_COST); }
-    if UIK.clicked(obsidian_h) { buy_armor_tier_offer(player, 7, OBSIDIAN_ARMOR_COST); }
-    if UIK.clicked(netherite_h) { buy_armor_tier_offer(player, 9, NETHERITE_ARMOR_COST); }
 }
 
 draw_admin_shop :: proc(player: Player) {
@@ -1160,24 +1080,6 @@ draw_admin_panel :: proc(player: Player) {
     noclip_btn := UIK.button("admin/toggle_noclip", "Toggle Noclip", noclip_desc);
     UIK.panel_end();
 
-    UIK.spacer(UIK.pixels(1), UIK.pixels(4));
-    special_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 6);
-    UIK.panel_begin(special_row);
-
-    summon_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
-    summon_desc.panel.width = UIK.flex(1);
-    summon_desc.panel.height = UIK.pixels(52);
-    summon_btn := UIK.button("admin/summon_paperclips", "Summon Paperclips", summon_desc);
-
-
-    meteor_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
-    meteor_desc.panel.width = UIK.flex(1);
-    meteor_desc.panel.height = UIK.pixels(52);
-    meteor_btn := UIK.button("admin/summon_meteor_boss", "Summon Meteor", meteor_desc);
-
-
-    UIK.panel_end();
-
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
     UIK.text("Fight", UIK.text_title());
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
@@ -1300,15 +1202,9 @@ draw_admin_panel :: proc(player: Player) {
         player.show_minigames = false;
     }
 
-    if UIK.clicked(summon_btn) {
-        spawn_paperclips_boss();
-        player.play_reward_feedback("Paperclips approaches!");
-    }
 
-    if UIK.clicked(meteor_btn) {
-        spawn_meteor_boss();
-        player.play_reward_feedback("Meteor incoming!");
-    }
+
+
 
     if UIK.clicked(inv_btn) {
         set_player_invincible(admin_target, true);

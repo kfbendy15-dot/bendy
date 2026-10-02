@@ -135,6 +135,7 @@ tripmine_test_grant_invisible_powerup :: proc(player: Player) {
     }
 
     player.has_invisible = true;
+        Save.set_int(player, "powerup_invisible", 1);
     player.powerup_invisible_active = true;
     effect := new(Invisible_Effect);
     player.entity.add_passive_effect(effect);
@@ -146,6 +147,7 @@ tripmine_test_force_powerup_invisible :: proc(player: Player) {
     }
 
     player.has_invisible = true;
+        Save.set_int(player, "powerup_invisible", 1);
     player.powerup_invisible_active = true;
     effect := new(Invisible_Effect);
     player.entity.add_passive_effect(effect);
@@ -175,6 +177,7 @@ tripmine_test_spawn_powerup_invisible :: proc(player: Player) {
 
     if !player.has_invisible {
         player.has_invisible = true;
+        Save.set_int(player, "powerup_invisible", 1);
     }
     effect := new(Invisible_Effect);
     player.entity.add_passive_effect(effect);

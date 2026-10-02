@@ -78,7 +78,7 @@ draw_hud :: proc(player: Player) {
         home := UIK.button("adventure/home", "Home", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE));
         if UIK.clicked(home) { adventure_travel(player, 0); }
         if player.adventure_world == 1 {
-            UIK.text(format_string("Splash · Shards %/9 · Jumps %/9", {adventure_rescue_count(player.shard_mask), player.jump_daily_uses}), UIK.text_body());
+            UIK.text(format_string("Splash Â· Shards %/9 Â· Jumps %/9", {adventure_rescue_count(player.shard_mask), player.jump_daily_uses}), UIK.text_body());
         } else { UIK.text(format_string("Rescued %/10", {adventure_rescue_count(player.rescue_mask)}), UIK.text_body()); }
     }
     // Coin balance
@@ -96,16 +96,6 @@ draw_hud :: proc(player: Player) {
         role_style := UIK.text_title();
         role_style.color = player.murder_role == .KILLER ? {1, 0.2, 0.2, 1} : player.murder_role == .DETECTIVE ? {0.3, 0.7, 1, 1} : {0.5, 1, 0.5, 1};
         UIK.text(format_string("Role: %", {murder_role_name(player.murder_role)}), role_style);
-    }
-
-    if player.show_reward_popups && player.reward_feedback_duration > 0 {
-        elapsed := get_time() - player.reward_feedback_start;
-        if elapsed < player.reward_feedback_duration {
-            pct := clamp(elapsed / player.reward_feedback_duration, 0, 1);
-            ts := UIK.text_body();
-            ts.color = {0.35, 1.0, 0.5, 1.0 - pct};
-            UIK.text(player.reward_feedback_text, ts);
-        }
     }
 
     UIK.spacer(UIK.flex(1), UIK.pixels(1));

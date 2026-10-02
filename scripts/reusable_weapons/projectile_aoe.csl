@@ -1,11 +1,11 @@
 // AOE damage helper: damages all targets in radius except owner
-apply_aoe_damage :: proc(pos: v2, owner_id: u64, radius: float, damage: float) {
+apply_aoe_damage :: proc(pos: v2, owner_id: u64, radius: float, damage: float, source_weapon: Weapon_Type = .NONE) {
     nearby: [..]Weapon_Target;
     Scene.get_all_components_in_range(pos, radius, ref nearby);
 
     for t: nearby {
         if t.entity.id == owner_id continue;
-        weapon_target_apply_damage(t, damage, owner_id);
+        weapon_target_apply_damage(t, damage, owner_id, source_weapon);
     }
 }
 
@@ -15,6 +15,7 @@ AOE_Projectile :: class : Component {
     lifetime: float;
     direction: v2;
     owner_id: u64;
+    weapon_type: Weapon_Type;
     speed: float;
     max_lifetime: float;
     aoe_radius: float;
@@ -38,11 +39,11 @@ AOE_Projectile :: class : Component {
         if found && hit_target != null {
             if hit_target.entity.id != owner_id {
                 // Direct hit damage
-                weapon_target_apply_damage(hit_target, damage, owner_id);
+                weapon_target_apply_damage(hit_target, damage, owner_id, weapon_type);
 
                 // AOE damage
                 if aoe_radius > 0 {
-                    apply_aoe_damage(pos, owner_id, aoe_radius, aoe_damage);
+                    apply_aoe_damage(pos, owner_id, aoe_radius, aoe_damage, weapon_type);
                 }
 
                 sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/cannon_explode.wav");
@@ -81,6 +82,7 @@ spawn_aoe_projectile :: proc(player: Player, direction: v2, wt: Weapon_Type) {
     proj.damage = config.base_damage;
     proj.direction = normalize(direction);
     proj.owner_id = player.entity.id;
+    proj.weapon_type = wt;
     proj.speed = config.projectile_speed;
     proj.max_lifetime = config.projectile_lifetime;
     proj.aoe_radius = config.aoe_radius;
