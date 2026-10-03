@@ -1,3 +1,21 @@
+armor_offer_available :: proc(tier: s64) -> bool {
+    switch tier {
+        case 8: return g_event_sun;
+        case 10: return g_event_tadc;
+        case 11: return g_event_cyber_energy;
+        case 13: return g_event_mrlovebraids;
+    }
+    return true;
+}
+
+clear_session_inventory :: proc(inventory: Inventory) {
+    if inventory == null { return; }
+    for slot: 0..<inventory.capacity {
+        item := inventory.get_item(slot);
+        if #alive(item) { Items.destroy_item_instance(item); }
+    }
+}
+
 ARMOR_WEAR_SECONDS :: 1200.0;
 g_armor_definitions: [14]Item_Definition;
 g_badge_definition: Item_Definition;
@@ -99,6 +117,7 @@ grant_armor_item :: proc(p: Player, tier: s64) -> Armor_Item {
 
 purchase_or_equip_armor :: proc(p: Player, tier: s64) {
     if p == null || p.is_dead || tier < 1 || tier > 13 { return; }
+    if !armor_offer_available(tier) { return; }
     item := owned_armor(p, tier);
     if #alive(item) && item.seconds_left > 0 { equip_armor(p, item); return; }
     if tier == 13 && !g_event_mrlovebraids { p.play_reward_feedback("Available during Mrlovebraids event"); return; }
@@ -118,6 +137,9 @@ load_progression :: proc(p: Player, legacy_tier: s64) {
     // Named inventories must be created during Player.ao_start, before references are read.
     p.armor_inventory = Items.create_player_inventory(p, "armors", capacity=16);
     p.badge_inventory = Items.create_player_inventory(p, "badges", capacity=64);
+    clear_session_inventory(p.armor_inventory);
+    Save.delete_key(p, "equipped_armor_v3");
+    legacy_tier = 0;
     if Save.get_int(p, "armor_inventory_migrated_v3", 0) == 0 {
         if legacy_tier > 0 && legacy_tier <= 11 { grant_armor_item(p, legacy_tier); }
         Save.set_int(p, "armor_inventory_migrated_v3", 1);

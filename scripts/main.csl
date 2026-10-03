@@ -1335,6 +1335,7 @@ Player :: class : Player_Base {
     survive_mode_flashlight_glow: Entity;
     has_vip: bool;
     vip_crown_entity: Entity;
+    backrooms_radio_muted: bool;
     is_in_backrooms: bool;
     backrooms_return_position: v2;
     admin_chat_last_send_at: float;
@@ -1439,7 +1440,10 @@ Player :: class : Player_Base {
         init_weapon_items();
         setup_reusable_weapons_player_state_machine(this);
 
-        // Restored inventory remains intact, including PileoHarse's purchases.
+        // A fresh session never restores carried items or purchased powers.
+        clear_session_inventory(default_inventory);
+        session_keys: []string = {"powerup_dash", "powerup_invisible", "powerup_speed_boost", "powerup_zoom_out", "starter_loadout_v2", ARMOR_TIER_KEY, SUN_ARMOR_KEY, CYBER_ARMOR_KEY};
+        for key: session_keys { Save.delete_key(this, key); }
         pileo_spawn := is_pileo_harse(this);
         if Save.get_int(this, "starter_loadout_v2", 0) == 0 {
             if !pileo_spawn && !player_has_weapon(this, .ASSAULT_RIFLE) {
@@ -1449,6 +1453,7 @@ Player :: class : Player_Base {
             Save.set_int(this, "starter_loadout_v2", 1);
         }
         adventure_inventory = Items.create_player_inventory(this, "adventure", capacity=8);
+        clear_session_inventory(adventure_inventory);
         splash_unlocked = Save.get_int(this, "splash_unlocked", 0) != 0;
         jump_crafted = Save.get_int(this, "jump_crafted", 0) != 0;
         forest_unlocked = Save.get_int(this, "forest_unlocked", 0) != 0;
@@ -2015,7 +2020,11 @@ Player :: class : Player_Base {
     }
 
     ao_end :: method() {
-        if #alive(equipped_armor) { Items.mark_item_dirty(equipped_armor); }
+        clear_session_inventory(default_inventory);
+        clear_session_inventory(armor_inventory);
+        clear_session_inventory(adventure_inventory);
+        Save.delete_key(this, ARMOR_TIER_KEY);
+        Save.delete_key(this, "equipped_armor_v3");
         Save.set_int(this, PARKOUR_REWARD_KEY, has_claimed_parkour_reward ? 1 : 0);
     }
 
