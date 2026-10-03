@@ -5,6 +5,7 @@ set_my_title :: proc(player: Player, title: string = "") {
         return;
     }
 
+    title = allowed_player_title(title);
     player.user_tag = title;
     Save.set_string(player, PLAYER_TITLE_SAVE_KEY, title);
     unlock_title_badges(player, title);
@@ -16,6 +17,7 @@ set_player_title :: proc(player: Player, target: Player, title: string = "") {
         return;
     }
 
+    title = allowed_player_title(title);
     target.user_tag = title;
     Save.set_string(target, PLAYER_TITLE_SAVE_KEY, title);
     unlock_title_badges(target, title);

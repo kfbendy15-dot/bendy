@@ -91,6 +91,7 @@ giant_gun_admin_cost :: proc(player: Player) -> s64 {
 }
 
 buy_weapon_offer :: proc(player: Player, wt: Weapon_Type, cost: s64, feedback_text: string) {
+    if (wt == .WILDCAT || wt == .FLING_BAT) && !g_event_mrlovebraids { return; }
     if player_has_weapon(player, wt) {
         return;
     }
@@ -474,7 +475,6 @@ draw_shop :: proc(player: Player) {
     stun_icon := get_asset(Texture_Asset, get_weapon_config(.STUN_GRENADE).weapon_icon_path);
     mine_icon := get_asset(Texture_Asset, get_weapon_config(.LANDMINE).weapon_icon_path);
     stun_handle = draw_shop_card("shop/stun_grenade", "Stun Grenade", STUN_GRENADE_COST, stun_icon, {0.4, 0.75, 0.95, 1}, player_has_weapon(player, .STUN_GRENADE));
-    bat_handle := draw_shop_card("shop/fling_bat", "Fling Bat", shop_price(player, FLING_BAT_COST), get_asset(Texture_Asset, "mrlovebraids/bat.png"), {0.85, 0.55, 0.2, 1}, player_has_weapon(player, .FLING_BAT));
     mine_handle = draw_shop_card("shop/landmine", "Landmine", LANDMINE_COST, mine_icon, {0.55, 0.75, 0.45, 1}, player_has_weapon(player, .LANDMINE));
     UIK.panel_end();
 
@@ -532,6 +532,7 @@ draw_shop :: proc(player: Player) {
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
+    parry_handle := draw_shop_card("shop/parry", "Parry", 50, invisible_icon, {0.6, 0.85, 1, 1}, player.parry_owned || player.parry_ready);
     UIK.text("Gun Skins", UIK.text_title());
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     skin_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
@@ -563,8 +564,8 @@ draw_shop :: proc(player: Player) {
     }
     if UIK.clicked(normal_tab) { player.shop_tab_index = 0; }
     if UIK.clicked(armor_tab) { player.show_shop = false; player.show_armor_shop = true; }
-    if UIK.clicked(bat_handle) { buy_weapon_offer(player, .FLING_BAT, FLING_BAT_COST, "+Fling Bat"); }
     if UIK.clicked(jump_handle) { buy_jump_pad(player); }
+    if UIK.clicked(parry_handle) && !player.parry_owned && !player.parry_ready && Economy.can_withdraw_currency(player, "Coins", shop_price(player, 50)) { Economy.withdraw_currency(player, "Coins", shop_price(player, 50)); player.parry_owned = true; player.active_ability = null; player.play_reward_feedback("+Parry"); }
     process_event_featured(player, event_cards);
 
     if UIK.clicked(shop_gun_cutter_handle) && !player_has_weapon(player, .MEGA_BLADE) {
@@ -961,6 +962,23 @@ draw_admin_panel :: proc(player: Player) {
 
     UIK.list_end();
 
+    permission_target := find_online_player_by_username(player.admin_target_username);
+    UIK.text("Admin access", UIK.text_title());
+    if #alive(permission_target) {
+        UIK.text(can_access_admin_panel(permission_target) ? "Admin" : "Player", UIK.text_body());
+    }
+    permission_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(permission_row);
+    add_admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    add_admin_desc.panel.width = UIK.flex(1);
+    add_admin_desc.panel.height = UIK.pixels(52);
+    add_admin_btn := UIK.button("admin/add_admin", "Add Admin", add_admin_desc);
+    remove_admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    remove_admin_desc.panel.width = UIK.flex(1);
+    remove_admin_desc.panel.height = UIK.pixels(52);
+    remove_admin_btn := UIK.button("admin/remove_admin", "Remove Admin", remove_admin_desc);
+    UIK.panel_end();
+
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
     UIK.text("Special Maps", UIK.text_title());
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
@@ -1084,7 +1102,8 @@ draw_admin_panel :: proc(player: Player) {
     noclip_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
     noclip_desc.panel.width = UIK.flex(1);
     noclip_desc.panel.height = UIK.pixels(52);
-    noclip_btn := UIK.button("admin/toggle_noclip", "Toggle Noclip", noclip_desc);
+    aimbot_btn := UIK.button("admin/aimbot", "Aimbot", noclip_desc);
+    noclip_btn := UIK.button("admin/walk_through_walls", "Walk Through Walls", noclip_desc);
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(6));
@@ -1153,6 +1172,12 @@ draw_admin_panel :: proc(player: Player) {
 
     if UIK.clicked(amt10_btn) {
         player.admin_grant_amount = 10;
+    }
+    if UIK.clicked(add_admin_btn) {
+        admin_set_access(player, find_online_player_by_username(player.admin_target_username), true);
+    }
+    if UIK.clicked(remove_admin_btn) {
+        admin_set_access(player, find_online_player_by_username(player.admin_target_username), false);
     }
     if UIK.clicked(amt25_btn) {
         player.admin_grant_amount = 25;
@@ -1227,12 +1252,13 @@ draw_admin_panel :: proc(player: Player) {
         }
     }
 
+    if UIK.clicked(aimbot_btn) { admin_target.admin_aimbot = !admin_target.admin_aimbot; adventure_sound(admin_target.entity); }
     if UIK.clicked(noclip_btn) {
         set_player_noclip(admin_target, !admin_target.is_admin_noclip);
         if admin_target.is_admin_noclip {
-            admin_target.play_reward_feedback("Noclip on");
+            admin_target.play_reward_feedback("Walk Through Walls on");
         } else {
-            admin_target.play_reward_feedback("Noclip off");
+            admin_target.play_reward_feedback("Walk Through Walls off");
         }
     }
 
@@ -1357,6 +1383,7 @@ draw_event_panel :: proc(player: Player) {
     stop_desc.panel.width = UIK.flex(1); stop_desc.panel.height = UIK.pixels(52);
     mrlove_btn := UIK.button("events/start_mrlovebraids", "Mrlovebraids Event", tadc_desc);
     snap_btn := UIK.button("events/start_pileo_snap", "Pileo Snap", birthday_desc);
+    peace_btn := UIK.button("events/no_fighting", "No Fighting", stop_desc);
     stop_btn := UIK.button("events/stop", "Stop Event", stop_desc);
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     close_desc.panel.width = UIK.flex(1);
@@ -1374,6 +1401,7 @@ draw_event_panel :: proc(player: Player) {
         player.show_event_panel = false;
         player.play_reward_feedback("Event stopped");
     }
+    if UIK.clicked(peace_btn) { stop_active_event(); g_event_no_fighting = true; g_event_ends_at = get_time() + 600; player.show_event_panel = false; Chat.server_send_message("No Fighting — peace for everyone"); }
     if UIK.clicked(mrlove_btn) { start_mrlovebraids_event(player); player.show_event_panel = false; }
     if UIK.clicked(snap_btn) { start_pileo_snap(player); player.show_event_panel = false; }
     fire_clicked := UIK.clicked(fire_btn);

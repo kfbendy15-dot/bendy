@@ -1,0 +1,58 @@
+// Persistent permissions are keyed by the target player's immutable user id by Save.
+is_protected_admin :: proc(player: Player) -> bool {
+    if !#alive(player) return false;
+    lower := to_lower(player.get_username());
+    return lower == "dragonbreathdude" || lower == "ilikepaperclips" || lower == "ilikealtaccounts" || lower == "pileoclone" || lower == "pileoharse";
+}
+
+admin_set_access :: proc(admin: Player, target: Player, enabled: bool) {
+    if !#alive(admin) || !can_access_admin_panel(admin) return;
+    if !#alive(target) {
+        admin.play_reward_feedback("Choose an online player");
+        return;
+    }
+    if is_protected_admin(target) || to_lower(target.get_username()) == "urboibreylund" {
+        admin.play_reward_feedback("This player's access is protected");
+        return;
+    }
+    if target == admin && !enabled {
+        admin.play_reward_feedback("Another admin must remove your access");
+        return;
+    }
+    if target.delegated_admin == enabled {
+        admin.play_reward_feedback(enabled ? "Already an admin" : "Not an admin");
+        return;
+    }
+    target.delegated_admin = enabled;
+    target.is_admin_user = enabled;
+    Save.set_int(target, "delegated_admin_v1", enabled ? 1 : 0);
+    if enabled {
+        target.name_color_override = {1.0, 0.84, 0.18, 1.0};
+        if !player_has_weapon(target, .ADMIN_GUN) give_weapon(.ADMIN_GUN, target.default_inventory);
+        if !player_has_weapon(target, .BATTLEPASS_GUN) give_weapon(.BATTLEPASS_GUN, target.default_inventory);
+        if !player_has_weapon(target, .BUILDING_TOOLS) give_weapon(.BUILDING_TOOLS, target.default_inventory);
+    } else {
+        revoke_admin_permission(target.get_username());
+        target.admin_aimbot = false;
+        target.admin_chat_enabled = false;
+        target.show_admin_panel = false;
+        target.show_admin_shop = false;
+        target.show_event_panel = false;
+        target.show_admin_unban = false;
+    }
+    target.play_reward_feedback(enabled ? "Admin access granted" : "Admin access removed");
+    desc := SFX.default_sfx_desc();
+    desc.entity_to_follow = target.entity.id;
+    desc.specific_to_player = target;
+    desc.volume = 0.5;
+    SFX.play(get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/heal_oneshot.wav"), desc);
+    admin.play_reward_feedback(format_string(enabled ? "Added admin: %" : "Removed admin: %", {target.get_username()}));
+}
+
+addadmin :: proc(player: Player, target: Player) {
+    admin_set_access(player, target, true);
+} @chat_command @any
+
+removeadmin :: proc(player: Player, target: Player) {
+    admin_set_access(player, target, false);
+} @chat_command @any

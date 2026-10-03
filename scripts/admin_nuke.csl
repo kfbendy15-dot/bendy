@@ -1,4 +1,5 @@
 admin_nuke_all :: proc(admin: Player) {
+    if g_event_no_fighting { return; }
     if !#alive(admin) || !can_access_admin_panel(admin) return;
     if get_time() < admin.nuke_ready_at return;
     admin.nuke_ready_at = get_time() + 5;

@@ -46,7 +46,7 @@ event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
 
         offers.append({.SHURIKEN, ADMIN_SHOP_GUN_COST, "Shuriken", 0});
 
-        offers.append({.KILLER_FISH, 60, "Tree Trap", 0});
+        offers.append({.KILLER_FISH, 60, "Killer Fish", 0});
 
         offers.append({.GLACIATOR, ADMIN_SHOP_GUN_COST, "Glaciator", 0});
 
@@ -74,7 +74,7 @@ event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
 
         case 2: { offers.append(admin_shop ? Event_Shop_Offer{.HYDRO_CANNON, ADMIN_SHOP_GUN_COST, "Hydro Cannon", 0} : Event_Shop_Offer{.WATER_GUN, 30, "Water Gun", 0}); }
 
-        case 3: { offers.append(admin_shop ? Event_Shop_Offer{.SHURIKEN, ADMIN_SHOP_GUN_COST, "Shuriken", 0} : Event_Shop_Offer{.KILLER_FISH, 60, "Tree Trap", 0}); }
+        case 3: { offers.append(admin_shop ? Event_Shop_Offer{.SHURIKEN, ADMIN_SHOP_GUN_COST, "Shuriken", 0} : Event_Shop_Offer{.KILLER_FISH, 60, "Killer Fish", 0}); }
 
         case 4: { offers.append(admin_shop ? Event_Shop_Offer{.GLACIATOR, ADMIN_SHOP_GUN_COST, "Glaciator", 0} : Event_Shop_Offer{.ICE_LAUNCHER, 85, "Ice Launcher", 0}); }
 
@@ -120,7 +120,10 @@ event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
 
     }
 
+    offers.append({.KILLER_FISH, 60, "Killer Fish", 0});
     if g_event_mrlovebraids {
+        offers.append({.WILDCAT, 150, "Wildcat", 0});
+        offers.append({.FLING_BAT, FLING_BAT_COST, "Baseball Bat", 0});
 
         offers.append({.HAIR_TRAP, HAIR_TRAP_COST, "Hair Trap", 0});
 

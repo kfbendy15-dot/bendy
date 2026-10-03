@@ -9,6 +9,12 @@ respawn_player :: proc(player: Player) {
     player.agent.input_this_frame = {0, 0};
     player.weapon_target.health = player.weapon_target.max_health;
     player.is_dead = false;
+    player.parry_ready = false;
+    player.parry_owned = false;
+    if player.adventure_world == 0 && !is_murder_mystery_active() {
+        if !player_has_weapon(player, .ASSAULT_RIFLE) { grant_weapon_with_ammo(player, .ASSAULT_RIFLE, STARTING_BULLETS); }
+        if !player_has_weapon(player, .SWORD) { give_weapon(.SWORD, player.default_inventory); }
+    }
     player.damage_contributors.clear();
     player.last_damage_weapon = .NONE;
     player.out_of_bounds_respawn_active = false;

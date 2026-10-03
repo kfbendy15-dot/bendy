@@ -1,0 +1,16 @@
+Parry_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Parry";
+        icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
+    }
+    can_use :: method() -> bool { return player.(Player).parry_owned; }
+    on_update :: method(params: ref Ability_Update_Params) {
+        if params.clicked && params.can_use {
+            p := player.(Player);
+            p.parry_owned = false;
+            p.parry_ready = true;
+            p.active_ability = null;
+            adventure_sound(p.entity);
+        }
+    }
+}
