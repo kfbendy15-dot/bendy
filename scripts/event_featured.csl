@@ -1,74 +1,102 @@
-// Shared event catalog keeps Featured complete in both shops.
-Event_Shop_Offer :: struct {
-    weapon: Weapon_Type;
-    price: s64;
-    label: string;
-}
-Event_Shop_Card :: struct {
-    offer: Event_Shop_Offer;
-    handle: Interact_Result;
-}
-event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
-    offers: [..]Event_Shop_Offer;
-    event := elemental_shop_event();
-    if g_event_birthday {
-        offers.append({.BIRTHDAY_PAPERCLIP_GUN, 0, "Birthday Paperclip Gun"});
-        return offers;
-    }
-    switch event {
-        case 1: { offers.append(admin_shop ? Event_Shop_Offer{.FIRE_RAY, ADMIN_SHOP_GUN_COST, "Fire Ray"} : Event_Shop_Offer{.FIREBALL, 50, "Fireball"}); }
-        case 2: { offers.append(admin_shop ? Event_Shop_Offer{.HYDRO_CANNON, ADMIN_SHOP_GUN_COST, "Hydro Cannon"} : Event_Shop_Offer{.WATER_GUN, 30, "Water Gun"}); }
-        case 3: { offers.append(admin_shop ? Event_Shop_Offer{.SHURIKEN, ADMIN_SHOP_GUN_COST, "Shuriken"} : Event_Shop_Offer{.KILLER_FISH, 60, "Tree Trap"}); }
-        case 4: { offers.append(admin_shop ? Event_Shop_Offer{.GLACIATOR, ADMIN_SHOP_GUN_COST, "Glaciator"} : Event_Shop_Offer{.ICE_LAUNCHER, 85, "Ice Launcher"}); }
-        case 5: { offers.append({.VOID_SPLITTER, ADMIN_SHOP_GUN_COST, "Void Splitter"}); }
-        case 6: { offers.append({.RAY_GUN, ADMIN_SHOP_GUN_COST, "Ray Gun"}); }
-        case 7: {
-            offers.append({.SUN_SHOOTER_TSUNAMI, 120, "Sun Shooter - Tsunami"});
-            offers.append({.SUN_SHOOTER_SAND, 120, "Sun Shooter - Sand"});
-        }
-        case 10: { offers.append(admin_shop ? Event_Shop_Offer{.WIND_BLASTER, 150, "Wind Blaster"} : Event_Shop_Offer{.STORMS_EYE, 150, "Storm's Eye"}); }
-    }
-    if g_event_void2 { offers.append({.DISTORTION, 500, "Distortion"}); }
-    if g_event_cyber_energy {
-        offers.append({.ENERGY_PISTOLS, ENERGY_PISTOLS_COST, "Energy Pistols"});
-        offers.append({.ENERGY_RIFLE, ENERGY_RIFLE_COST, "Energy Rifle"});
-    }
-    if g_event_tadc {
-        offers.append({.NONE, ABSTRACTION_COST, "Abstraction"});
-        offers.append({.EXPLOSIVE_SHOTGUN, KINGERS_SHOTGUN_COST, "Kinger's Shotgun"});
-        offers.append({.GATLING_GUN, GANGLES_MINIGUN_COST, "Gangle's Minigun"});
-        offers.append({.SNIPER, JAX_SNIPER_COST, "Jax's Sniper"});
-    }
-    return offers;
-}
-// Rebuild from synced state every frame; no startup-only visibility cache.
-draw_event_featured :: proc(player: Player, admin_shop: bool) -> [..]Event_Shop_Card {
-    cards: [..]Event_Shop_Card;
-    offers := event_shop_offers(admin_shop);
-    prefix := admin_shop ? "admin_shop/featured/" : "shop/featured/";
-    for offer, i: offers {
-        if i % 2 == 0 { UIK.panel_begin(UIK.layout_row(UIK.flex(1), UIK.fit(), 8)); }
-        icon := get_asset(Texture_Asset, "$AO/circle.png");
-        owned := player.has_abstraction;
-        if offer.weapon != .NONE {
-            icon = get_asset(Texture_Asset, get_weapon_config(offer.weapon).weapon_icon_path);
-            owned = player_has_weapon(player, offer.weapon);
-        }
-        handle := draw_shop_card(`{prefix}{offer.weapon.(s64)}`, offer.label, shop_price(player, offer.price), icon, event_map_color(elemental_shop_event()), owned);
-        cards.append({offer, handle});
-        if i % 2 == 1 || i == offers.count - 1 { UIK.panel_end(); }
-    }
-    return cards;
-}
-// Resolve input after UIK.end, like the other shop purchase handlers.
-process_event_featured :: proc(player: Player, cards: []Event_Shop_Card) {
-    for card: cards {
-        if !UIK.clicked(card.handle) { continue; }
-        if card.offer.weapon == .NONE {
-            if g_event_tadc { buy_abstraction(player); }
-        } else {
-            buy_weapon_offer(player, card.offer.weapon, card.offer.price, "+" + card.offer.label);
-        }
-    }
-}
-
+// Shared event catalog keeps Featured complete in both shops.
+Event_Shop_Offer :: struct {
+    weapon: Weapon_Type;
+    price: s64;
+    label: string;
+    armor_tier: s64;
+}
+Event_Shop_Card :: struct {
+    offer: Event_Shop_Offer;
+    handle: Interact_Result;
+}
+event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
+    offers: [..]Event_Shop_Offer;
+    event := elemental_shop_event();
+    if g_event_birthday {
+        offers.append({.BIRTHDAY_PAPERCLIP_GUN, 0, "Birthday Paperclip Gun", 0});
+        if !g_event_pileo_snap { return offers; }
+    }
+    if g_event_pileo_snap {
+        offers.append({.FIRE_RAY, ADMIN_SHOP_GUN_COST, "Fire Ray", 0});
+        offers.append({.FIREBALL, 50, "Fireball", 0});
+        offers.append({.HYDRO_CANNON, ADMIN_SHOP_GUN_COST, "Hydro Cannon", 0});
+        offers.append({.WATER_GUN, 30, "Water Gun", 0});
+        offers.append({.SHURIKEN, ADMIN_SHOP_GUN_COST, "Shuriken", 0});
+        offers.append({.KILLER_FISH, 60, "Tree Trap", 0});
+        offers.append({.GLACIATOR, ADMIN_SHOP_GUN_COST, "Glaciator", 0});
+        offers.append({.ICE_LAUNCHER, 85, "Ice Launcher", 0});
+        offers.append({.VOID_SPLITTER, ADMIN_SHOP_GUN_COST, "Void Splitter", 0});
+        offers.append({.RAY_GUN, ADMIN_SHOP_GUN_COST, "Ray Gun", 0});
+        offers.append({.SUN_SHOOTER_TSUNAMI, 120, "Sun Shooter - Tsunami", 0});
+        offers.append({.SUN_SHOOTER_SAND, 120, "Sun Shooter - Sand", 0});
+        offers.append({.WIND_BLASTER, 150, "Wind Blaster", 0});
+        offers.append({.STORMS_EYE, 150, "Storm's Eye", 0});
+        offers.append({.NONE, SUN_ARMOR_COST, "Sun Armor", 8});
+        offers.append({.NONE, JESTER_ARMOR_COST, "Jester Armor", 10});
+    } else switch event {
+        case 1: { offers.append(admin_shop ? Event_Shop_Offer{.FIRE_RAY, ADMIN_SHOP_GUN_COST, "Fire Ray", 0} : Event_Shop_Offer{.FIREBALL, 50, "Fireball", 0}); }
+        case 2: { offers.append(admin_shop ? Event_Shop_Offer{.HYDRO_CANNON, ADMIN_SHOP_GUN_COST, "Hydro Cannon", 0} : Event_Shop_Offer{.WATER_GUN, 30, "Water Gun", 0}); }
+        case 3: { offers.append(admin_shop ? Event_Shop_Offer{.SHURIKEN, ADMIN_SHOP_GUN_COST, "Shuriken", 0} : Event_Shop_Offer{.KILLER_FISH, 60, "Tree Trap", 0}); }
+        case 4: { offers.append(admin_shop ? Event_Shop_Offer{.GLACIATOR, ADMIN_SHOP_GUN_COST, "Glaciator", 0} : Event_Shop_Offer{.ICE_LAUNCHER, 85, "Ice Launcher", 0}); }
+        case 5: { offers.append({.VOID_SPLITTER, ADMIN_SHOP_GUN_COST, "Void Splitter", 0}); }
+        case 6: { offers.append({.RAY_GUN, ADMIN_SHOP_GUN_COST, "Ray Gun", 0}); }
+        case 7: {
+            offers.append({.SUN_SHOOTER_TSUNAMI, 120, "Sun Shooter - Tsunami", 0});
+            offers.append({.SUN_SHOOTER_SAND, 120, "Sun Shooter - Sand", 0});
+        }
+        case 10: { offers.append(admin_shop ? Event_Shop_Offer{.WIND_BLASTER, 150, "Wind Blaster", 0} : Event_Shop_Offer{.STORMS_EYE, 150, "Storm's Eye", 0}); }
+    }
+    if g_event_void2 { offers.append({.DISTORTION, 500, "Distortion", 0}); }
+    if g_event_cyber_energy {
+        offers.append({.ENERGY_PISTOLS, ENERGY_PISTOLS_COST, "Energy Pistols", 0});
+        offers.append({.ENERGY_RIFLE, ENERGY_RIFLE_COST, "Energy Rifle", 0});
+    }
+    if g_event_tadc {
+        offers.append({.NONE, ABSTRACTION_COST, "Abstraction", 0});
+        offers.append({.EXPLOSIVE_SHOTGUN, KINGERS_SHOTGUN_COST, "Kinger's Shotgun", 0});
+        offers.append({.GATLING_GUN, GANGLES_MINIGUN_COST, "Gangle's Minigun", 0});
+        offers.append({.SNIPER, JAX_SNIPER_COST, "Jax's Sniper", 0});
+    }
+    if g_event_mrlovebraids {
+        offers.append({.HAIR_TRAP, HAIR_TRAP_COST, "Hair Trap", 0});
+        offers.append({.LASERNICK_GRAPPLER, LASERNICK_GRAPPLER_COST, "Lasernick's Grappler", 0});
+        offers.append({.NONE, DURP_SPACE_ARMOR_COST, "Durp Space Armor · Damage ÷30", 13});
+    }
+    return offers;
+}
+// Rebuild from synced state every frame; no startup-only visibility cache.
+draw_event_featured :: proc(player: Player, admin_shop: bool) -> [..]Event_Shop_Card {
+    cards: [..]Event_Shop_Card;
+    offers := event_shop_offers(admin_shop);
+    prefix := admin_shop ? "admin_shop/featured/" : "shop/featured/";
+    for offer, i: offers {
+        if i % 2 == 0 { UIK.panel_begin(UIK.layout_row(UIK.flex(1), UIK.fit(), 8)); }
+        icon := get_asset(Texture_Asset, "$AO/circle.png");
+        owned := player.has_abstraction;
+        if offer.weapon != .NONE {
+            icon = get_asset(Texture_Asset, get_weapon_config(offer.weapon).weapon_icon_path);
+            owned = player_has_weapon(player, offer.weapon);
+        }
+        if offer.armor_tier > 0 {
+            icon = get_asset(Texture_Asset, offer.armor_tier == 13 ? "mrlovebraids/durp_space_armor.png" : "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
+            owned = #alive(owned_armor(player, offer.armor_tier));
+        }
+        handle := draw_shop_card(`{prefix}{offer.weapon.(s64)}_{offer.armor_tier}`, offer.label, shop_price(player, offer.price), icon, event_map_color(elemental_shop_event()), owned);
+        cards.append({offer, handle});
+        if i % 2 == 1 || i == offers.count - 1 { UIK.panel_end(); }
+    }
+    return cards;
+}
+// Resolve input after UIK.end, like the other shop purchase handlers.
+process_event_featured :: proc(player: Player, cards: []Event_Shop_Card) {
+    for card: cards {
+        if !UIK.clicked(card.handle) { continue; }
+        if card.offer.armor_tier > 0 { purchase_or_equip_armor(player, card.offer.armor_tier); }
+        else if card.offer.weapon == .NONE {
+            if g_event_tadc { buy_abstraction(player); }
+        } else {
+            buy_weapon_offer(player, card.offer.weapon, card.offer.price, "+" + card.offer.label);
+        }
+    }
+}
+

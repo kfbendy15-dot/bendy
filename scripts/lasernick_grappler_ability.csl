@@ -1,0 +1,88 @@
+Lasernick_Grappler_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Lasernick's Grappler"; icon = get_asset(Texture_Asset, "mrlovebraids/lasernick_grappler.png");
+        is_aimed_ability = true;
+    }
+    can_use :: method() -> bool { return player.(Player).equipped_weapon_type == .LASERNICK_GRAPPLER; }
+    on_update :: method(params: ref Ability_Update_Params) {
+        activation := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
+        if !activation.activate { return; }
+        p := player.(Player); dir := normalize(activation.direction); p.last_aim_direction = dir;
+        origin := p.entity.world_position;
+        wall, wall_found := grappler_wall_hit(origin, dir, 28);
+        best_distance := wall_found ? length(wall - origin) : 28.0;
+        victim: Player;
+        if g_event_mrlovebraids {
+            for target: component_iterator(Player) {
+                if target == p || target.is_dead || target.adventure_world != 0 || p.adventure_world != 0 || is_player_invisible_for_targeting(target) { continue; }
+                offset := target.entity.world_position - origin; distance := dot(offset, dir);
+                if distance < 0.5 || distance >= best_distance { continue; }
+                if length(offset - dir * distance) <= 0.85 { victim = target; best_distance = distance; }
+            }
+        }
+        if victim == null && !wall_found { current_cooldown = 0.3; return; }
+        current_cooldown = 2;
+        motion := new(Fling_Motion_Effect); motion.pulling = true; motion.speed = 24;
+        endpoint := wall;
+        target_uid := "";
+        if #alive(victim) {
+            motion.event_delivery = true;
+            motion.destination = g_shared_spawn_position;
+            endpoint = victim.entity.world_position; target_uid = victim.get_user_id();
+            victim.entity.set_active_effect(motion);
+        } else {
+            motion.destination = wall - dir * 0.9; p.entity.set_active_effect(motion);
+        }
+        rope := Scene.create_entity(); rope.set_name("Lasernick Grapple Cable");
+        rope.add_component(Grapple_Cable, on_before_start=proc(c: Grapple_Cable) {
+            c.owner_user_id = p.get_user_id(); c.target_user_id = target_uid; c.endpoint = endpoint;
+        });
+        rope.queue_for_destruction(2);
+        mrlove_item_sound(p.entity, "reusable_weapons/sounds/reusable-weapons/ray_gun_shoot.wav");
+        Tutorial.report_ability_used(this);
+    }
+}
+grappler_segment_distance :: proc(origin: v2, dir: v2, a: v2, b: v2) -> float {
+    segment := b - a; denominator := dir.x * segment.y - dir.y * segment.x;
+    if abs(denominator) < 0.0001 { return 100000.0; }
+    delta := a - origin;
+    distance := (delta.x * segment.y - delta.y * segment.x) / denominator;
+    along := (delta.x * dir.y - delta.y * dir.x) / denominator;
+    if distance > 0.05 && along >= 0 && along <= 1 { return distance; }
+    return 100000.0;
+}
+grappler_check_segments :: proc(origin: v2, dir: v2, points: []v2, closed: bool, nearest: ref float, found: ref bool) {
+    if points.count < 2 { return; }
+    for i: 0..<points.count - 1 {
+        distance := grappler_segment_distance(origin, dir, points[i], points[i + 1]);
+        if distance < nearest { nearest = distance; found = true; }
+    }
+    if closed {
+        distance := grappler_segment_distance(origin, dir, points[points.count - 1], points[0]);
+        if distance < nearest { nearest = distance; found = true; }
+    }
+}
+grappler_wall_hit :: proc(origin: v2, dir: v2, range: float) -> (v2, bool) {
+    nearest := range; found := false; points: [..]v2;
+    for box: component_iterator(Box_Collider) {
+        if box.is_trigger || !box.entity.get_world_enabled() { continue; }
+        points.clear(); box.get_points_world(ref points); grappler_check_segments(origin, dir, points, true, ref nearest, ref found);
+    }
+    for poly: component_iterator(Polygon_Collider) {
+        if poly.is_trigger || !poly.entity.get_world_enabled() { continue; }
+        points.clear(); poly.get_points_world(ref points); grappler_check_segments(origin, dir, points, true, ref nearest, ref found);
+    }
+    for edge: component_iterator(Edge_Collider) {
+        if edge.is_trigger || !edge.entity.get_world_enabled() { continue; }
+        points.clear(); edge.get_points_world(ref points); grappler_check_segments(origin, dir, points, edge.is_loop, ref nearest, ref found);
+    }
+    // Also supports tilemap walls and navmesh boundaries.
+    for nav: component_iterator(Navmesh) {
+        closest: v2; hint: s64;
+        if !nav.entity.get_world_enabled() || !nav.try_find_closest_point_on_navmesh(origin, ref closest, ref hint) { continue; }
+        if length(closest - origin) > 0.2 { continue; }
+        hit, hit_found := nav.try_raycast(origin, dir * range);
+        if hit_found && length(hit - origin) < nearest { nearest = length(hit - origin); found = true; }
+    }
+    return origin + dir * nearest, found;
+}

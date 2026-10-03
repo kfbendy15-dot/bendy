@@ -1,4 +1,4 @@
-WEAPON_COUNT :: 60;
+WEAPON_COUNT :: 63;
 AMMO_TYPE_COUNT :: 10;
 
 g_weapon_item_defs: [WEAPON_COUNT]Item_Definition;
@@ -73,6 +73,9 @@ weapon_type_to_index :: proc(wt: Weapon_Type) -> s64 {
         case .ENERGY_PISTOLS:         return 57;
         case .ENERGY_RIFLE:           return 58;
         case .BIRTHDAY_PAPERCLIP_GUN: return 59;
+        case .FLING_BAT: return 60;
+        case .HAIR_TRAP: return 61;
+        case .LASERNICK_GRAPPLER: return 62;
     }
     return -1;
 }
@@ -232,6 +235,9 @@ init_weapon_items :: proc() {
     register_weapon(.ENERGY_PISTOLS);
     register_weapon(.ENERGY_RIFLE);
     register_weapon(.BIRTHDAY_PAPERCLIP_GUN);
+    register_weapon(.FLING_BAT);
+    register_weapon(.HAIR_TRAP);
+    register_weapon(.LASERNICK_GRAPPLER);
 
     // Load fire sounds for each weapon
     load_fire_sounds();
@@ -484,6 +490,9 @@ get_weapon_type_for_item :: proc(item_def: Item_Definition) -> Weapon_Type {
                  case 57: return .ENERGY_PISTOLS;
                 case 58: return .ENERGY_RIFLE;
                 case 59: return .BIRTHDAY_PAPERCLIP_GUN;
+                case 60: return .FLING_BAT;
+                case 61: return .HAIR_TRAP;
+                case 62: return .LASERNICK_GRAPPLER;
             }
         }
         i += 1;

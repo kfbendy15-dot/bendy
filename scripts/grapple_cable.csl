@@ -1,0 +1,25 @@
+Grapple_Cable :: class : Component {
+    owner_user_id: string;
+    target_user_id: string;
+    endpoint: v2;
+    ao_start :: method() {
+        sprite := entity.add_component(Sprite_Renderer); sprite.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+        sprite.color = {0.25, 0.95, 1, 1}; sprite.layer = 1;
+    }
+    ao_update :: method(dt: float) {
+        owner := find_online_player_by_user_id(owner_user_id);
+        if !#alive(owner) || owner.is_dead { entity.destroy(); return; }
+        target := find_online_player_by_user_id(target_user_id);
+        end := endpoint;
+        if target_user_id != "" {
+            if !#alive(target) || target.is_dead { entity.destroy(); return; }
+            end = target.entity.world_position;
+        }
+        start := owner.entity.world_position + v2{0, 0.45}; end.y += 0.4;
+        delta := end - start;
+        entity.set_world_position((start + end) * 0.5);
+        entity.set_local_rotation(to_degrees(atan2(delta.y, delta.x)));
+        sprite := entity.get_component(Sprite_Renderer); size := sprite.get_texture().get_world_size();
+        entity.set_local_scale({length(delta) / max(size.x, 0.01), 0.045 / max(size.y, 0.01)});
+    }
+}

@@ -111,13 +111,13 @@ birthday_grant_loadout :: proc(player: Player) {
         give_weapon(.BIRTHDAY_PAPERCLIP_GUN, player.default_inventory);
     }
 
-    if !player.birthday_loadout_active || player.equipped_weapon_type != .BIRTHDAY_PAPERCLIP_GUN {
+    if !g_event_pileo_snap && (!player.birthday_loadout_active || player.equipped_weapon_type != .BIRTHDAY_PAPERCLIP_GUN) {
         birthday_equip_weapon(player);
         player.birthday_loadout_active = true;
         player.play_reward_feedback("Paperclip Gun ready!");
     }
 
-    birthday_ensure_gun_visual(player);
+    if !g_event_pileo_snap { birthday_ensure_gun_visual(player); }
 }
 
 birthday_equip_weapon :: proc(player: Player) {
@@ -202,6 +202,7 @@ start_birthday_event :: proc(admin: Player) {
     }
 
     stop_active_event();
+    record_event_started(12);
     g_event_birthday = true;
     g_event_ends_at = get_time() + BIRTHDAY_EVENT_DURATION;
     set_birthday_save_state(true);

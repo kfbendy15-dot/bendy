@@ -1,0 +1,26 @@
+Hair_Trap :: class : Component {
+    owner_user_id: string;
+    adventure_world: s64;
+    created_at: float;
+    armed_at: float;
+    triggered: bool;
+    ao_start :: method() {
+        created_at = get_time(); armed_at = created_at + 0.6;
+        texture := get_asset(Texture_Asset, "mrlovebraids/hair_trap.png");
+        sprite := entity.add_component(Sprite_Renderer); sprite.set_texture(texture); sprite.layer = -1;
+        size := texture.get_world_size(); sprite.scale = {2.3 / max(size.x, 0.01), 1.35 / max(size.y, 0.01)};
+        collider := entity.add_component(Circle_Collider); collider.radius = 1.0; collider.is_trigger = true;
+        collider.on_trigger_stay = on_hair_trap_contact;
+        collider.on_trigger_start = on_hair_trap_contact;
+        entity.queue_for_destruction(45);
+    }
+}
+on_hair_trap_contact :: proc(self: Collider, other: Collider) {
+    trap := self.entity.get_component(Hair_Trap); p := other.entity.get_component(Player);
+    if !#alive(trap) || !#alive(p) || trap.triggered || get_time() < trap.armed_at { return; }
+    if p.get_user_id() == trap.owner_user_id || p.is_dead || p.adventure_world != trap.adventure_world { return; }
+    trap.triggered = true;
+    effect := new(Hair_Trap_Bind_Effect); p.entity.set_active_effect(effect);
+    mrlove_item_sound(trap.entity, "reusable_weapons/sounds/reusable-weapons/bullet_hit.wav");
+    trap.entity.destroy();
+}

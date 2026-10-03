@@ -1,0 +1,11 @@
+Hair_Trap_Bind_Effect :: class : Effect_Base {
+    braid: Entity;
+    effect_start :: method() {
+        player_specific.freeze_player = true; player.active_ability = null; set_duration(3.0);
+        braid = Scene.create_entity(); braid.set_parent(player.entity, false); braid.set_local_position({0, 0.4});
+        texture := get_asset(Texture_Asset, "mrlovebraids/hair_trap.png");
+        s := braid.add_component(Sprite_Renderer); s.set_texture(texture); s.layer = 1;
+        scale := 1.8 / max(texture.get_world_size().x, 0.01); braid.set_local_scale({scale, scale});
+    }
+    effect_end :: method(interrupt: bool) { if #alive(braid) { braid.destroy(); } }
+}

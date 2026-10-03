@@ -538,6 +538,9 @@ grant_weapon_with_ammo :: proc(player: Player, wt: Weapon_Type, ammo_amount: s64
 }
 
 is_admin_only_weapon :: proc(wt: Weapon_Type) -> bool {
+    // Event shop rewards must be usable by every participant during Pileo Snap.
+    if g_event_pileo_snap && (wt == .HYDRO_CANNON || wt == .SHURIKEN || wt == .FIREBALL || wt == .KILLER_FISH || wt == .VOID_SPLITTER || wt == .WIND_BLASTER || wt == .SNIPER || wt == .ENERGY_PISTOLS || wt == .ENERGY_RIFLE) { return false; }
+
     if wt == .GOLDEN_ROCKET_LAUNCHER { return true; }
     if wt == .VOID_SPLITTER { return true; }
     if wt == .WIND_BLASTER { return true; }
@@ -967,6 +970,7 @@ armor_tier_name :: proc(tier: s64) -> string {
         case 1: return "Wooden";
         case 2: return "Stone";
         case 12: return "Wool";
+        case 13: return "Durp Space";
         case 3: return "Iron";
         case 4: return "Gold";
         case 5: return "Diamond";
@@ -997,7 +1001,10 @@ refresh_armor_visual :: proc(player: Player) {
         visual.set_parent(player.entity, false);
         visual.set_local_position({0, 0.25});
         sprite := visual.add_component(Sprite_Renderer);
-        sprite.set_texture(get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png"));
+        sprite.set_texture(get_asset(Texture_Asset, player.armor_tier == 13 ? "mrlovebraids/durp_space_armor.png" : "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png"));
+        if player.armor_tier == 13 {
+            scale := 0.85 / max(sprite.get_world_size().y, 0.01); visual.set_local_scale({scale, scale});
+        }
         sprite.layer = 2;
         player.armor_visual_entity = visual;
     }
@@ -1016,6 +1023,7 @@ armor_tier_color :: proc(tier: s64) -> v4 {
         case 1: return {0.55, 0.32, 0.15, 0.9};
         case 2: return {0.55, 0.55, 0.58, 0.9};
         case 12: return {0.95, 0.9, 0.82, 1.0};
+        case 13: return {0.4, 0.4, 1.0, 1.0};
         case 3: return {0.75, 0.78, 0.82, 0.95};
         case 4: return {1.0, 0.72, 0.15, 0.95};
         case 5: return {0.3, 0.85, 1.0, 0.95};
@@ -1050,7 +1058,7 @@ buy_cyber_armor :: proc(player: Player) { purchase_or_equip_armor(player, 11); }
 buy_sun_armor :: proc(player: Player) { purchase_or_equip_armor(player, 8); }
 give_armor_to_player :: proc(target: Player) { if target != null { grant_armor_item(target, 9); } }
 set_armor_tier_for_admin :: proc(target: Player, tier: s64) {
-    if target != null && tier >= 1 && tier <= 12 { grant_armor_item(target, tier); }
+    if target != null && tier >= 1 && tier <= 13 { grant_armor_item(target, tier); }
 }
 
 buy_starter_pack :: proc(player: Player) {
@@ -1122,7 +1130,8 @@ ao_start :: proc() {
 
 ao_update :: proc(dt: float) {
     admin_chat_poll();
-    if (g_event_elemental || g_event_cyber_energy || g_event_tadc || g_event_birthday) && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
+    update_event_landmarks();
+    if (g_event_elemental || g_event_cyber_energy || g_event_tadc || g_event_birthday || g_event_mrlovebraids || g_event_pileo_snap) && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
         stop_active_event();
     }
     if g_event_birthday {
@@ -1132,6 +1141,8 @@ ao_update :: proc(dt: float) {
 }
 
 stop_active_event :: proc() {
+    g_event_mrlovebraids = false; g_event_pileo_snap = false;
+    clear_hair_traps();
     g_event_elemental = false;
     g_event_ice = false;
     g_event_sun = false;
@@ -1260,6 +1271,7 @@ Player :: class : Player_Base {
     death_weapon_icon: string;
     death_started_at: float;
     troll_verity_active: bool;
+    troll_reference_morph: s64;
     troll_verity_entity: Entity;
     armor_bonus_health: float;
     armor_tier: s64;
@@ -1691,7 +1703,7 @@ Player :: class : Player_Base {
                 armor_visual_entity.destroy();
                 armor_visual_entity = null;
             }
-            if (backrooms_monster_active || troll_caine_active || troll_verity_active) && #alive(animator) {
+            if (backrooms_monster_active || troll_caine_active || troll_verity_active || troll_reference_morph != 0) && #alive(animator) {
                 tint := animator.get_tint();
                 if tint.w != 0 {
                     animator.set_tint({1.0, 1.0, 1.0, 0.0});
@@ -1913,7 +1925,12 @@ Player :: class : Player_Base {
                         case .SPREAD:      { draw_ability_button(this, Spread_Shot_Ability, 0); }
                         case .LOBBED:      { draw_ability_button(this, Lobbed_Shot_Ability, 0); }
                         case .BEAM:        { draw_ability_button(this, Beam_Ability, 0); }
-                        case .SPECIAL:     { draw_ability_button(this, Special_Ability, 0); }
+                        case .SPECIAL: {
+                            if equipped_weapon_type == .FLING_BAT { draw_ability_button(this, Fling_Bat_Ability, 0); }
+                            else if equipped_weapon_type == .HAIR_TRAP { draw_ability_button(this, Hair_Trap_Ability, 0); }
+                            else if equipped_weapon_type == .LASERNICK_GRAPPLER { draw_ability_button(this, Lasernick_Grappler_Ability, 0); }
+                            else { draw_ability_button(this, Special_Ability, 0); }
+                        }
                     }
                 }
 
@@ -1959,7 +1976,7 @@ Player :: class : Player_Base {
             options.scroll_item_selection = true;
             options.keyboard_item_selection = true;
             options.enable_use_from_hotbar = true;
-            if g_event_birthday {
+            if g_event_birthday && !g_event_pileo_snap {
                 birthday_slot := birthday_weapon_slot(this);
                 if birthday_slot >= 0 {
                     options.force_select_hotbar_index = birthday_slot.(s32);

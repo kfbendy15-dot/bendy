@@ -1,0 +1,18 @@
+Hair_Trap_Ability :: class : Ability_Base {
+    on_init :: method() { name = "Hair Trap"; icon = get_asset(Texture_Asset, "mrlovebraids/hair_trap.png"); }
+    can_use :: method() -> bool { return player.(Player).equipped_weapon_type == .HAIR_TRAP; }
+    on_update :: method(params: ref Ability_Update_Params) {
+        if !params.clicked || !params.can_use { return; }
+        p := player.(Player); current_cooldown = 4;
+        count := 0; oldest: Hair_Trap;
+        for trap: component_iterator(Hair_Trap) {
+            if trap.owner_user_id == p.get_user_id() { count += 1; if oldest == null || trap.created_at < oldest.created_at { oldest = trap; } }
+        }
+        if count >= 3 && #alive(oldest) { oldest.entity.destroy(); }
+        e := Scene.create_entity(); e.set_name("Braided Hair Trap"); e.set_world_position(p.entity.world_position);
+        e.add_component(Hair_Trap, on_before_start=proc(t: Hair_Trap) { t.owner_user_id = p.get_user_id(); t.adventure_world = p.adventure_world; });
+        mrlove_item_sound(e, "reusable_weapons/sounds/reusable-weapons/player_throw_grenade.wav");
+        Tutorial.report_ability_used(this);
+    }
+}
+clear_hair_traps :: proc() { for trap: component_iterator(Hair_Trap) { trap.entity.destroy(); } }

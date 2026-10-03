@@ -55,6 +55,21 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
     config.hit_radius = 0.8;
     config.equip_sound_path = "reusable_weapons/sounds/reusable-weapons/equip_gun.wav";
 
+    if wt == .FLING_BAT || wt == .HAIR_TRAP || wt == .LASERNICK_GRAPPLER {
+        config.fire_mode = .SPECIAL; config.hand_type = .NONE; config.ammo_per_shot = 0;
+        config.ammo_type_index = -1;
+        if wt == .FLING_BAT {
+            config.item_id = "fling_bat"; config.item_name = "Fling Bat";
+            config.weapon_icon_path = "mrlovebraids/bat.png"; config.base_damage = 10; config.fire_rate = 1.1;
+        } else if wt == .HAIR_TRAP {
+            config.item_id = "hair_trap"; config.item_name = "Hair Trap";
+            config.weapon_icon_path = "mrlovebraids/hair_trap.png"; config.fire_rate = 4;
+        } else {
+            config.item_id = "lasernick_grappler"; config.item_name = "Lasernick's Grappler";
+            config.weapon_icon_path = "mrlovebraids/lasernick_grappler.png"; config.fire_rate = 2;
+        }
+        return config;
+    }
     switch wt {
         case .ASSAULT_RIFLE: {
             config.fire_mode = .CONTINUOUS;
