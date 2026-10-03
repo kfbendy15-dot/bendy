@@ -1,0 +1,41 @@
+// Assign the licensed audio asset for https://www.youtube.com/watch?v=n_S04a8j54k.
+// YouTube web pages are not playable SFX assets.
+Backrooms_Radio :: class : Interactable {
+    @ao_serialize track: SFX_Asset;
+
+    ao_start :: method() {
+        set_listener(this);
+        set_text("Radio");
+        radius = 2;
+        required_hold_time = 0;
+    }
+
+    can_use :: method(player: Player) -> bool {
+        return track != null && !player.is_dead;
+    }
+
+    on_interact :: method(player: Player) {
+        player.backrooms_radio_muted = !player.backrooms_radio_muted;
+        adventure_sound(entity);
+    }
+
+    // Draw is presentation-only and runs for late joiners without ao_start.
+    // Refresh one loop by stable id; the short timeout stops it on leaving.
+    ao_draw :: method(dt: float) {
+        if track == null { return; }
+        for player: component_iterator(Player) {
+            if !player.is_local() || player.backrooms_radio_muted { continue; }
+            distance := length(player.entity.world_position - entity.world_position);
+            if distance >= 10 { continue; }
+            desc := SFX.default_sfx_desc();
+            desc.entity_to_follow = entity.id;
+            desc.specific_to_player = player;
+            desc.unique_id = entity.id;
+            desc.loop = true;
+            desc.loop_timeout = 0.3;
+            desc.volume = 0.45 * clamp(1.0 - distance / 10.0, 0.0, 1.0);
+            SFX.play(track, desc);
+        }
+    }
+}
+
