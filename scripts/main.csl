@@ -139,7 +139,8 @@ can_access_admin_panel :: proc(player: Player) -> bool {
     }
 
     lower := to_lower(player.get_username());
-    return lower == "dragonbreathdude" || lower == "ilikepaperclips" || lower == "ilikealtaccounts" || lower == "pileoclone" || lower == "pileoharse";
+    if lower == "urboibreylund" return false;
+    return is_protected_admin(player) || player.delegated_admin;
 }
 
 can_access_troll_panel :: proc(player: Player) -> bool {
@@ -1281,6 +1282,7 @@ Player :: class : Player_Base {
     purchased_finger_gun: bool;
     purchased_paper_gun: bool;
     is_admin_user: bool;
+    delegated_admin: bool;
     is_mimicer: bool;
     has_claimed_parkour_reward: bool;
     admin_freeze_until: float;
@@ -1398,6 +1400,7 @@ Player :: class : Player_Base {
     troll_caine_entity: Entity;
 
     ao_start :: method() {
+        delegated_admin = Save.get_int(this, "delegated_admin_v1", 0) == 1;
         banned_seconds := admin_ban_remaining_seconds(get_user_id());
         if banned_seconds > 0 {
             Server.kick_player(this, format_string("You have been banned for % seconds. Reason For Ban: %", {banned_seconds, admin_ban_reason_for_user(get_user_id())}));

@@ -962,6 +962,23 @@ draw_admin_panel :: proc(player: Player) {
 
     UIK.list_end();
 
+    permission_target := find_online_player_by_username(player.admin_target_username);
+    UIK.text("Admin access", UIK.text_title());
+    if #alive(permission_target) {
+        UIK.text(can_access_admin_panel(permission_target) ? "Admin" : "Player", UIK.text_body());
+    }
+    permission_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
+    UIK.panel_begin(permission_row);
+    add_admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
+    add_admin_desc.panel.width = UIK.flex(1);
+    add_admin_desc.panel.height = UIK.pixels(52);
+    add_admin_btn := UIK.button("admin/add_admin", "Add Admin", add_admin_desc);
+    remove_admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
+    remove_admin_desc.panel.width = UIK.flex(1);
+    remove_admin_desc.panel.height = UIK.pixels(52);
+    remove_admin_btn := UIK.button("admin/remove_admin", "Remove Admin", remove_admin_desc);
+    UIK.panel_end();
+
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
     UIK.text("Special Maps", UIK.text_title());
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
@@ -1155,6 +1172,12 @@ draw_admin_panel :: proc(player: Player) {
 
     if UIK.clicked(amt10_btn) {
         player.admin_grant_amount = 10;
+    }
+    if UIK.clicked(add_admin_btn) {
+        admin_set_access(player, find_online_player_by_username(player.admin_target_username), true);
+    }
+    if UIK.clicked(remove_admin_btn) {
+        admin_set_access(player, find_online_player_by_username(player.admin_target_username), false);
     }
     if UIK.clicked(amt25_btn) {
         player.admin_grant_amount = 25;
