@@ -3,6 +3,16 @@ Verity_Visual :: class : Component {
     owner_user_id: string;
     morph_kind: s64;
     ao_start :: method() {
+        if morph_kind == 4 {
+            a := entity.add_component(Spine_Animator);
+            a.set_skeleton(get_asset(Spine_Asset, "$AO/streamed_character"));
+            a.disable_all_skins(); a.enable_skin("base/crewchsia");
+            a.enable_skin("body/dino_suit"); a.enable_skin("hat/cooking_pan"); a.enable_skin("face/cute_eyes");
+            a.refresh_skins(); a.color = {1.2, 1, 0.2, 1};
+            a.set_animation("Idle", true, 0);
+            entity.set_local_scale({0.9, 0.9});
+            return;
+        }
         texture := get_asset(Texture_Asset, reference_morph_path(morph_kind));
         sprite := entity.add_component(Sprite_Renderer);
         sprite.set_texture(texture); sprite.layer = 0;
@@ -23,6 +33,7 @@ reference_morph_path :: proc(kind: s64) -> string {
     return "mrlovebraids/verity.png";
 }
 reference_morph_name :: proc(kind: s64) -> string {
+    if kind == 4 { return "Paperclips"; }
     if kind == 2 { return "Lovity"; }
     if kind == 3 { return "Mrlovebraids & Marcat"; }
     return "Verity";
@@ -40,7 +51,7 @@ update_verity_visual :: proc(p: Player) {
     });
 }
 troll_do_reference_morph :: proc(admin: Player, target: Player, kind: s64) -> bool {
-    if !can_access_troll_panel(admin) || !#alive(target) || kind < 1 || kind > 3 { return false; }
+    if !can_access_troll_panel(admin) || !#alive(target) || kind < 1 || kind > 4 { return false; }
     if target.troll_morph_active { admin.play_reward_feedback("Already transformed"); return false; }
     troll_save_morph_original(target);
     target.troll_morph_active = true; target.troll_reference_morph = kind;

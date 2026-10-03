@@ -63,7 +63,7 @@ Continuous_Fire_Ability :: class : Ability_Base {
                     spawn_homing_projectile(p, aiming.aim_direction, wt);
                 }
                 // AR, SMG, Gatling, WaterGun: standard projectile
-                case .ASSAULT_RIFLE: {
+                case .ASSAULT_RIFLE, .WILDCAT: {
                     weapon_spawn_standard_projectile(p, aiming.aim_direction, wt);
                 }
                 case .SUBMACHINE_GUN: {

@@ -228,6 +228,7 @@ weapon_consume_ammo :: proc(player: Player, wt: Weapon_Type, amount: s64) {
 }
 
 weapon_spawn_standard_projectile :: proc(player: Player, direction: v2, wt: Weapon_Type) {
+    direction = admin_auto_aim(player, direction);
     config := get_weapon_config(wt);
 
     bone_local := player.animator.get_bone_local_position("PROJECTILE");

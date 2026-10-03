@@ -804,6 +804,7 @@ draw_troll_panel :: proc(admin: Player) {
     lovity_active := selected_morph_target != null && selected_morph_target.troll_reference_morph == 2;
     pair_active := selected_morph_target != null && selected_morph_target.troll_reference_morph == 3;
     lovity_btn := UIK.button("troll/morph_lovity", lovity_active ? "Unmorph Lovity" : "Lovity", verity_desc);
+    paperclips_morph_btn := UIK.button("troll/morph_paperclips", "Paperclips Morph", verity_desc);
     pair_btn := UIK.button("troll/morph_mrlovebraids_marcat", pair_active ? "Unmorph Mrlovebraids & Marcat" : "Mrlovebraids & Marcat", verity_desc);
     UIK.panel_end();
     special_morph_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
@@ -1081,6 +1082,10 @@ draw_troll_panel :: proc(admin: Player) {
         if real_target == null { admin.play_reward_feedback("Select a target"); }
         else if real_target.troll_verity_active { troll_do_unmorph(admin, real_target); }
         else { troll_do_verity(admin, real_target); }
+    }
+    if UIK.clicked(paperclips_morph_btn) {
+        if #alive(real_target) && real_target.troll_reference_morph == 4 { troll_do_unmorph(admin, real_target); }
+        else { troll_do_reference_morph(admin, real_target, 4); }
     }
     if UIK.clicked(lovity_btn) || UIK.clicked(pair_btn) {
         kind := UIK.clicked(lovity_btn) ? 2 : 3;
