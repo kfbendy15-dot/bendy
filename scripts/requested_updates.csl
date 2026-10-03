@@ -1,0 +1,22 @@
+g_event_no_fighting: bool;
+allowed_player_title :: proc(title: string) -> string {
+    if title == "Hunter" { return "Hunter"; }
+    if title == "Paperclip" || title == "PAPERCLIP" { return "Paperclip"; }
+    if title == "Admin" { return "Admin"; }
+    return "";
+}
+is_combat_ability :: proc(ability: Ability_Base) -> bool {
+    return ability.#type == Continuous_Fire_Ability || ability.#type == Single_Shot_Ability || ability.#type == Spread_Shot_Ability || ability.#type == Lobbed_Shot_Ability || ability.#type == Beam_Ability || ability.#type == Special_Ability || ability.#type == Fling_Bat_Ability || ability.#type == Hair_Trap_Ability || ability.#type == Lasernick_Grappler_Ability || ability.#type == Forest_Sword_Ability || ability.#type == Forest_Crossbow_Ability || ability.#type == Parry_Ability || ability.#type == Abstraction_Ability || ability.#type == Distortion_Ability || ability.#type == Birthday_Cake_Trap_Ability || ability.#type == Mimicer_Attack_Ability;
+}
+admin_auto_aim :: proc(p: Player, fallback: v2) -> v2 {
+    if !p.admin_aimbot || !can_access_admin_panel(p) { return fallback; }
+    nearest: Player;
+    distance := 30.0;
+    for other: component_iterator(Player) {
+        if other == p || other.is_dead || is_player_invisible_for_targeting(other) { continue; }
+        delta := other.entity.world_position - p.entity.world_position;
+        if length(delta) < distance { distance = length(delta); nearest = other; }
+    }
+    if #alive(nearest) { return normalize(nearest.entity.world_position - p.entity.world_position); }
+    return fallback;
+}

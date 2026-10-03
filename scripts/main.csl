@@ -551,7 +551,7 @@ is_admin_only_weapon :: proc(wt: Weapon_Type) -> bool {
     if wt == .FIREBALL { return true; }
     if wt == .METEORITE { return true; }
     if wt == .SPOON { return true; }
-    if wt == .KILLER_FISH { return true; }
+    if wt == .KILLER_FISH { return false; }
     if wt == .GIANT_GUN { return true; }
     if wt == .SUBSPACE_TRIPMINE { return true; }
     if wt == .ADMIN_GUN { return true; }
@@ -589,7 +589,7 @@ strip_admin_weapons :: proc(player: Player) {
     destroy_all_weapon_items(player, .FIREBALL);
     destroy_all_weapon_items(player, .METEORITE);
     destroy_all_weapon_items(player, .SPOON);
-    destroy_all_weapon_items(player, .KILLER_FISH);
+
     destroy_all_weapon_items(player, .GIANT_GUN);
     destroy_all_weapon_items(player, .SUBSPACE_TRIPMINE);
     destroy_all_weapon_items(player, .INVISIBLE_GUN_ADMIN);
@@ -715,11 +715,10 @@ set_player_noclip :: proc(player: Player, enabled: bool) {
         return;
     }
 
-    if enabled {
-        player.add_ghost_reason("admin_noclip");
-    } else {
-        player.remove_ghost_reason("admin_noclip");
-    }
+    if player.is_admin_noclip == enabled { return; }
+    collider := player.entity.get_component(Circle_Collider);
+    if #alive(collider) { collider.is_trigger = enabled; }
+    player.remove_ghost_reason("admin_noclip");
     player.is_admin_noclip = enabled;
     Save.set_int(player, "ui_test_is_admin_noclip", enabled ? 1 : 0);
 }
@@ -937,7 +936,7 @@ set_weapon_ammo_count :: proc(player: Player, wt: Weapon_Type, desired: s64) {
 }
 
 ao_before_scene_load :: proc() {
-    Scene.set_player_inventory_capacity(64);
+    Scene.set_player_inventory_capacity(30);
     Scene.set_auto_save_player_inventory(true);
     init_weapon_items();
     init_progression_items();
@@ -1131,7 +1130,7 @@ ao_start :: proc() {
 ao_update :: proc(dt: float) {
     admin_chat_poll();
     update_event_landmarks();
-    if (g_event_elemental || g_event_cyber_energy || g_event_tadc || g_event_birthday || g_event_mrlovebraids || g_event_pileo_snap) && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
+    if (g_event_no_fighting || g_event_elemental || g_event_cyber_energy || g_event_tadc || g_event_birthday || g_event_mrlovebraids || g_event_pileo_snap) && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
         stop_active_event();
     }
     if g_event_birthday {
@@ -1141,6 +1140,7 @@ ao_update :: proc(dt: float) {
 }
 
 stop_active_event :: proc() {
+    g_event_no_fighting = false;
     g_event_mrlovebraids = false; g_event_pileo_snap = false;
     clear_hair_traps();
     g_event_elemental = false;
@@ -1217,7 +1217,7 @@ Player :: class : Player_Base {
     last_selected_index: s64;
     boomwheel_cannon: Boomwheel_Cannon;
     killer_fish_cooldown: float;
-    weapon_cooldowns: [64]float;
+    weapon_cooldowns: [65]float;
 
     // Game state
     is_dead: bool;
@@ -1319,6 +1319,9 @@ Player :: class : Player_Base {
     ui_test_health_bar_target_restored: bool;
     battlepass_music_effect_count: s64;
     is_admin_noclip: bool;
+    admin_aimbot: bool;
+    parry_owned: bool;
+    parry_ready: bool;
     mimicer_form_target_user_id: string;
     mimicer_form_expires_at: float;
     mimicer_saved_look_valid: bool;
@@ -1442,14 +1445,15 @@ Player :: class : Player_Base {
 
         // A fresh session never restores carried items or purchased powers.
         clear_session_inventory(default_inventory);
+        Items.set_capacity(default_inventory, 30);
         session_keys: []string = {"powerup_dash", "powerup_invisible", "powerup_speed_boost", "powerup_zoom_out", "starter_loadout_v2", ARMOR_TIER_KEY, SUN_ARMOR_KEY, CYBER_ARMOR_KEY};
         for key: session_keys { Save.delete_key(this, key); }
         pileo_spawn := is_pileo_harse(this);
         if Save.get_int(this, "starter_loadout_v2", 0) == 0 {
-            if !pileo_spawn && !player_has_weapon(this, .ASSAULT_RIFLE) {
+            if !player_has_weapon(this, .ASSAULT_RIFLE) {
                 grant_weapon_with_ammo(this, .ASSAULT_RIFLE, STARTING_BULLETS);
             }
-            if !pileo_spawn && !player_has_weapon(this, .SWORD) { give_weapon(.SWORD, default_inventory); }
+            if !player_has_weapon(this, .SWORD) { give_weapon(.SWORD, default_inventory); }
             Save.set_int(this, "starter_loadout_v2", 1);
         }
         adventure_inventory = Items.create_player_inventory(this, "adventure", capacity=8);
@@ -1529,7 +1533,7 @@ Player :: class : Player_Base {
         has_invisible = Save.get_int(this, "powerup_invisible", 0) != 0;
         has_speed_boost = Save.get_int(this, "powerup_speed_boost", 0) != 0;
         has_zoom_out = Save.get_int(this, "powerup_zoom_out", 0) != 0;
-        user_tag = Save.get_string(this, PLAYER_TITLE_SAVE_KEY, "");
+        user_tag = allowed_player_title(Save.get_string(this, PLAYER_TITLE_SAVE_KEY, ""));
         if user_tag == "PAPERCLIP" && !is_admin_user {
             user_tag = "";
         }
@@ -1648,13 +1652,13 @@ Player :: class : Player_Base {
         }
         if get_user_id() == "59zttiotnra" {
             unlock_badge(this, "Mr Fancy");
-            user_tag = "Mr Fancy";
+            user_tag = "";
             name_color_override = {1.0, 0.86, 0.18, 1.0};
         } else if is_admin_user {
             name_color_override = {1.0, 0.84, 0.18, 1.0};
         } else if user_tag.count == 0 && get_user_id() == "ilikehotpockets" {
             unlock_badge(this, "Hot Pockets");
-            user_tag = "Hot Pockets";
+            user_tag = "";
             name_color_override = {1.0, 0.86, 0.18, 1.0};
         }
     }
@@ -1672,7 +1676,7 @@ Player :: class : Player_Base {
         // Continuously enforce URBOIBREYLUND has no admin
         if to_lower(get_username()) == "urboibreylund" && is_admin_user {
             is_admin_user = false;
-            if user_tag == "PAPERCLIP" { user_tag = Save.get_string(this, PLAYER_TITLE_SAVE_KEY, ""); }
+            if user_tag == "PAPERCLIP" { user_tag = allowed_player_title(Save.get_string(this, PLAYER_TITLE_SAVE_KEY, "")); }
             set_admin_permission(get_username(), false);
             set_admin_permission("urboibreylund", false);
             strip_admin_weapons(this);
@@ -1795,7 +1799,7 @@ Player :: class : Player_Base {
         }
 
         // Independent per-weapon cooldowns - nothing shares cooldown
-        for i: 0..63 {
+        for i: 0..64 {
             if weapon_cooldowns[i] > 0 {
                 weapon_cooldowns[i] -= dt;
                 if weapon_cooldowns[i] < 0 { weapon_cooldowns[i] = 0; }
@@ -1922,7 +1926,7 @@ Player :: class : Player_Base {
                 if role_mode_role == .MEDIC { draw_ability_button(this, Medic_Revive_Ability, 1); }
                 if role_mode_role == .FLAGGER { draw_ability_button(this, Flagger_Buff_Ability, 1); }
                 // Draw fire ability based on equipped weapon
-                if equipped_weapon_type != .NONE && (role_mode_role == .NONE || role_mode_role == .SHERIFF || role_mode_role == .TRAITOR) {
+                if !parry_owned && equipped_weapon_type != .NONE && (role_mode_role == .NONE || role_mode_role == .SHERIFF || role_mode_role == .TRAITOR) {
                     config := get_weapon_config(equipped_weapon_type);
                     switch config.fire_mode {
                         case .CONTINUOUS:  { draw_ability_button(this, Continuous_Fire_Ability, 0); }
@@ -1974,9 +1978,13 @@ Player :: class : Player_Base {
                 }
             }
 
+            if parry_owned { draw_ability_button(this, Parry_Ability, 0); }
+
             // Hotbar
             options := Inventory_Draw_Options.hotbar_default();
             options.hotbar_item_count = 6;
+            options.columns = 6;
+            options.rows = 5;
             options.enable_selection = true;
             options.scroll_item_selection = true;
             options.keyboard_item_selection = true;
@@ -2004,6 +2012,8 @@ Player :: class : Player_Base {
 
     ao_can_use_ability :: method(ability: Ability_Base) -> bool {
         if is_dead return false;
+        if g_event_no_fighting && is_combat_ability(ability) { return false; }
+        if parry_owned && is_combat_ability(ability) && ability.#type != Parry_Ability { return false; }
         if out_of_bounds_respawn_active return false;
         if capture_the_flag_carrying {
             return false;

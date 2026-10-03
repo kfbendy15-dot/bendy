@@ -63,6 +63,7 @@ Weapon_Type :: enum {
     FLING_BAT;
     HAIR_TRAP;
     LASERNICK_GRAPPLER;
+    WILDCAT;
 }
 
 Fire_Mode :: enum {

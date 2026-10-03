@@ -47,6 +47,12 @@ Weapon_Config :: struct {
 }
 
 get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
+    if wt == .WILDCAT {
+        wild := get_weapon_config(.ASSAULT_RIFLE);
+        wild.weapon_type = wt; wild.item_id = "wildcat"; wild.item_name = "Wildcat";
+        wild.base_damage = 30; wild.fire_rate = 0.2;
+        return wild;
+    }
     config: Weapon_Config;
     config.weapon_type = wt;
     config.ammo_per_shot = 1;
@@ -59,7 +65,7 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
         config.fire_mode = .SPECIAL; config.hand_type = .NONE; config.ammo_per_shot = 0;
         config.ammo_type_index = -1;
         if wt == .FLING_BAT {
-            config.item_id = "fling_bat"; config.item_name = "Fling Bat";
+            config.item_id = "fling_bat"; config.item_name = "Baseball Bat";
             config.weapon_icon_path = "mrlovebraids/bat.png"; config.base_damage = 10; config.fire_rate = 1.1;
         } else if wt == .HAIR_TRAP {
             config.item_id = "hair_trap"; config.item_name = "Hair Trap";
@@ -254,15 +260,15 @@ get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
         case .KILLER_FISH: {
             config.fire_mode = .SPECIAL;
             config.hand_type = .ONE_HAND;
-            config.fire_rate = 15.0;
-            config.base_damage = 0.0;
+            config.fire_rate = 1.0;
+            config.base_damage = 100000000.0;
             config.aoe_radius = 2.6;
             config.aoe_damage = 0.0;
             config.ammo_per_shot = 0;
             config.weapon_skin = "";
-            config.weapon_icon_path = "mine_on_0a827f.png";
+            config.weapon_icon_path = "fish_8c87b1.png";
             config.item_id = "killer_fish";
-            config.item_name = "Tree Trap";
+            config.item_name = "Killer Fish";
             config.ammo_type_index = -1;
             config.ammo_first_pickup = 0;
             config.shoot_trigger = "throw";
