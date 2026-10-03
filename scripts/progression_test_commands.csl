@@ -1,0 +1,91 @@
+progression_test_setup :: proc(p: Player) {
+    current := Economy.get_balance(p, "Coins");
+    if current > 100 { Economy.withdraw_currency(p, "Coins", current - 100); }
+    if current < 100 { Economy.deposit_currency(p, "Coins", 100 - current); }
+    p.is_admin_invincible = false;
+    p.player_element = 0; p.gun_mutation_element = 0;
+    if #alive(p.equipped_armor) { p.equipped_armor.seconds_left = 0; update_armor_wear(p, 0); }
+    for item, slot: p.armor_inventory.slots() { if #alive(item) { Items.destroy_item_instance(item); } }
+    p.equipped_armor = null; p.armor_tier = 0;
+    Save.save_item_reference(p, "equipped_armor_v3", null);
+    p.weapon_target.health = 100; p.weapon_target.max_health = 100;
+    p.show_armor_shop = false; p.show_shop = false;
+    g_event_sun = false; g_event_tadc = false;
+    Save.set_int(p, "progress_test_reductions", 0);
+} @chat_command @owner_or_editor
+
+progression_test_catalog :: proc(p: Player) {
+    costs: [12]s64 = {5, 10, 1000, 2000, 5000, 10000, 25000, 50000, 75000, 100000, 150000, 500};
+    divisors: [12]float = {2, 4, 8, 10, 20, 30, 40, 50, 60, 75, 90, 6};
+    matches: s64;
+    p.is_admin_invincible = false; p.player_element = 0;
+    for tier: 1..12 {
+        grant_armor_item(p, tier);
+        p.weapon_target.health = 100;
+        weapon_target_apply_damage(p.weapon_target, 80, 0);
+        expected := 100.0 - 80.0 / divisors[tier - 1];
+        if abs(p.weapon_target.health - expected) < 0.001 && armor_cost(tier) == costs[tier - 1] { matches += 1; }
+    }
+    Save.set_int(p, "progress_test_catalog_matches", matches);
+} @chat_command @owner_or_editor
+
+progression_test_hit :: proc(p: Player) {
+    p.weapon_target.health = 100;
+    weapon_target_apply_damage(p.weapon_target, 80, 0);
+} @chat_command @owner_or_editor
+
+progression_test_break :: proc(p: Player) {
+    if #alive(p.equipped_armor) { p.equipped_armor.seconds_left = 0.01; }
+} @chat_command @owner_or_editor
+
+progression_test_badges :: proc(p: Player) {
+    for slot: 0..2 { p.equipped_badges[slot] = null; Save.save_item_reference(p, `equipped_badge_{slot}`, null); }
+    labels: [4]string = {"Test One", "Test Two", "Test Three", "Test Four"};
+    for label: labels { unlock_badge(p, label); }
+    for item, slot: p.badge_inventory.slots() {
+        if #alive(item) && item.#type == Badge_Item {
+            label := item.(Badge_Item).label;
+            if label == "Test One" || label == "Test Two" || label == "Test Three" { 
+                already := false;
+                for badge: p.equipped_badges { if badge == item { already = true; } }
+                if !already { toggle_badge(p, item); }
+            }
+        }
+    }
+    for item, slot: p.badge_inventory.slots() { if #alive(item) && item.#type == Badge_Item && item.(Badge_Item).label == "Test Four" { toggle_badge(p, item); } }
+    count: s64;
+    for badge: p.equipped_badges { if #alive(badge) { count += 1; } }
+    Save.set_int(p, "progress_test_badge_count", count);
+} @chat_command @owner_or_editor
+
+progression_test_combat :: proc(p: Player, mode: s64 = 0) {
+    opponents: [..]Player;
+    for other: component_iterator(Player) { if other != p { opponents.append(other); } }
+    if opponents.count < 2 { return; }
+    killer := opponents[0]; victim := opponents[1];
+    killer.is_admin_invincible = false; victim.is_admin_invincible = false;
+    victim.armor_tier = 0; victim.player_element = 0; victim.equipped_weapon_type = .NONE;
+    if mode == 0 {
+        killer.has_vip = true; g_event_double_coins = true;
+        victim.weapon_target.health = 100; victim.damage_contributors.clear();
+        weapon_target_apply_damage(victim.weapon_target, 10, p.entity.id, .ASSAULT_RIFLE);
+        weapon_target_apply_damage(victim.weapon_target, 500, killer.entity.id, .SUBMACHINE_GUN);
+        weapon_target_apply_damage(victim.weapon_target, 500, killer.entity.id, .SUBMACHINE_GUN);
+        Save.set_int(p, "progress_test_killer_coins", Economy.get_balance(killer, "Coins"));
+        Save.set_string(p, "progress_test_death_weapon", victim.death_weapon);
+        Save.set_string(p, "progress_test_assistant", victim.death_assistants);
+    } else {
+        if victim.is_dead { return; }
+        weapon_target_apply_damage(victim.weapon_target, 500, p.entity.id, .ASSAULT_RIFLE);
+        weapon_target_apply_damage(victim.weapon_target, 500, p.entity.id, .ASSAULT_RIFLE);
+    }
+} @chat_command @owner_or_editor
+
+progression_test_die :: proc(p: Player) {
+    for other: component_iterator(Player) {
+        if other == p { continue; }
+        p.is_admin_invincible = false; p.armor_tier = 0; p.weapon_target.health = 100;
+        weapon_target_apply_damage(p.weapon_target, 500, other.entity.id, .ASSAULT_RIFLE);
+        return;
+    }
+} @chat_command @owner_or_editor

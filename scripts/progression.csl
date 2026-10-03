@@ -1,0 +1,254 @@
+ARMOR_WEAR_SECONDS :: 1200.0;
+g_armor_definitions: [13]Item_Definition;
+g_badge_definition: Item_Definition;
+g_kill_sequence: s64;
+
+init_progression_items :: proc() {
+    shield := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
+    for tier: 1..12 {
+        g_armor_definitions[tier] = Items.register_item_definition(
+            {`armor_{tier}`, armor_tier_name(tier) + " Armor", shield, 1, .RARE}, instance_type=Armor_Item);
+    }
+    g_badge_definition = Items.register_item_definition({"player_badge", "Badge", shield, 1, .RARE}, instance_type=Badge_Item);
+}
+
+armor_cost :: proc(tier: s64) -> s64 {
+    switch tier {
+        case 1: return WOOD_ARMOR_COST;
+        case 2: return STONE_ARMOR_COST;
+        case 12: return WOOL_ARMOR_COST;
+        case 3: return IRON_ARMOR_COST;
+        case 4: return GOLD_ARMOR_COST;
+        case 5: return DIAMOND_ARMOR_COST;
+        case 6: return EMERALD_ARMOR_COST;
+        case 7: return OBSIDIAN_ARMOR_COST;
+        case 8: return SUN_ARMOR_COST;
+        case 9: return NETHERITE_ARMOR_COST;
+        case 10: return JESTER_ARMOR_COST;
+        case 11: return CYBER_ARMOR_COST;
+    }
+    return 0;
+}
+
+armor_damage_divisor :: proc(tier: s64) -> float {
+    switch tier {
+        case 1: return 2.0;
+        case 2: return 4.0;
+        case 12: return 6.0;
+        case 3: return 8.0;
+        case 4: return 10.0;
+        case 5: return 20.0;
+        case 6: return 30.0;
+        case 7: return 40.0;
+        case 8: return 50.0;
+        case 9: return 60.0;
+        case 10: return 75.0;
+        case 11: return 90.0;
+    }
+    return 1.0;
+}
+
+owned_armor :: proc(p: Player, tier: s64) -> Armor_Item {
+    if p == null || p.armor_inventory == null || tier < 1 || tier > 12 { return null; }
+    for item, slot: p.armor_inventory.slots() {
+        if #alive(item) && item.get_definition() == g_armor_definitions[tier] { return item.(Armor_Item); }
+    }
+    return null;
+}
+
+armor_item_tier :: proc(item: Armor_Item) -> s64 {
+    if !#alive(item) { return 0; }
+    for tier: 1..12 { if item.get_definition() == g_armor_definitions[tier] { return tier; } }
+    return 0;
+}
+
+equip_armor :: proc(p: Player, item: Armor_Item) {
+    if !#alive(item) || item.inventory != p.armor_inventory || item.seconds_left <= 0 { return; }
+    if #alive(p.equipped_armor) { Items.mark_item_dirty(p.equipped_armor); }
+    p.equipped_armor = item;
+    p.armor_tier = armor_item_tier(item);
+    p.sun_armor_active = p.armor_tier == 8;
+    p.cyber_armor_active = p.armor_tier == 11;
+    Save.save_item_reference(p, "equipped_armor_v3", item);
+    // This save is legacy selection only; inventory owns armor and durability.
+    Save.set_int(p, ARMOR_TIER_KEY, p.armor_tier);
+    if #alive(p.armor_visual_entity) { p.armor_visual_entity.destroy(); p.armor_visual_entity = null; }
+    if !p.troll_morph_active { refresh_armor_visual(p); }
+    p.play_reward_feedback(armor_tier_name(p.armor_tier) + " equipped");
+    adventure_sound(p.entity);
+}
+
+grant_armor_item :: proc(p: Player, tier: s64) -> Armor_Item {
+    item := owned_armor(p, tier);
+    if !#alive(item) {
+        item = Items.create_item_instance(g_armor_definitions[tier], Armor_Item);
+        merged: bool;
+        if !Items.can_move_item_to_inventory(item, p.armor_inventory, ref merged) {
+            Items.destroy_item_instance(item); return null;
+        }
+        Items.move_item_to_inventory(item, p.armor_inventory);
+    }
+    spawn_item_reward(p, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
+    item.seconds_left = ARMOR_WEAR_SECONDS;
+    Items.mark_item_dirty(item);
+    equip_armor(p, item);
+    return item;
+}
+
+purchase_or_equip_armor :: proc(p: Player, tier: s64) {
+    if p == null || p.is_dead || tier < 1 || tier > 12 { return; }
+    item := owned_armor(p, tier);
+    if #alive(item) && item.seconds_left > 0 { equip_armor(p, item); return; }
+    if tier == 8 && !g_event_sun { p.play_reward_feedback("Available during Sun event"); return; }
+    if tier == 10 && !g_event_tadc { p.play_reward_feedback("Available during TADC event"); return; }
+    if Items.calculate_room_in_inventory_for_item(g_armor_definitions[tier], p.armor_inventory) <= 0 && !#alive(item) {
+        p.play_reward_feedback("Armor storage full"); return;
+    }
+    // Exact requested armor prices, not the weapon shop's VIP discount.
+    cost := armor_cost(tier);
+    if !Economy.can_withdraw_currency(p, "Coins", cost) { p.play_reward_feedback("Not enough Coins"); return; }
+    Economy.withdraw_currency(p, "Coins", cost);
+    grant_armor_item(p, tier);
+}
+
+load_progression :: proc(p: Player, legacy_tier: s64) {
+    // Named inventories must be created during Player.ao_start, before references are read.
+    p.armor_inventory = Items.create_player_inventory(p, "armors", capacity=16);
+    p.badge_inventory = Items.create_player_inventory(p, "badges", capacity=64);
+    if Save.get_int(p, "armor_inventory_migrated_v3", 0) == 0 {
+        if legacy_tier > 0 && legacy_tier <= 11 { grant_armor_item(p, legacy_tier); }
+        Save.set_int(p, "armor_inventory_migrated_v3", 1);
+    }
+    ref_item := Save.get_item_reference(p, "equipped_armor_v3");
+    p.armor_tier = 0; p.sun_armor_active = false; p.cyber_armor_active = false;
+    if #alive(ref_item) && ref_item.#type == Armor_Item {
+        p.equipped_armor = ref_item.(Armor_Item);
+        if p.equipped_armor.seconds_left > 0 { equip_armor(p, p.equipped_armor); }
+    }
+    for slot: 0..2 { p.equipped_badges[slot] = Save.get_item_reference(p, `equipped_badge_{slot}`); }
+    if p.user_tag != "" { unlock_title_badges(p, p.user_tag); }
+    lower := to_lower(p.get_username());
+    if p.is_admin_user && (lower == "ilikepaperclips" || lower == "ilikealtaccounts") { unlock_badge(p, "paperclip"); }
+    if p.has_vip { unlock_badge(p, "VIP"); }
+    if p.is_admin_user { unlock_badge(p, "Admin"); }
+    if p.has_claimed_parkour_reward { unlock_badge(p, "Parkour"); }
+}
+
+update_armor_wear :: proc(p: Player, dt: float) {
+    if !#alive(p.equipped_armor) || p.equipped_armor.seconds_left <= 0 { return; }
+    p.equipped_armor.seconds_left = max(0.0, p.equipped_armor.seconds_left - dt);
+    p.armor_save_elapsed += dt;
+    if p.armor_save_elapsed >= 30 || p.equipped_armor.seconds_left <= 0 {
+        Items.mark_item_dirty(p.equipped_armor); p.armor_save_elapsed = 0;
+    }
+    if p.equipped_armor.seconds_left <= 0 {
+        p.armor_tier = 0; p.sun_armor_active = false; p.cyber_armor_active = false;
+        Save.set_int(p, ARMOR_TIER_KEY, 0);
+        if #alive(p.armor_visual_entity) { p.armor_visual_entity.destroy(); p.armor_visual_entity = null; }
+        p.play_reward_feedback("Armor broken"); adventure_sound(p.entity);
+    }
+}
+
+unlock_badge :: proc(p: Player, label: string) {
+    if p.badge_inventory == null || label == "" { return; }
+    for item, slot: p.badge_inventory.slots() {
+        if #alive(item) && item.#type == Badge_Item && item.(Badge_Item).label == label { return; }
+    }
+    item := Items.create_item_instance(g_badge_definition, Badge_Item);
+    item.label = label;
+    merged: bool;
+    if !Items.can_move_item_to_inventory(item, p.badge_inventory, ref merged) { Items.destroy_item_instance(item); return; }
+    Items.move_item_to_inventory(item, p.badge_inventory); Items.mark_item_dirty(item);
+    for slot: 0..2 {
+        if !#alive(p.equipped_badges[slot]) {
+            p.equipped_badges[slot] = item; Save.save_item_reference(p, `equipped_badge_{slot}`, item); break;
+        }
+    }
+}
+
+toggle_badge :: proc(p: Player, item: Item_Instance) {
+    if !#alive(item) || item.inventory != p.badge_inventory { return; }
+    for slot: 0..2 {
+        if p.equipped_badges[slot] == item {
+            p.equipped_badges[slot] = null; Save.save_item_reference(p, `equipped_badge_{slot}`, null); adventure_sound(p.entity); return;
+        }
+    }
+    for slot: 0..2 {
+        if !#alive(p.equipped_badges[slot]) {
+            p.equipped_badges[slot] = item; Save.save_item_reference(p, `equipped_badge_{slot}`, item); adventure_sound(p.entity); return;
+        }
+    }
+    p.play_reward_feedback("Unequip a badge first (3 max)");
+}
+
+Damage_Contribution :: struct { user_id: string; hit_at: float; }
+
+record_damage_contribution :: proc(victim: Player, attacker: Player, wt: Weapon_Type) {
+    if attacker == null || attacker == victim { return; }
+    victim.last_damage_weapon = wt;
+    for contribution, index: victim.damage_contributors {
+        if contribution.user_id == attacker.get_user_id() { victim.damage_contributors[index].hit_at = get_time(); return; }
+    }
+    victim.damage_contributors.append({attacker.get_user_id(), get_time()});
+}
+
+combat_reward :: proc(p: Player, amount: s64) {
+    Economy.deposit_currency(p, "Coins", amount);
+    p.play_reward_feedback(`+{amount} Coins`);
+    e := Scene.create_entity(); e.set_world_position(p.entity.world_position + v2{0, 1.3});
+    e.add_component(Coin_Reward_Popup, on_before_start=proc(popup: Coin_Reward_Popup) {
+        popup.owner_user_id = p.get_user_id(); popup.amount = amount;
+    });
+    desc := SFX.default_sfx_desc(); desc.entity_to_follow = p.entity.id; desc.specific_to_player = p; desc.volume = 0.55;
+    SFX.play(get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav"), desc);
+}
+
+publish_player_death :: proc(victim: Player, attacker_id: u64) {
+    killer: Player;
+    for candidate: component_iterator(Player) { if candidate.entity.id == attacker_id { killer = candidate; break; } }
+    assistants := "";
+    if killer != null && killer != victim {
+        combat_reward(killer, 20); unlock_badge(killer, "First Kill");
+        if is_vs_battle(killer, victim) { clear_vs_match(killer, victim); }
+        for contribution: victim.damage_contributors {
+            if contribution.user_id == killer.get_user_id() || get_time() - contribution.hit_at > 15 { continue; }
+            assistant := find_online_player_by_user_id(contribution.user_id);
+            if assistant == null || assistant == victim { continue; }
+            combat_reward(assistant, 10); unlock_badge(assistant, "Team Player");
+            if assistants != "" { assistants += ", "; }
+            assistants += assistant.get_username();
+        }
+    }
+    victim.death_killer = killer != null ? killer.get_username() : "Environment";
+    victim.death_assistants = assistants;
+    victim.death_weapon = "Fall";
+    victim.death_weapon_icon = "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png";
+    if attacker_id != 0 {
+        victim.death_weapon = "Hazard";
+        if victim.last_damage_weapon != .NONE {
+            config := get_weapon_config(victim.last_damage_weapon);
+            victim.death_weapon = config.item_name; victim.death_weapon_icon = config.weapon_icon_path;
+        }
+    }
+    g_kill_sequence += 1;
+    e := Scene.create_entity();
+    e.add_component(Kill_Feed_Entry, on_before_start=proc(entry: Kill_Feed_Entry) {
+        entry.killer = victim.death_killer; entry.assistants = assistants; entry.weapon = victim.death_weapon;
+        entry.icon = victim.death_weapon_icon; entry.victim = victim.get_username(); entry.sequence = g_kill_sequence;
+    });
+    victim.damage_contributors.clear();
+}
+
+buy_jump_pad :: proc(p: Player) {
+    if Items.calculate_room_in_inventory_for_item(g_jump_pad, p.default_inventory) <= 0 { p.play_reward_feedback("No room"); return; }
+    if !Economy.can_withdraw_currency(p, "Coins", 10) { p.play_reward_feedback("Need 10 Coins"); return; }
+    Economy.withdraw_currency(p, "Coins", 10);
+    item := Items.create_item_instance(g_jump_pad, 1); Items.move_item_to_inventory(item, p.default_inventory);
+    p.play_reward_feedback("+1 Jump Pad"); adventure_sound(p.entity);
+    p.show_shop = false;
+    spawn_item_reward(p, "generated_6ab9165e_ea2119.png");
+}
+
+unlock_title_badges :: proc(p: Player, title: string) {
+    for raw: string_split(title, "|") { label := string_trim(raw); if label != "" { unlock_badge(p, label); } }
+}

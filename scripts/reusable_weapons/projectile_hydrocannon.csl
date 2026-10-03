@@ -108,7 +108,7 @@ Hydro_Cannon_Geyser :: class : Component {
                 hit_count += 1;
             }
 
-            weapon_target_apply_damage(target, GEYSER_DAMAGE, owner_id);
+            weapon_target_apply_damage(target, GEYSER_DAMAGE, owner_id, .HYDRO_CANNON);
         }
     }
 }

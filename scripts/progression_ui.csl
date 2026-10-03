@@ -1,0 +1,92 @@
+on_progression_event :: proc(event: UIDoc_Event, userdata: Object) {
+    p := userdata.(Player);
+    if event.handler == "event:armor:open" { p.show_shop = false; p.show_badges = false; p.show_armor_shop = true; }
+    if event.handler == "event:badges:open" { p.show_armor_shop = false; p.show_badges = true; }
+    if event.handler == "event:progress:close" { p.show_armor_shop = false; p.show_badges = false; }
+    if event.handler == "event:armor:buy" {
+        for tier: 1..12 { if event.key == `armor_{tier}` { purchase_or_equip_armor(p, tier); return; } }
+    }
+    if event.handler == "event:badge:toggle" {
+        for item, slot: p.badge_inventory.slots() {
+            if #alive(item) && event.key == `badge_{slot}` { toggle_badge(p, item); return; }
+        }
+    }
+}
+
+bind_armor_offer :: proc(p: Player, tier: s64) {
+    item := owned_armor(p, tier);
+    state := "Buy";
+    if #alive(item) {
+        state = item.seconds_left <= 0 ? "Replace broken" : (p.equipped_armor == item ? "Equipped" : "Equip");
+    }
+    UI.uidoc_list_item(`armor_{tier}`);
+    UI.uidoc_list_bind_text("name", armor_tier_name(tier) + " Armor");
+    UI.uidoc_list_bind_text("price", `{armor_cost(tier)} Coins`);
+    UI.uidoc_list_bind_text("reduction", `Damage ÷{armor_damage_divisor(tier).(int)}`);
+    UI.uidoc_list_bind_text("state", state);
+    UI.uidoc_list_bind_text("color", tier == 8 ? "#ffd16c" : tier == 10 ? "#ff8bce" : tier == 11 ? "#69e5ff" : "#edf2fa");
+}
+
+draw_progression_ui :: proc(p: Player) {
+    if !p.is_local_or_server() { return; }
+    UI.push_layer(25); defer UI.pop_layer();
+    UI.uidoc_clear_bindings();
+    UI.uidoc_bind_bool("armorOpen", p.show_armor_shop);
+    UI.uidoc_bind_bool("badgesOpen", p.show_badges);
+    UI.uidoc_bind_bool("modal", p.show_armor_shop || p.show_badges);
+    UI.uidoc_bind_bool("dead", p.is_dead);
+    UI.uidoc_bind_bool("feedback", p.show_reward_popups && p.reward_feedback_duration > 0 && get_time() - p.reward_feedback_start < p.reward_feedback_duration);
+    UI.uidoc_bind_text("feedbackText", p.reward_feedback_text);
+    UI.uidoc_bind_bool("featured", g_event_sun || g_event_tadc);
+    UI.uidoc_bind_text("balance", `{Economy.get_balance(p, "Coins")} Coins`);
+    UI.uidoc_bind_text("armorStatus", p.armor_tier > 0 && #alive(p.equipped_armor) ? `{armor_tier_name(p.armor_tier)} · {ceil(p.equipped_armor.seconds_left / 60).(int)} min` : "No armor");
+    UI.uidoc_bind_text("killer", p.death_killer);
+    UI.uidoc_bind_text("deathWeapon", p.death_weapon);
+    UI.uidoc_bind_text("deathIcon", p.death_weapon_icon);
+    UI.uidoc_bind_bool("hasDeathAssist", p.death_assistants != "");
+    UI.uidoc_bind_text("deathAssist", "Assisted by " + p.death_assistants);
+    remaining := max(0.0, 3.0 - (get_time() - p.death_started_at));
+    UI.uidoc_bind_text("respawn", p.murder_permadead || p.survive_mode_killed_by_creature ? "Spectating" : `Back in {ceil(remaining).(int)}s`);
+    UI.uidoc_begin_list("featuredArmors");
+    if g_event_sun { bind_armor_offer(p, 8); }
+    if g_event_tadc { bind_armor_offer(p, 10); }
+    UI.uidoc_end_list();
+    UI.uidoc_begin_list("armors");
+    order: [12]s64 = {1, 2, 12, 3, 4, 5, 6, 7, 9, 11, 8, 10};
+    for tier: order {
+        if tier == 8 && g_event_sun || tier == 10 && g_event_tadc { continue; }
+        if (tier == 8 || tier == 10) && !#alive(owned_armor(p, tier)) { continue; }
+        bind_armor_offer(p, tier);
+    }
+    UI.uidoc_end_list();
+    UI.uidoc_begin_list("badges");
+    count: s64;
+    for badge: p.equipped_badges { if #alive(badge) { count += 1; } }
+    UI.uidoc_bind_text("badgeCount", `{count}/3 equipped`);
+    for item, slot: p.badge_inventory.slots() {
+        if !#alive(item) || item.#type != Badge_Item { continue; }
+        equipped := false;
+        for badge: p.equipped_badges { if badge == item { equipped = true; } }
+        UI.uidoc_list_item(`badge_{slot}`);
+        UI.uidoc_list_bind_text("label", item.(Badge_Item).label);
+        UI.uidoc_list_bind_text("state", equipped ? "Unequip" : "Equip");
+        UI.uidoc_list_bind_text("color", equipped ? "#ffd16c" : "#edf2fa");
+    }
+    UI.uidoc_end_list();
+    UI.uidoc_begin_list("kills");
+    // Newest first, bounded to five lines. No dependency on entity creation order.
+    for offset: 0..4 {
+        sequence := g_kill_sequence - offset;
+        for entry: component_iterator(Kill_Feed_Entry) {
+            if entry.sequence != sequence { continue; }
+            UI.uidoc_list_item(`kill_{sequence}`);
+            UI.uidoc_list_bind_text("killer", entry.killer + (entry.assistants != "" ? " + " + entry.assistants : ""));
+            UI.uidoc_list_bind_text("weapon", entry.weapon);
+            UI.uidoc_list_bind_text("icon", entry.icon);
+            UI.uidoc_list_bind_text("victim", entry.victim);
+        }
+    }
+    UI.uidoc_end_list();
+    UI.uidoc(get_asset(UIDoc_Asset, "ui/progression.uidoc"), false, p, on_progression_event);
+}
+

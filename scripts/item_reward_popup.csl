@@ -1,0 +1,24 @@
+Item_Reward_Popup :: class : Component {
+    owner_user_id: string;
+    icon: Texture_Asset;
+    age: float;
+    ao_update :: method(dt: float) {
+        age += dt;
+        if age >= 1.2 { entity.destroy(); return; }
+        entity.add_local_position({0, dt});
+    }
+    ao_draw :: method(dt: float) {
+        viewer, ok := Game.get_local_player();
+        if !ok || viewer.get_user_id() != owner_user_id { return; }
+        UI.push_z(entity.world_position.y); defer UI.pop_z();
+        rect := Rect{entity.world_position - v2{0.3, 0.3}, entity.world_position + v2{0.3, 0.3}};
+        UI.quad(rect, icon, {1, 1, 1, 1 - age / 1.2});
+    }
+}
+
+spawn_item_reward :: proc(p: Player, path: string) {
+    e := Scene.create_entity(); e.set_world_position(p.entity.world_position + v2{0, 1.3});
+    e.add_component(Item_Reward_Popup, on_before_start=proc(popup: Item_Reward_Popup) {
+        popup.owner_user_id = p.get_user_id(); popup.icon = get_asset(Texture_Asset, path);
+    });
+}

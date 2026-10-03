@@ -1,0 +1,74 @@
+<!-- Dynamic names and catalog labels change only on events; intrinsic sizing intentionally wraps long names. Timer and balance bindings reserve fixed samples. -->
+<div class="safe">
+  <div class="feedback" data-if="feedback">{{feedbackText}}</div>
+
+  <div class="quick">
+
+    <button id="open-armor" data-on-click="event:armor:open"><img src="$AO/ui/kit/Icons/misc_icons_1/shield_iron.png"><span>Armor</span></button>
+
+    <button id="open-badges" data-on-click="event:badges:open"><img src="$AO/ui/kit/Icons/weapon_tier/weapon_tier_icon_gold.png"><span>Badges</span></button>
+
+    <span class="armor-status" data-text-reserve="Netherite · 20 min">{{armorStatus}}</span>
+
+  </div>
+
+  <div class="feed">
+
+    <div class="kill" data-for="kill in kills">
+
+      <span class="killer">{{kill.killer}}</span><div class="weapon"><img src="{{kill.icon}}"><span>{{kill.weapon}}</span></div><span class="victim">{{kill.victim}}</span>
+
+    </div>
+
+  </div>
+
+  <div class="death" data-if="dead">
+
+    <span class="eliminated">ELIMINATED</span>
+
+    <div class="death-weapon"><img src="{{deathIcon}}"><div><div class="death-name">{{deathWeapon}}</div><div class="death-by">{{killer}}</div></div></div>
+
+    <span class="assist" data-if="hasDeathAssist">{{deathAssist}}</span>
+
+    <span class="respawn" data-text-reserve="Back in 3s">{{respawn}}</span>
+
+  </div>
+
+  <div class="backdrop" data-if="modal">
+
+    <div class="panel" data-if="armorOpen">
+
+      <div class="header"><span class="title">Armor Shop</span><button class="close" id="close-armor" data-on-click="event:progress:close">×</button></div>
+
+      <div class="summary"><div data-text-reserve="1,500,000 Coins">{{balance}}</div><div data-text-reserve="Netherite · 20 min">{{armorStatus}}</div></div>
+
+      <span class="hint">20 minutes of wear · Saved between visits</span>
+
+      <div class="scroll">
+
+        <span class="category" data-if="featured">Featured · Limited time</span>
+
+        <div class="offers" data-if="featured"><button class="offer" data-key="armor-offer" data-for="armor in featuredArmors" data-on-click="event:armor:buy" data-style-color="armor.color"><img src="$AO/ui/kit/Icons/misc_icons_1/shield_iron.png"><div class="details"><div class="name">{{armor.name}}</div><div class="reduction">{{armor.reduction}}</div><div class="price">{{armor.price}}</div></div><span class="state">{{armor.state}}</span></button></div>
+
+        <span class="category">Armor</span>
+
+        <div class="offers"><button class="offer" data-key="armor-offer" data-for="armor in armors" data-on-click="event:armor:buy" data-style-color="armor.color"><img src="$AO/ui/kit/Icons/misc_icons_1/shield_iron.png"><div class="details"><div class="name">{{armor.name}}</div><div class="reduction">{{armor.reduction}}</div><div class="price">{{armor.price}}</div></div><span class="state">{{armor.state}}</span></button></div>
+
+      </div>
+
+    </div>
+
+    <div class="panel badges" data-if="badgesOpen">
+
+      <div class="header"><span class="title">Badges</span><button class="close" id="close-badges" data-on-click="event:progress:close">×</button></div>
+
+      <span class="hint" data-text-reserve="3/3 equipped">{{badgeCount}}</span>
+
+      <div class="scroll"><div class="offers"><button class="badge" data-key="badge-toggle" data-for="badge in badges" data-on-click="event:badge:toggle" data-style-color="badge.color"><img class="badge-icon" src="$AO/ui/kit/Icons/weapon_tier/weapon_tier_icon_gold.png"><div class="name">{{badge.label}}</div><span class="state">{{badge.state}}</span></button></div></div>
+
+    </div>
+
+  </div>
+
+</div>
+

@@ -101,7 +101,7 @@ Landmine_Trap :: class : Component {
 
             detonated = true;
             if victim.weapon_target != null {
-                weapon_target_apply_damage(victim.weapon_target, damage, owner_id);
+                weapon_target_apply_damage(victim.weapon_target, damage, owner_id, .LANDMINE);
             }
             stun_and_damage_players_in_radius(entity.world_position, owner_id, trigger_radius, 0, stun_duration, format_string("landmine/%", {owner_id}));
 
@@ -214,7 +214,7 @@ spawn_subspace_tripmine_explosion :: proc(pos: v2, owner_id: u64, damage: float,
 
     apply_pink_tint_to_players(pos, radius, owner_id);
     spawn_subspace_floor_flash(pos);
-    apply_aoe_damage(pos, owner_id, radius, damage);
+    apply_aoe_damage(pos, owner_id, radius, damage, .SUBSPACE_TRIPMINE);
 
     burst := spawn_simple_vfx("reusable_weapons/anims/reusable-weapons/nuke_vfx/ExplosionNuke.spine", "default", pos, {1.9, 1.9}, "Nuke_explosion", 0.75);
     if burst != null {

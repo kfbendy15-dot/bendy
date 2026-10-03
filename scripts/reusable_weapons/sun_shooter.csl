@@ -31,12 +31,12 @@ Sun_Knockback_Effect :: class : Effect_Base {
     }
 }
 
-apply_sun_shooter_damage_chance :: proc(victim: Player, owner_id: u64, chance: float) {
+apply_sun_shooter_damage_chance :: proc(victim: Player, owner_id: u64, chance: float, source_weapon: Weapon_Type) {
     if victim == null || victim.is_dead || victim.weapon_target == null return;
 
     rng: u64 = rng_root_seed();
     if rng_range_float(ref rng, 0, 1) < chance {
-        weapon_target_apply_damage(victim.weapon_target, SUN_SHOOTER_DAMAGE, owner_id);
+        weapon_target_apply_damage(victim.weapon_target, SUN_SHOOTER_DAMAGE, owner_id, source_weapon);
     }
 }
 
@@ -71,10 +71,10 @@ Sun_Shooter_Projectile :: class : Component {
             knockback.direction = direction;
             knockback.strength = 18.0;
             victim.entity.add_passive_effect(knockback);
-            apply_sun_shooter_damage_chance(victim, owner_id, SUN_TSUNAMI_DAMAGE_CHANCE);
+            apply_sun_shooter_damage_chance(victim, owner_id, SUN_TSUNAMI_DAMAGE_CHANCE, .SUN_SHOOTER_TSUNAMI);
         } else {
             apply_weapon_stun(victim, 1.1, "sun_sand");
-            apply_sun_shooter_damage_chance(victim, owner_id, SUN_SAND_DAMAGE_CHANCE);
+            apply_sun_shooter_damage_chance(victim, owner_id, SUN_SAND_DAMAGE_CHANCE, .SUN_SHOOTER_SAND);
         }
 
         hit_sfx := get_asset(SFX_Asset, "reusable_weapons/sounds/reusable-weapons/bullet_hit.wav");

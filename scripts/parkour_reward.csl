@@ -25,6 +25,7 @@ Parkour_Reward :: class : Component {
             if length_squared(delta) <= reward_radius * reward_radius {
                 player.has_claimed_parkour_reward = true;
                 Save.set_int(player, PARKOUR_REWARD_KEY, 1);
+                unlock_badge(player, "Parkour");
                 award_coins(player, reward_amount);
             }
         }

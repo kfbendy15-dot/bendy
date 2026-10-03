@@ -1,0 +1,9 @@
+Kill_Feed_Entry :: class : Component {
+    killer: string;
+    assistants: string;
+    weapon: string;
+    icon: string;
+    victim: string;
+    sequence: s64;
+    ao_start :: method() { entity.queue_for_destruction(10); }
+}
