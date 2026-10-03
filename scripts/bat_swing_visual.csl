@@ -1,0 +1,6 @@
+Bat_Swing_Visual :: class : Component {
+    elapsed: float;
+    ao_update :: method(dt: float) {
+        elapsed += dt; entity.set_local_rotation(-80 + elapsed * 640);
+    }
+}

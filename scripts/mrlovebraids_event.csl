@@ -1,0 +1,50 @@
+MRLOVEBRAIDS_EVENT_DURATION :: 600.0;
+DURP_SPACE_ARMOR_COST :: 10000;
+HAIR_TRAP_COST :: 150;
+FLING_BAT_COST :: 250;
+LASERNICK_GRAPPLER_COST :: 300;
+g_event_mrlovebraids: bool;
+g_event_pileo_snap: bool;
+g_events_started: [14]bool;
+g_all_events_started: bool;
+
+record_event_started :: proc(id: s64) {
+    if id < 1 || id > 13 { return; }
+    g_events_started[id] = true;
+    all := true;
+    for i: 1..13 { if !g_events_started[i] { all = false; } }
+    g_all_events_started = all;
+}
+start_mrlovebraids_event :: proc(admin: Player) {
+    if !can_access_admin_panel(admin) { return; }
+    stop_active_event(); g_event_mrlovebraids = true; g_active_element_event = 13;
+    g_event_ends_at = get_time() + MRLOVEBRAIDS_EVENT_DURATION;
+    record_event_started(13); update_event_landmarks(); adventure_sound(admin.entity);
+    admin.play_reward_feedback("Mrlovebraids Event");
+}
+start_pileo_snap :: proc(admin: Player) {
+    if !can_access_admin_panel(admin) { return; }
+    stop_active_event(); g_event_pileo_snap = true; g_event_mrlovebraids = true;
+    g_event_elemental = true; g_event_ice = true; g_event_sun = true; g_event_void2 = true;
+    g_event_cyber_energy = true; g_event_tadc = true; g_event_birthday = true;
+    g_active_element_event = 13; g_event_ends_at = get_time() + MRLOVEBRAIDS_EVENT_DURATION;
+    for id: 1..13 { record_event_started(id); }
+    manager := ensure_birthday_event_manager(); manager.active = true; manager.ends_at = g_event_ends_at;
+    for p: component_iterator(Player) { birthday_grant_loadout(p); }
+    update_event_landmarks(); adventure_sound(admin.entity);
+    admin.play_reward_feedback("Pileo Snap — all event items active");
+}
+update_event_landmarks :: proc() {
+    has_pair := false; has_pileo := false;
+    for landmark: component_iterator(Event_Spawn_Landmark) {
+        if landmark.kind == 0 { has_pair = true; } else { has_pileo = true; }
+    }
+    if g_event_mrlovebraids && !has_pair {
+        e := Scene.create_entity(); e.set_name("Mrlovebraids Event at Spawn");
+        e.add_component(Event_Spawn_Landmark, on_before_start=proc "start_pair_landmark"(l: Event_Spawn_Landmark) { l.kind = 0; });
+    }
+    if g_all_events_started && !has_pileo {
+        e := Scene.create_entity(); e.set_name("Pileo at Spawn");
+        e.add_component(Event_Spawn_Landmark, on_before_start=proc "start_pileo_landmark"(l: Event_Spawn_Landmark) { l.kind = 1; });
+    }
+}

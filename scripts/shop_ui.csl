@@ -29,6 +29,7 @@ draw_shop_card :: proc(id: string, label: string, price: s64, icon: Texture_Asse
 }
 
 elemental_shop_event :: proc() -> s64 {
+    if g_event_mrlovebraids return 13;
     if g_event_tadc return 9;
     if g_event_cyber_energy return 8;
     if g_event_sun return 7;
@@ -39,6 +40,7 @@ elemental_shop_event :: proc() -> s64 {
 }
 
 elemental_shop_name :: proc(event: s64) -> string {
+    if event == 13 return "Mrlovebraids";
     if event == 0 return "Closed";
     if event == 1 return "Fire";
     if event == 2 return "Water";
@@ -53,6 +55,7 @@ elemental_shop_name :: proc(event: s64) -> string {
 }
 
 event_map_color :: proc(event: s64) -> v4 {
+    if event == 13 return {0.65, 0.25, 0.95, 1.0};
     if event == 1 return {1.0, 0.45, 0.05, 1.0}; // Fire
     if event == 2 return {0.0, 0.9, 0.95, 1.0}; // Water
     if event == 3 return {0.15, 0.85, 0.2, 1.0}; // Leaf
@@ -407,7 +410,7 @@ draw_shop :: proc(player: Player) {
 
     UIK.text("Featured", UIK.text_title());
     event_cards := draw_event_featured(player, false);
-    jump_handle := draw_shop_card("shop/jump_pad", "Jump Pad", 10, get_asset(Texture_Asset, "generated_6ab9165e_ea2119.png"), {0.25, 0.7, 0.85, 1}, false);
+    jump_handle: Interact_Result;
 
     if player.has_vip {
         UIK.text("VIP: 50% off shop prices", UIK.text_body());
@@ -471,6 +474,7 @@ draw_shop :: proc(player: Player) {
     stun_icon := get_asset(Texture_Asset, get_weapon_config(.STUN_GRENADE).weapon_icon_path);
     mine_icon := get_asset(Texture_Asset, get_weapon_config(.LANDMINE).weapon_icon_path);
     stun_handle = draw_shop_card("shop/stun_grenade", "Stun Grenade", STUN_GRENADE_COST, stun_icon, {0.4, 0.75, 0.95, 1}, player_has_weapon(player, .STUN_GRENADE));
+    bat_handle := draw_shop_card("shop/fling_bat", "Fling Bat", shop_price(player, FLING_BAT_COST), get_asset(Texture_Asset, "mrlovebraids/bat.png"), {0.85, 0.55, 0.2, 1}, player_has_weapon(player, .FLING_BAT));
     mine_handle = draw_shop_card("shop/landmine", "Landmine", LANDMINE_COST, mine_icon, {0.55, 0.75, 0.45, 1}, player_has_weapon(player, .LANDMINE));
     UIK.panel_end();
 
@@ -541,6 +545,7 @@ draw_shop :: proc(player: Player) {
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(12));
+    jump_handle = draw_shop_card("shop/jump_pad", "Jump Pad", shop_price(player, 10), get_asset(Texture_Asset, "generated_6ab9165e_ea2119.png"), {0.25, 0.7, 0.85, 1}, false);
     close_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(close_row);
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
@@ -558,6 +563,7 @@ draw_shop :: proc(player: Player) {
     }
     if UIK.clicked(normal_tab) { player.shop_tab_index = 0; }
     if UIK.clicked(armor_tab) { player.show_shop = false; player.show_armor_shop = true; }
+    if UIK.clicked(bat_handle) { buy_weapon_offer(player, .FLING_BAT, FLING_BAT_COST, "+Fling Bat"); }
     if UIK.clicked(jump_handle) { buy_jump_pad(player); }
     process_event_featured(player, event_cards);
 
@@ -797,6 +803,7 @@ draw_admin_shop :: proc(player: Player) {
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
+
     close_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(close_row);
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
@@ -1309,7 +1316,7 @@ draw_event_panel :: proc(player: Player) {
     if UIK.clicked(wind_btn) {
         stop_active_event();
         g_event_elemental = true;
-        g_active_element_event = 10;
+        g_active_element_event = 10; record_event_started(10);
         g_event_ends_at = get_time() + 600;
         player.show_event_panel = false;
     }
@@ -1348,6 +1355,8 @@ draw_event_panel :: proc(player: Player) {
     birthday_btn := UIK.button("events/start_birthday", "BIRTHDAY!", birthday_desc);
     stop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     stop_desc.panel.width = UIK.flex(1); stop_desc.panel.height = UIK.pixels(52);
+    mrlove_btn := UIK.button("events/start_mrlovebraids", "Mrlovebraids Event", tadc_desc);
+    snap_btn := UIK.button("events/start_pileo_snap", "Pileo Snap", birthday_desc);
     stop_btn := UIK.button("events/stop", "Stop Event", stop_desc);
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     close_desc.panel.width = UIK.flex(1);
@@ -1365,6 +1374,8 @@ draw_event_panel :: proc(player: Player) {
         player.show_event_panel = false;
         player.play_reward_feedback("Event stopped");
     }
+    if UIK.clicked(mrlove_btn) { start_mrlovebraids_event(player); player.show_event_panel = false; }
+    if UIK.clicked(snap_btn) { start_pileo_snap(player); player.show_event_panel = false; }
     fire_clicked := UIK.clicked(fire_btn);
     water_clicked := UIK.clicked(water_btn);
     leaf_clicked := UIK.clicked(leaf_btn);
@@ -1397,6 +1408,7 @@ draw_event_panel :: proc(player: Player) {
     }
     any_event_clicked := fire_clicked || water_clicked || leaf_clicked || ice_clicked || void_clicked || lightning_clicked || sun_clicked;
     if any_event_clicked {
+        stop_active_event();
         g_event_elemental = true;
         g_event_ice = ice_clicked;
         g_event_sun = sun_clicked;
@@ -1416,6 +1428,7 @@ draw_event_panel :: proc(player: Player) {
         else if void_clicked { g_active_element_event = 5; }
         else if sun_clicked { g_active_element_event = 7; }
         else { g_active_element_event = 6; }
+        record_event_started(g_active_element_event);
         g_event_ends_at = get_time() + 600.0;
         cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
         if cur_elem == 0 { Save.increment_game_int(EVENT_ELEMENTAL_KEY, 1); }

@@ -60,6 +60,9 @@ Weapon_Type :: enum {
     ENERGY_PISTOLS;
     ENERGY_RIFLE;
     BIRTHDAY_PAPERCLIP_GUN;
+    FLING_BAT;
+    HAIR_TRAP;
+    LASERNICK_GRAPPLER;
 }
 
 Fire_Mode :: enum {

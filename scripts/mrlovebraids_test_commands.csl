@@ -1,0 +1,38 @@
+mrlove_test_setup :: proc(p: Player, item: string = "") {
+    if !can_access_admin_panel(p) { return; }
+    clear_player_inventory(p); p.handle_equipped_item_changing(-1);
+    wt := Weapon_Type.NONE;
+    if item == "bat" { wt = .FLING_BAT; }
+    if item == "hair" { wt = .HAIR_TRAP; }
+    if item == "grappler" { wt = .LASERNICK_GRAPPLER; }
+    if wt != .NONE { give_weapon(wt, p.default_inventory); equip_weapon_item_if_present(p, wt); }
+    p.last_aim_direction = {1, 0};
+    p.adventure_world = 0;
+} @chat_command @owner_or_editor
+
+
+mrlove_test_event :: proc(p: Player, action: string) {
+    if action == "start" { start_mrlovebraids_event(p); }
+    if action == "snap" { start_pileo_snap(p); }
+    if action == "stop" && can_access_admin_panel(p) { stop_active_event(); }
+} @chat_command @owner_or_editor
+mrlove_test_morph :: proc(p: Player, kind: s64) {
+    if p.troll_morph_active { troll_do_unmorph(p, p); }
+    if kind > 0 { troll_do_reference_morph(p, p, kind); }
+} @chat_command @owner_or_editor
+mrlove_test_armor :: proc(p: Player) {
+    if !can_access_admin_panel(p) { return; }
+    grant_armor_item(p, 13); p.player_element = 0;
+    p.weapon_target.health = p.weapon_target.max_health;
+    weapon_target_apply_damage(p.weapon_target, 300, 0);
+} @chat_command @owner_or_editor
+mrlove_test_target :: proc(p: Player, position: string = "near") {
+    if !can_access_admin_panel(p) { return; }
+    for target: component_iterator(Player) {
+        if target == p { continue; }
+        target.adventure_world = 0;
+        target.entity.set_world_position(p.entity.world_position + (position == "far" ? v2{6, 0} : (position == "touch" ? v2{0.6, 0} : v2{1.6, 0})));
+        target.entity.mark_teleported(); target.agent.velocity = {0, 0};
+        target.weapon_target.health = target.weapon_target.max_health;
+    }
+} @chat_command @owner_or_editor

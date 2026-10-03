@@ -1,0 +1,80 @@
+test_mrlovebraids_content :: proc() {
+    Test.wait_seconds(1);
+    Test.run_admin_command("mrlove_test_event start");
+    Test.assert_var_bool("Mrlovebraids active", "g_event_mrlovebraids", true);
+    Test.assert_entity_exists("Third reference at spawn", "Mrlovebraids Event at Spawn");
+    Test.run_admin_command("mrlove_test_morph 1");
+    Test.assert_component_int("Verity morph", "", "Player.troll_reference_morph", 1);
+    Test.assert_entity_exists("Yellow smiley", "Verity Morph");
+    Test.run_admin_command("mrlove_test_morph 2");
+    Test.assert_entity_exists("Pink smiley", "Lovity Morph");
+    Test.assert_entity_not_exists("Verity removed", "Verity Morph");
+    Test.run_admin_command("mrlove_test_morph 3");
+    Test.assert_entity_exists("Braided pair morph", "Mrlovebraids & Marcat Morph");
+    Test.run_admin_command("mrlove_test_morph 0");
+    Test.assert_component_int("Unmorphed", "", "Player.troll_reference_morph", 0);
+    Test.assert_component_bool("No leaked morph state", "", "Player.troll_morph_active", false);
+    Test.run_admin_command("mrlove_test_armor");
+    Test.assert_component_int("Durp Space equipped", "", "Player.armor_tier", 13);
+    Test.assert_component_float("Damage divided by thirty", "", "Player.weapon_target.health", 90);
+    Test.run_admin_command("mrlove_test_event snap");
+    Test.assert_var_bool("Snap active", "g_event_pileo_snap", true);
+    Test.assert_var_bool("All event completion", "g_all_events_started", true);
+    Test.assert_entity_exists("Pileo at spawn", "Pileo at Spawn");
+    Test.assert_var_bool("Birthday included", "g_event_birthday", true);
+    Test.assert_var_bool("Cyber included", "g_event_cyber_energy", true);
+    Test.assert_var_bool("TADC included", "g_event_tadc", true);
+    Test.run_admin_command("mrlove_test_setup hair");
+    Test.select_hotbar_slot(0);
+    Test.assert_inventory_has_item("Hair inventory item", "", "hair_trap");
+    Test.assert_ability_available("Hair selected during Snap", 0);
+    Test.use_ability(0);
+    Test.assert_entity_exists("Braided trap placed", "Braided Hair Trap");
+    Test.run_admin_command("mrlove_test_event stop");
+    Test.assert_var_bool("Snap stopped", "g_event_pileo_snap", false);
+    Test.assert_var_bool("Mrlovebraids stopped", "g_event_mrlovebraids", false);
+    Test.assert_entity_not_exists("Event landmark cleaned up", "Mrlovebraids Event at Spawn");
+    Test.assert_entity_not_exists("Traps cleaned up", "Braided Hair Trap");
+}
+
+test_mrlovebraids_bat_and_grappler :: proc() {
+    Test.wait_seconds(1);
+    Test.run_admin_command("mrlove_test_event start");
+    Test.run_admin_command("mrlove_test_setup bat");
+    Test.teleport({0, 0});
+    Test.spawn_dummy_players(1); Test.wait_seconds(8);
+    Test.run_admin_command("mrlove_test_target");
+    Test.select_hotbar_slot(0);
+    Test.use_ability(0); Test.wait_seconds(0.9);
+    Test.assert_component_float("Fling cleans up friction", "Editor_1000", "Player.agent.friction", 0.5);
+    Test.assert_component_float_range("Bat flung another player across map", "Editor_1000", "Player.entity.world_position.x", 15, 60);
+    Test.run_admin_command("mrlove_test_setup grappler");
+    Test.teleport({0, -11});
+    Test.run_admin_command("mrlove_test_target far");
+    Test.select_hotbar_slot(0);
+    Test.set_mouse({6, -11}); Test.use_ability(0); Test.wait_seconds(1);
+    Test.assert_component_float_range("Player pulled to spawn", "Editor_1000", "Player.entity.world_position.x", -0.7, 0.7);
+    Test.assert_component_float("Pull cleans up friction", "Editor_1000", "Player.agent.friction", 0.5);
+}
+
+test_mrlovebraids_wall_and_hair_trap :: proc() {
+    Test.wait_seconds(1);
+    Test.run_admin_command("mrlove_test_event start");
+    Test.run_admin_command("mrlove_test_setup grappler");
+    Test.teleport({0, -11}); Test.select_hotbar_slot(0);
+    Test.set_mouse({8, -11}); Test.use_ability(0); Test.wait_seconds(1.2);
+    Test.assert_player_near("Wall grapple moved shooter", {19.4, -11}, 1.2);
+    Test.assert_component_float("Wall grapple restores friction", "", "Player.agent.friction", 0.5);
+    Test.run_admin_command("mrlove_test_setup hair");
+    Test.teleport({0, -11}); Test.select_hotbar_slot(0);
+    Test.spawn_dummy_players(1); Test.wait_seconds(8);
+    Test.use_ability(0);
+    Test.wait_seconds(0.7);
+    Test.assert_entity_exists("Owner does not trigger own trap", "Braided Hair Trap");
+    Test.run_admin_command("mrlove_test_target touch");
+    Test.wait_seconds(0.3);
+    Test.assert_entity_not_exists("Hair trap springs on victim", "Braided Hair Trap");
+    Test.assert_component_bool("Braids hold victim", "Editor_1000", "Player.entity.effect_data.active_effect.player_specific.freeze_player", true);
+    Test.wait_seconds(3.1);
+    Test.assert_component_float("Victim can move after trap", "Editor_1000", "Player.agent.friction", 0.5);
+}

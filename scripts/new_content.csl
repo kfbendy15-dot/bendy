@@ -496,6 +496,7 @@ Buzz_Laser_Ability :: class : Ability_Base {
 }
 
 start_cyber_energy_event :: proc(admin: Player) {
+    stop_active_event(); record_event_started(8);
     // Cyber Energy is a standalone server-wide energy sale event.
     g_event_elemental = true;
     g_event_ice = false;
@@ -524,6 +525,7 @@ start_cyber_energy_event :: proc(admin: Player) {
 }
 
 start_tadc_event :: proc(admin: Player) {
+    record_event_started(9);
     stop_active_event();
     g_event_tadc = true;
     g_active_element_event = 9;
@@ -542,6 +544,7 @@ void2_price :: proc(base: s64) -> s64 {
 }
 
 start_void2_event :: proc(admin: Player) {
+    stop_active_event(); record_event_started(11);
     g_event_void2 = true;
     g_event_cyber_energy = false;
     g_event_tadc = false;

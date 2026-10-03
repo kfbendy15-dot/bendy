@@ -4,7 +4,7 @@ on_progression_event :: proc(event: UIDoc_Event, userdata: Object) {
     if event.handler == "event:badges:open" { p.show_armor_shop = false; p.show_badges = true; }
     if event.handler == "event:progress:close" { p.show_armor_shop = false; p.show_badges = false; }
     if event.handler == "event:armor:buy" {
-        for tier: 1..12 { if event.key == `armor_{tier}` { purchase_or_equip_armor(p, tier); return; } }
+        for tier: 1..13 { if event.key == `armor_{tier}` { purchase_or_equip_armor(p, tier); return; } }
     }
     if event.handler == "event:badge:toggle" {
         for item, slot: p.badge_inventory.slots() {
@@ -37,7 +37,7 @@ draw_progression_ui :: proc(p: Player) {
     UI.uidoc_bind_bool("dead", p.is_dead);
     UI.uidoc_bind_bool("feedback", p.show_reward_popups && p.reward_feedback_duration > 0 && get_time() - p.reward_feedback_start < p.reward_feedback_duration);
     UI.uidoc_bind_text("feedbackText", p.reward_feedback_text);
-    UI.uidoc_bind_bool("featured", g_event_sun || g_event_tadc);
+    UI.uidoc_bind_bool("featured", g_event_sun || g_event_tadc || g_event_mrlovebraids);
     UI.uidoc_bind_text("balance", `{Economy.get_balance(p, "Coins")} Coins`);
     UI.uidoc_bind_text("armorStatus", p.armor_tier > 0 && #alive(p.equipped_armor) ? `{armor_tier_name(p.armor_tier)} · {ceil(p.equipped_armor.seconds_left / 60).(int)} min` : "No armor");
     UI.uidoc_bind_text("killer", p.death_killer);
@@ -50,12 +50,13 @@ draw_progression_ui :: proc(p: Player) {
     UI.uidoc_begin_list("featuredArmors");
     if g_event_sun { bind_armor_offer(p, 8); }
     if g_event_tadc { bind_armor_offer(p, 10); }
+    if g_event_mrlovebraids { bind_armor_offer(p, 13); }
     UI.uidoc_end_list();
     UI.uidoc_begin_list("armors");
-    order: [12]s64 = {1, 2, 12, 3, 4, 5, 6, 7, 9, 11, 8, 10};
+    order: [13]s64 = {1, 2, 12, 3, 4, 5, 6, 7, 9, 11, 8, 10, 13};
     for tier: order {
-        if tier == 8 && g_event_sun || tier == 10 && g_event_tadc { continue; }
-        if (tier == 8 || tier == 10) && !#alive(owned_armor(p, tier)) { continue; }
+        if tier == 8 && g_event_sun || tier == 10 && g_event_tadc || tier == 13 && g_event_mrlovebraids { continue; }
+        if (tier == 8 || tier == 10 || tier == 13) && !#alive(owned_armor(p, tier)) { continue; }
         bind_armor_offer(p, tier);
     }
     UI.uidoc_end_list();
