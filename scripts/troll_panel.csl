@@ -809,7 +809,6 @@ draw_troll_panel :: proc(admin: Player) {
     UIK.panel_end();
     falsity_btn := UIK.button("troll/morph_falsity", selected_morph_target != null && selected_morph_target.troll_reference_morph == 5 ? "Unmorph Falsity" : "Falsity", verity_desc);
     billy_btn := UIK.button("troll/morph_kingofbilly", selected_morph_target != null && selected_morph_target.troll_reference_morph == 6 ? "Unmorph Kingofbilly" : "Kingofbilly", verity_desc);
-    mimicer_btn := UIK.button("troll/morph_mimicer", selected_morph_target != null && selected_morph_target.is_mimicer ? "Unmorph Mimicer" : "Mimicer", verity_desc);
     special_morph_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(special_morph_row);
     red_sun_active := selected_morph_target != null && #alive(selected_morph_target.red_sun_visual);
@@ -1104,8 +1103,7 @@ draw_troll_panel :: proc(admin: Player) {
         if real_target.troll_reference_morph == 6 { troll_do_unmorph(admin, real_target); }
         else { if real_target.troll_morph_active { troll_do_unmorph(admin, real_target); } troll_do_reference_morph(admin, real_target, 6); }
     } }
-    if UIK.clicked(mimicer_btn) { if #alive(real_target) { if real_target.is_mimicer { restore_mimicer_form(real_target); real_target.is_mimicer = false; real_target.show_mimicer_selector = false; real_target.active_ability = null; Save.set_int(real_target, "ui_test_is_mimicer", 0); real_target.play_reward_feedback("Unmorphed"); }
-        else { troll_do_unmorph(admin, real_target); grant_mimicer_mode(real_target); } } }
+
     if UIK.clicked(meteor_btn) { spawn_meteor_boss(); adventure_sound(admin.entity); }
     if UIK.clicked(paperclips_btn) { spawn_paperclips_boss(); adventure_sound(admin.entity); }
     if UIK.clicked(pileo_btn) {

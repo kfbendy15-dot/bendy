@@ -1,0 +1,38 @@
+Peace_Race_Dash_Ability :: class : Ability_Base {
+    on_init :: method() {
+        name = "Dash";
+        icon = get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png");
+        is_aimed_ability = true;
+    }
+
+    can_use :: method() -> bool {
+        return g_event_peace_race;
+    }
+
+    on_update :: method(params: ref Ability_Update_Params) {
+
+        activation := Ability_Utilities.full_update_aimed_ability(player, ref params);
+        if !activation.activate {
+            return;
+        }
+
+        current_cooldown = 4.0;
+        p := player.(Player);
+        dir := activation.direction;
+        if length(dir) < 0.1 {
+            dir = v2{1, 0};
+            if p.entity.world_position.x > 0 {
+                dir = v2{-1, 0};
+            }
+        }
+        if dir.x != 0 {
+            p.set_facing_right(dir.x > 0);
+        }
+
+        dash := new(Dash_Effect);
+        dash.direction = normalize(dir);
+        p.entity.set_active_effect(dash);
+        adventure_sound(p.entity);
+        Tutorial.report_ability_used(this);
+    }
+}
