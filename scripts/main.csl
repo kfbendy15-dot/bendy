@@ -2517,6 +2517,9 @@ Player :: class : Player_Base {
     owned_emotes: [3]bool;
 
     show_jumpscares: bool;
+    weapon_animation_rig_id: u64;
+    native_weapon_visual_type: Weapon_Type;
+    native_weapon_attachment_id: u64;
 
     control_target_id: string;
 
@@ -2841,8 +2844,7 @@ Player :: class : Player_Base {
 
 
     ao_start :: method() {
-
-        set_avatar_emote_rig(this);
+        refresh_shop_emote_presentation(this);
 
         for i: 0..2 { owned_emotes[i] = Save.get_int(this, `emote_owned_v1_{i}`, 0) != 0; }
 
@@ -3792,7 +3794,8 @@ Player :: class : Player_Base {
 
         if is_local_or_server() {
 
-            if show_jumpscares && can_access_troll_panel(this) { draw_jumpscare_category(this); }
+            // Legacy open state routes to the single troll panel, never a second modal.
+            if show_jumpscares && can_access_troll_panel(this) { show_jumpscares = false; show_troll_panel = true; }
 
             controlled := direct_control_target(this);
 

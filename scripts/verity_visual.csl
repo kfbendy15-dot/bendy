@@ -13,9 +13,17 @@ Verity_Visual :: class : Component {
             entity.set_local_scale({0.9, 0.9});
             return;
         }
-        texture := get_asset(Texture_Asset, reference_morph_path(morph_kind));
         sprite := entity.add_component(Sprite_Renderer);
-        sprite.set_texture(texture); sprite.layer = 0;
+        sprite.layer = 0;
+        refresh_art();
+    }
+    refresh_art :: method() {
+        if morph_kind == 4 { return; }
+        sprite := entity.get_component(Sprite_Renderer);
+        if !#alive(sprite) { return; }
+        texture := get_asset(Texture_Asset, reference_morph_path(morph_kind));
+        if sprite.get_texture() == texture { return; }
+        sprite.set_texture(texture);
         height := morph_kind == 3 ? 2.1 : 1.7;
         sprite.depth_offset = -height * 0.43;
         scale := height / max(texture.get_world_size().y, 0.01);
@@ -25,13 +33,16 @@ Verity_Visual :: class : Component {
     ao_update :: method(dt: float) {
         p := find_online_player_by_user_id(owner_user_id);
         if !#alive(p) || p.troll_reference_morph != morph_kind { entity.destroy(); return; }
+        refresh_art();
+        p.set_name_override(reference_morph_name(morph_kind));
     }
+    ao_on_state_sync :: method() { refresh_art(); }
 }
 reference_morph_path :: proc(kind: s64) -> string {
     if kind == 7 { return "pileo.png"; }
     if kind == 5 { return "kingofbilly/falsity.png"; }
     if kind == 6 { return "kingofbilly/kingofbilly.png"; }
-    if kind == 2 { return "mrlovebraids/lovity.png"; }
+    if kind == 2 { return g_event_mrlovebraids ? "mrlovebraids/purple_braids_girl.png" : "mrlovebraids/lovity.png"; }
     if kind == 3 { return "mrlovebraids/mrlovebraids_marcat.png"; }
     return "mrlovebraids/verity.png";
 }
@@ -40,7 +51,7 @@ reference_morph_name :: proc(kind: s64) -> string {
     if kind == 5 { return "Falsity"; }
     if kind == 6 { return "Kingofbilly"; }
     if kind == 4 { return "Paperclips"; }
-    if kind == 2 { return "Lovity"; }
+    if kind == 2 { return g_event_mrlovebraids ? "Lily Lovebraids" : "Lovity"; }
     if kind == 3 { return "Mrlovebraids & Lily"; }
     return "Verity";
 }

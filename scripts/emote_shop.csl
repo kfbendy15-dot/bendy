@@ -67,22 +67,37 @@ draw_emote_shop :: proc(p: Player) {
 }
 
 refresh_shop_emote_presentation :: proc(p: Player) {
-    rig := get_asset(Spine_Asset, "reusable_weapons/anims/reusable-weapons/player/player.merged_spine_rig#output");
-    if p.animator.get_skeleton() != rig {
-        set_avatar_emote_rig(p);
+    // The engine applies each player's All Out cosmetics to the configured rig.
+    // Never replace that live skeleton: skin names do not preserve cosmetics.
+    // Attach weapon animation data alongside the native avatar, not over it.
+    rig := get_asset(Spine_Asset, "native_weapon_overlay/weapon_overlay.spine");
+    if p.weapon_animation_rig_id == 0 {
+        p.weapon_animation_rig_id = p.animator.instance.add_skeleton(rig);
     }
+    refresh_native_held_weapon(p);
     setup_shop_emotes(p);
     effect, found := get_effect(p.entity, Shop_Emote_Effect);
     p.animator.state_machine.set_int("shop_emote", found ? effect.emote_index + 1 : 0);
 }
 
-// Preserve the engine-provided avatar outfit when changing only its animation rig.
-set_avatar_emote_rig :: proc(p: Player) {
-    skins: [..]string;
-    for skin: p.animator.get_skins() { skins.append(skin); }
-    p.animator.set_skeleton(get_asset(Spine_Asset, "reusable_weapons/anims/reusable-weapons/player/player.merged_spine_rig#output"));
-    p.animator.enable_skin("base/crewchsia");
-    for skin: skins { if skin != "" { p.animator.enable_skin(skin); } }
-    p.animator.refresh_skins();
-    p.animator.set_color_replace_color(p.avatar_color);
+refresh_native_held_weapon :: proc(p: Player) {
+    wt := p.is_dead || p.troll_morph_active ? Weapon_Type.NONE : p.equipped_weapon_type;
+    config := get_weapon_config(wt);
+    if config.weapon_skin == "" { wt = .NONE; }
+    if wt == p.native_weapon_visual_type { return; }
+    if p.native_weapon_attachment_id != 0 {
+        p.animator.instance.clear_attachment_sprite(p.native_weapon_attachment_id);
+        p.native_weapon_attachment_id = 0;
+    }
+    p.native_weapon_visual_type = wt;
+    if wt == .NONE { return; }
+    texture := get_asset(Texture_Asset, config.weapon_icon_path);
+    if texture == null { return; }
+    desc := Attachment_Desc.default();
+    desc.draw_mode = .IN_FRONT;
+    scale := 0.95 / max(texture.get_world_size().x, 0.01);
+    desc.scale = {scale, scale};
+    desc.offset = {0.28, 0.04};
+    p.native_weapon_attachment_id = p.animator.instance.add_attachment_sprite("Hand_R", texture, desc);
 }
+

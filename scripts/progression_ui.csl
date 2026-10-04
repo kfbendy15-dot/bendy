@@ -32,7 +32,6 @@ draw_progression_ui :: proc(p: Player) {
     if !can_present_player(p) { return; }
     UI.push_layer(25); defer UI.pop_layer();
     UI.uidoc_clear_bindings();
-    UI.uidoc_bind_bool("jumpscaresAllowed", can_access_troll_panel(p));
     UI.uidoc_bind_bool("armorOpen", p.show_armor_shop);
     UI.uidoc_bind_bool("badgesOpen", p.show_badges);
     UI.uidoc_bind_bool("modal", p.show_armor_shop || p.show_badges);

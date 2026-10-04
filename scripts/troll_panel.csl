@@ -11,7 +11,7 @@ troll_jumpscare_name :: proc(idx: s64) -> string {
     if idx == 2 return "Tung Tung Tung Sahur";
     if idx == 3 return "Alpha Mosasaurus";
     if idx == 4 return "Verity";
-    if idx == 5 return "Lovity";
+    if idx == 5 return reference_morph_name(2);
     if idx == 6 return "Mrlovebraids & Lily";
     return "Unknown";
 }
@@ -26,7 +26,7 @@ troll_jumpscare_color :: proc(idx: s64) -> v4 {
 
 troll_jumpscare_icon_path :: proc(idx: s64) -> string {
     if idx == 4 return "mrlovebraids/verity.png";
-    if idx == 5 return "mrlovebraids/lovity.png";
+    if idx == 5 return reference_morph_path(2);
     if idx == 6 return "mrlovebraids/mrlovebraids_marcat.png";
     if idx == 0 return "$AO/ui/kit/Icons/misc_icons_1/timer_icon.png";
     if idx == 1 return "$AO/ui/kit/Icons/coin/coin_icon.png";
@@ -633,8 +633,17 @@ draw_troll_panel :: proc(admin: Player) {
 
     UIK.text("Jumpscares", UIK.text_title());
     scare_buttons: [7]Interact_Result;
-    for index: 0..6 {
-        scare_buttons[index] = UIK.button(`troll/jumpscare/{index}`, troll_jumpscare_name(index), UIK.widget_desc_button_auto_default(troll_can_jumpscare(admin, index) ? .BUTTON_BASIC_RED : .BUTTON_BASIC_GREY));
+    for row: 0..3 {
+        UIK.panel_begin(UIK.layout_row(UIK.flex(1), UIK.fit(), 8));
+        for column: 0..1 {
+            index := row * 2 + column;
+            if index >= 7 { continue; }
+            desc := UIK.widget_desc_button_auto_default(troll_can_jumpscare(admin, index) ? .BUTTON_BASIC_RED : .BUTTON_BASIC_GREY);
+            desc.panel.width = UIK.flex(1);
+            desc.panel.height = UIK.pixels(58);
+            scare_buttons[index] = UIK.button(`troll/jumpscare/{index}`, troll_jumpscare_name(index), desc);
+        }
+        UIK.panel_end();
     }
     UIK.text("Teleport Selected Player", UIK.text_title());
     travel_buttons: [4]Interact_Result;
@@ -676,7 +685,7 @@ draw_troll_panel :: proc(admin: Player) {
     UIK.panel_begin(reference_row);
     lovity_active := selected_morph_target != null && selected_morph_target.troll_reference_morph == 2;
     pair_active := selected_morph_target != null && selected_morph_target.troll_reference_morph == 3;
-    lovity_btn := UIK.button("troll/morph_lovity", lovity_active ? "Unmorph Lovity" : "Lovity", verity_desc);
+    lovity_btn := UIK.button("troll/morph_lovity", (lovity_active ? "Unmorph " : "") + reference_morph_name(2), verity_desc);
     paperclips_morph_btn := UIK.button("troll/morph_paperclips", selected_morph_target != null && selected_morph_target.troll_reference_morph == 4 ? "Unmorph Paperclips" : "Paperclips Morph", verity_desc);
     pair_btn := UIK.button("troll/morph_mrlovebraids_marcat", pair_active ? "Unmorph Mrlovebraids & Lily" : "Mrlovebraids & Lily", verity_desc);
     UIK.panel_end();
