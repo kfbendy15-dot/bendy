@@ -1,0 +1,24 @@
+Race_Spear :: class : Component {
+    owner_user_id: string;
+    direction: v2;
+    life: float;
+    ao_start :: method() {
+        s := entity.add_component(Sprite_Renderer);
+        s.set_texture(get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/katana.png"));
+        entity.set_local_scale({0.45, 0.45});
+    }
+    ao_update :: method(dt: float) {
+        life += dt;
+        if !g_event_peace_race || life > 1.0 { entity.destroy(); return; }
+        entity.add_local_position(direction * (25 * dt));
+        owner := find_online_player_by_user_id(owner_user_id);
+        if !#alive(owner) { entity.destroy(); return; }
+        for p: component_iterator(Player) {
+            if p == owner || p.is_dead || p.adventure_world != owner.adventure_world || length(p.entity.world_position - entity.world_position) > 1.0 { continue; }
+            apply_weapon_stun(p, 1.25, "peace_race_spear");
+            dash := new(Dash_Effect); dash.direction = normalize(p.entity.world_position - owner.entity.world_position);
+            owner.entity.set_active_effect(dash);
+            adventure_sound(p.entity); entity.destroy(); return;
+        }
+    }
+}

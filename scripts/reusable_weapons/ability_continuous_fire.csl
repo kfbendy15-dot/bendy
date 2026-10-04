@@ -31,6 +31,7 @@ Continuous_Fire_Ability :: class : Ability_Base {
         ability.icon = get_asset(Texture_Asset, config.weapon_icon_path);
 
         aiming := Ability_Utilities.update_aiming_ability(p, ref params);
+        aiming.aim_direction = normalize(aiming.aim_direction + v2{0, p.gun_recoil});
 
         if aiming.aim {
             p.last_aim_direction = aiming.aim_direction;
@@ -63,7 +64,7 @@ Continuous_Fire_Ability :: class : Ability_Base {
                     spawn_homing_projectile(p, aiming.aim_direction, wt);
                 }
                 // AR, SMG, Gatling, WaterGun: standard projectile
-                case .ASSAULT_RIFLE, .WILDCAT: {
+                case .ASSAULT_RIFLE, .WILDCAT, .KINGOFBILLY_PISTOL: {
                     weapon_spawn_standard_projectile(p, aiming.aim_direction, wt);
                 }
                 case .SUBMACHINE_GUN: {

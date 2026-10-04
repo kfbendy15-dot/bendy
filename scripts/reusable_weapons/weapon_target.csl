@@ -134,6 +134,8 @@ weapon_target_apply_damage :: proc(target: Weapon_Target, damage: float, attacke
         player.last_damage_weapon = attacker_weapon;
         if final_damage > 0 { record_damage_contribution(player, attacking_player, attacker_weapon); }
     }
+    if g_event_double_damage { final_damage *= 2; }
+    if attacker_weapon == .KINGOFBILLY_PISTOL { final_damage = target.health; }
     if attacker_weapon == .KILLER_FISH { final_damage = target.health; }
     target.health -= final_damage;
     if target.health < 0 {

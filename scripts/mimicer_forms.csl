@@ -1,0 +1,44 @@
+Mimicer_Form :: struct {
+    user_id: string;
+    name: string;
+    skins: []string;
+    tint: v4;
+    color: Color_Replace_Color;
+    weapon: Weapon_Type;
+}
+record_mimicer_form :: proc(killer: Player, victim: Player) {
+    form: Mimicer_Form;
+    form.user_id = victim.get_user_id(); form.name = victim.get_username();
+    if victim.get_name_override() != "" { form.name = victim.get_name_override(); }
+    form.skins = victim.animator.get_skins(); form.tint = victim.animator.get_tint();
+    form.color = victim.avatar_color; form.weapon = victim.equipped_weapon_type;
+    for old, index: killer.mimicer_forms { if old.user_id == form.user_id { killer.mimicer_forms[index] = form; return; } }
+    killer.mimicer_forms.append(form);
+}
+apply_mimicer_snapshot :: proc(p: Player, index: s64) {
+    if !p.is_mimicer || index < 0 || index >= p.mimicer_forms.count { return; }
+    save_mimicer_original_look(p);
+    p.mimicer_selected_form = index; p.mimicer_form_target_user_id = p.mimicer_forms[index].user_id;
+    p.mimicer_form_expires_at = get_time() + 60; p.show_mimicer_selector = false;
+    p.animator.disable_all_skins();
+    for skin: p.mimicer_forms[index].skins { if skin != "" { p.animator.enable_skin(skin); } }
+    p.animator.refresh_skins(); refresh_requested_appearance(p); adventure_sound(p.entity);
+}
+refresh_requested_appearance :: proc(p: Player) {
+    if !#alive(p.animator) { return; }
+    // The 2D engine offers flat/narrow versus full-depth-styled character presentation.
+    p.animator.scale = p.visual_2d ? v2{0.72, 1} : v2{1, 1};
+    if p.armor_tier == 14 && !p.troll_morph_active {
+        p.animator.enable_skin("hat/cowboy_hat"); p.animator.refresh_skins();
+    }
+    if p.is_mimicer && p.mimicer_selected_form >= 0 && p.mimicer_selected_form < p.mimicer_forms.count {
+        form := p.mimicer_forms[p.mimicer_selected_form];
+        p.animator.set_color_replace_color(form.color); p.animator.set_tint(form.tint); p.set_name_override(form.name);
+    }
+}
+draw_dimension_toggle :: proc(p: Player) {
+    UIK.begin(UIK.window(UI.get_safe_screen_rect().right_center_rect().grow(100, 0, 0, 50).offset(-12, -100)));
+    h := UIK.button("hud/dimension", p.visual_2d ? "2D" : "3D", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE));
+    UIK.end();
+    if UIK.clicked(h) { p.visual_2d = !p.visual_2d; refresh_requested_appearance(p); adventure_sound(p.entity); }
+}

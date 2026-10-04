@@ -47,10 +47,23 @@ Weapon_Config :: struct {
 }
 
 get_weapon_config :: proc(wt: Weapon_Type) -> Weapon_Config {
+    if wt == .KINGOFBILLY_PISTOL {
+        c := get_weapon_config(.AKIMBO_PISTOLS);
+        c.weapon_type = wt; c.item_id = "kingofbilly_pistol"; c.item_name = "Kingofbilly Pistol";
+        c.fire_mode = .CONTINUOUS; c.fire_rate = 0.04; c.base_damage = 1000000; c.projectile_speed = 35;
+        return c;
+    }
+    if wt == .BACKSTAB_KNIFE || wt == .BEAR_TRAP {
+        c := get_weapon_config(wt == .BACKSTAB_KNIFE ? Weapon_Type.MEGA_BLADE : Weapon_Type.LANDMINE);
+        c.weapon_type = wt; c.item_id = wt == .BACKSTAB_KNIFE ? "backstab_knife" : "bear_trap";
+        c.item_name = wt == .BACKSTAB_KNIFE ? "Knife" : "Bear Trap";
+        c.fire_mode = .SPECIAL; c.ammo_per_shot = 0; c.ammo_type_index = -1; c.base_damage = 25;
+        return c;
+    }
     if wt == .WILDCAT {
         wild := get_weapon_config(.ASSAULT_RIFLE);
         wild.weapon_type = wt; wild.item_id = "wildcat"; wild.item_name = "Wildcat";
-        wild.base_damage = 30; wild.fire_rate = 0.2;
+        wild.base_damage = 30; wild.fire_rate = 0.04;
         return wild;
     }
     config: Weapon_Config;

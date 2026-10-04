@@ -64,6 +64,9 @@ Weapon_Type :: enum {
     HAIR_TRAP;
     LASERNICK_GRAPPLER;
     WILDCAT;
+    KINGOFBILLY_PISTOL;
+    BACKSTAB_KNIFE;
+    BEAR_TRAP;
 }
 
 Fire_Mode :: enum {

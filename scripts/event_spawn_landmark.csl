@@ -1,7 +1,7 @@
 Event_Spawn_Landmark :: class : Component {
     kind: s64;
     ao_start :: method() {
-        path := kind == 0 ? "mrlovebraids/mrlovebraids_marcat.png" : "pileo.png";
+        path := kind == 2 ? "kingofbilly/kingofbilly.png" : kind == 0 ? "mrlovebraids/mrlovebraids_marcat.png" : "pileo.png";
         texture := get_asset(Texture_Asset, path);
         sprite := entity.add_component(Sprite_Renderer); sprite.set_texture(texture); sprite.layer = 0;
         height := kind == 0 ? 3.1 : 1.8;
@@ -11,7 +11,7 @@ Event_Spawn_Landmark :: class : Component {
         entity.set_world_position(g_shared_spawn_position + (kind == 0 ? v2{3.3, 2.0} : v2{-2.4, 1.8}));
     }
     ao_update :: method(dt: float) {
-        if kind == 0 && !g_event_mrlovebraids { entity.destroy(); return; }
+        if (kind == 2 && !g_event_kingofbilly) || (kind == 0 && !g_event_mrlovebraids) { entity.destroy(); return; }
         entity.set_world_position(g_shared_spawn_position + (kind == 0 ? v2{3.3, 2.0} : v2{-2.4, 1.8}));
     }
 }

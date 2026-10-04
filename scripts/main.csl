@@ -396,6 +396,7 @@ player_has_weapon :: proc(player: Player, wt: Weapon_Type) -> bool {
 
 is_player_out_of_bounds :: proc(player: Player) -> bool {
     pos := player.entity.world_position;
+    if g_event_peace_race && player.race_joined { return pos.x < 287 || pos.x > 313 || pos.y < -5 || pos.y > 13; }
     if player.adventure_world == 1 { return pos.x < 85 || pos.x > 115 || pos.y < -13 || pos.y > 13; }
     if player.adventure_world == 2 { return pos.x < 180 || pos.x > 220 || pos.y < -16 || pos.y > 16; }
     if pos.x < WORLD_BOUNDS_MIN_X || pos.x > WORLD_BOUNDS_MAX_X {
@@ -571,7 +572,7 @@ is_player_invisible_for_targeting :: proc(player: Player) -> bool {
         return false;
     }
 
-    return player.admin_invisible_active || player.admin_gun_invisible_effect_count > 0 || player.powerup_invisible_active || player.powerup_invisible_effect_count > 0;
+    return player.mimicer_wall_hidden || player.admin_invisible_active || player.admin_gun_invisible_effect_count > 0 || player.powerup_invisible_active || player.powerup_invisible_effect_count > 0;
 }
 
 strip_admin_weapons :: proc(player: Player) {
@@ -971,6 +972,7 @@ armor_tier_name :: proc(tier: s64) -> string {
         case 2: return "Stone";
         case 12: return "Wool";
         case 13: return "Durp Space";
+        case 14: return "Kingofbilly Hat";
         case 3: return "Iron";
         case 4: return "Gold";
         case 5: return "Diamond";
@@ -995,6 +997,7 @@ armor_display_name :: proc(player: Player) -> string {
 }
 
 refresh_armor_visual :: proc(player: Player) {
+    if player.armor_tier == 14 { player.animator.enable_skin("hat/cowboy_hat"); player.animator.refresh_skins(); return; }
     if player == null || player.armor_tier <= 0 return;
     if player.armor_visual_entity == null {
         visual := Scene.create_entity();
@@ -1058,7 +1061,7 @@ buy_cyber_armor :: proc(player: Player) { purchase_or_equip_armor(player, 11); }
 buy_sun_armor :: proc(player: Player) { purchase_or_equip_armor(player, 8); }
 give_armor_to_player :: proc(target: Player) { if target != null { grant_armor_item(target, 9); } }
 set_armor_tier_for_admin :: proc(target: Player, tier: s64) {
-    if target != null && tier >= 1 && tier <= 13 { grant_armor_item(target, tier); }
+    if target != null && tier >= 1 && tier <= 14 { grant_armor_item(target, tier); }
 }
 
 buy_starter_pack :: proc(player: Player) {
@@ -1091,7 +1094,7 @@ buy_murder_mystery_bundle :: proc(player: Player) {
 }
 
 ao_start :: proc() {
-    g_event_double_coins = Save.get_game_int(EVENT_DOUBLE_COINS_KEY, 0) > 0;
+    g_event_double_coins = false;
     g_event_elemental = Save.get_game_int(EVENT_ELEMENTAL_KEY, 0) > 0;
     g_event_ice = Save.get_game_int(EVENT_ICE_KEY, 0) > 0;
     g_event_sun = Save.get_game_int(EVENT_SUN_KEY, 0) > 0;
@@ -1115,7 +1118,7 @@ ao_start :: proc() {
         g_active_element_event = 8;
     } else if g_event_void2 { g_event_elemental = true; g_active_element_event = 5; }
     else { g_active_element_event = g_event_sun ? 7 : (g_event_ice ? 4 : 0); }
-    g_event_ends_at = g_event_birthday ? get_time() + BIRTHDAY_EVENT_DURATION : 0;
+    g_event_ends_at = (g_event_elemental || g_event_ice || g_event_sun || g_event_void2 || g_event_cyber_energy || g_event_tadc || g_event_birthday) ? get_time() + 600 : 0;
     // Ensure URBOIBREYLUND never retains admin permission in shared save
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "URBOIBREYLUND"}), "0");
     Save.set_game_string(format_string("%0%", {ADMIN_PERMISSION_PREFIX, "urboibreylund"}), "0");
@@ -1130,6 +1133,7 @@ ao_start :: proc() {
 
 ao_update :: proc(dt: float) {
     admin_chat_poll();
+    update_requested_events();
     update_event_landmarks();
     if (g_event_no_fighting || g_event_elemental || g_event_cyber_energy || g_event_tadc || g_event_birthday || g_event_mrlovebraids || g_event_pileo_snap) && g_event_ends_at > 0 && get_time() >= g_event_ends_at {
         stop_active_event();
@@ -1141,7 +1145,15 @@ ao_update :: proc(dt: float) {
 }
 
 stop_active_event :: proc() {
+    for racer: component_iterator(Player) {
+        if racer.race_joined {
+            racer.entity.set_world_position(racer.race_previous_position); racer.entity.mark_teleported();
+            racer.adventure_world = racer.race_previous_world; racer.race_joined = false;
+            racer.agent.velocity = {0, 0}; racer.active_ability = null;
+        }
+    }
     g_event_no_fighting = false;
+    g_event_kingofbilly = false; g_event_peace_race = false; g_event_double_damage = false; g_event_double_coins = false;
     g_event_mrlovebraids = false; g_event_pileo_snap = false;
     clear_hair_traps();
     g_event_elemental = false;
@@ -1159,6 +1171,8 @@ stop_active_event :: proc() {
         manager.ends_at = 0;
     }
     birthday_cleanup_all_players();
+    cur_coins := Save.get_game_int(EVENT_DOUBLE_COINS_KEY, 0);
+    if cur_coins != 0 { Save.increment_game_int(EVENT_DOUBLE_COINS_KEY, -cur_coins); }
     cur_elem := Save.get_game_int(EVENT_ELEMENTAL_KEY, 0);
     if cur_elem != 0 { Save.increment_game_int(EVENT_ELEMENTAL_KEY, -cur_elem); }
     cur_ice := Save.get_game_int(EVENT_ICE_KEY, 0);
@@ -1167,6 +1181,8 @@ stop_active_event :: proc() {
     if cur_sun != 0 { Save.increment_game_int(EVENT_SUN_KEY, -cur_sun); }
     cur_void2 := Save.get_game_int(EVENT_VOID2_KEY, 0);
     if cur_void2 != 0 { Save.increment_game_int(EVENT_VOID2_KEY, -cur_void2); }
+    cur_tadc := Save.get_game_int(EVENT_TADC_KEY, 0);
+    if cur_tadc != 0 { Save.increment_game_int(EVENT_TADC_KEY, -cur_tadc); }
     cur_cyber := Save.get_game_int(EVENT_CYBER_ENERGY_KEY, 0);
     if cur_cyber != 0 { Save.increment_game_int(EVENT_CYBER_ENERGY_KEY, -cur_cyber); }
 }
@@ -1284,6 +1300,21 @@ Player :: class : Player_Base {
     is_admin_user: bool;
     delegated_admin: bool;
     is_mimicer: bool;
+    mimicer_killed_ids: [..]string;
+    mimicer_forms: [..]Mimicer_Form;
+    mimicer_selected_form: s64 = -1;
+    mimicer_wall_hidden: bool;
+    wildcat_speed_active: bool;
+    wildcat_base_speed: float;
+    gun_magazine: [68]s64;
+    gun_magazine_size: [68]s64;
+    gun_recoil: float;
+    visual_2d: bool;
+    race_joined: bool;
+    race_previous_position: v2;
+    race_previous_world: s64;
+    race_checkpoint: s64;
+    race_finished: bool;
     has_claimed_parkour_reward: bool;
     admin_freeze_until: float;
     admin_freeze_previous_speed: float;
@@ -1666,8 +1697,19 @@ Player :: class : Player_Base {
         }
     }
 
+    ao_on_state_sync :: method() {
+        if is_mimicer && mimicer_selected_form >= 0 && mimicer_selected_form < mimicer_forms.count {
+            animator.disable_all_skins();
+            for skin: mimicer_forms[mimicer_selected_form].skins { if skin != "" { animator.enable_skin(skin); } }
+            animator.refresh_skins();
+        }
+        refresh_requested_appearance(this);
+    }
+
     ao_update :: method(dt: float) {
         update_armor_wear(this, dt);
+        update_requested_player(this, dt);
+        refresh_requested_appearance(this);
         update_verity_visual(this);
         if g_event_birthday {
             birthday_grant_loadout(this);
@@ -1916,7 +1958,11 @@ Player :: class : Player_Base {
         }
 
         if is_local_or_server() && !is_dead {
-            if adventure_world == 2 {
+            if g_event_peace_race {
+                if !race_finished { Tutorial_Cue.world(this, race_waypoint(race_checkpoint)); }
+                draw_ability_button(this, Mimicer_Dash_Ability, 0);
+                draw_ability_button(this, Race_Spear_Ability, 1);
+            } else if adventure_world == 2 {
                 draw_ability_button(this, Forest_Crossbow_Ability, 0);
                 draw_ability_button(this, Forest_Sword_Ability, 1);
             } else if adventure_world == 1 {
@@ -1938,7 +1984,9 @@ Player :: class : Player_Base {
                         case .LOBBED:      { draw_ability_button(this, Lobbed_Shot_Ability, 0); }
                         case .BEAM:        { draw_ability_button(this, Beam_Ability, 0); }
                         case .SPECIAL: {
-                            if equipped_weapon_type == .FLING_BAT { draw_ability_button(this, Fling_Bat_Ability, 0); }
+                            if equipped_weapon_type == .BACKSTAB_KNIFE { draw_ability_button(this, Knife_Ability, 0); }
+                            else if equipped_weapon_type == .BEAR_TRAP { draw_ability_button(this, Bear_Trap_Ability, 0); }
+                            else if equipped_weapon_type == .FLING_BAT { draw_ability_button(this, Fling_Bat_Ability, 0); }
                             else if equipped_weapon_type == .HAIR_TRAP { draw_ability_button(this, Hair_Trap_Ability, 0); }
                             else if equipped_weapon_type == .LASERNICK_GRAPPLER { draw_ability_button(this, Lasernick_Grappler_Ability, 0); }
                             else { draw_ability_button(this, Special_Ability, 0); }
@@ -1950,6 +1998,8 @@ Player :: class : Player_Base {
                 // Distortion's black hole is a weapon secondary, so it gets its own
                 // button whenever Distortion is equipped.
                 ability_slot := 1;
+                if equipped_weapon_type == .BACKSTAB_KNIFE { draw_ability_button(this, Backstab_Ability, ability_slot); ability_slot += 1; }
+                if gun_needs_magazine(equipped_weapon_type) { draw_ability_button(this, Reload_Ability, ability_slot); ability_slot += 1; }
                 if #alive(shop_jump_pad_item(this)) { draw_ability_button(this, Place_Jump_Pad_Ability, ability_slot); ability_slot += 1; }
                 if g_event_birthday {
                     if ability_slot <= 5 { draw_ability_button(this, Birthday_Cake_Trap_Ability, ability_slot); ability_slot += 1; }
@@ -2015,6 +2065,9 @@ Player :: class : Player_Base {
 
     ao_can_use_ability :: method(ability: Ability_Base) -> bool {
         if is_dead return false;
+        if g_event_peace_race && (get_time() < g_race_starts_at || race_finished) { return false; }
+        if entity.has_effect(Reload_Effect) && is_combat_ability(ability) { return false; }
+        if g_event_no_fighting && (ability.#type == Knife_Ability || ability.#type == Backstab_Ability || ability.#type == Bear_Trap_Ability) { return false; }
         if g_event_no_fighting && is_combat_ability(ability) { return false; }
         if parry_owned && is_combat_ability(ability) && ability.#type != Parry_Ability { return false; }
         if out_of_bounds_respawn_active return false;

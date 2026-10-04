@@ -1,0 +1,16 @@
+Reload_Ability :: class : Ability_Base {
+    on_init :: method() { name = "Reload"; icon = get_asset(Texture_Asset, "reusable_weapons/sprites/reusable-weapons/ammo_icons/bullet.png"); }
+    can_use :: method() -> bool {
+        p := player.(Player); wt := p.equipped_weapon_type;
+        if !gun_needs_magazine(wt) { return false; }
+        ensure_gun_magazine(p, wt);
+        return p.gun_magazine[wt.(int)] < p.gun_magazine_size[wt.(int)] && weapon_get_ammo_count(p, wt) > 0;
+    }
+    on_update :: method(params: ref Ability_Update_Params) {
+        if !params.can_use || !params.clicked { return; }
+        current_cooldown = 1.2;
+        p := player.(Player); wt := p.equipped_weapon_type;
+        e := new(Reload_Effect); e.weapon = wt; p.entity.add_passive_effect(e);
+        adventure_sound(p.entity); Tutorial.report_ability_used(this);
+    }
+}

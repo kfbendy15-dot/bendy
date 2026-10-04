@@ -91,6 +91,7 @@ giant_gun_admin_cost :: proc(player: Player) -> s64 {
 }
 
 buy_weapon_offer :: proc(player: Player, wt: Weapon_Type, cost: s64, feedback_text: string) {
+    if wt == .KINGOFBILLY_PISTOL && (!g_event_kingofbilly || !can_access_admin_panel(player)) { return; }
     if (wt == .WILDCAT || wt == .FLING_BAT) && !g_event_mrlovebraids { return; }
     if player_has_weapon(player, wt) {
         return;
@@ -462,13 +463,16 @@ draw_shop :: proc(player: Player) {
     shop_battle_axe_icon := get_asset(Texture_Asset, get_weapon_config(.BATTLE_AXE).weapon_icon_path);
     shop_trowel_icon := get_asset(Texture_Asset, get_weapon_config(.SWORD).weapon_icon_path);
     shop_distortion_icon := get_asset(Texture_Asset, get_weapon_config(.DISTORTION).weapon_icon_path);
-    shop_battle_axe_handle = draw_shop_card("shop/scythe", "Scythe", shop_price(player, SCYTHE_COST), shop_battle_axe_icon, {0.65, 0.65, 0.7, 1}, player_has_weapon(player, .BATTLE_AXE));
-    trowel_handle := draw_shop_card("shop/trowel", "Trowel", shop_price(player, TROWEL_COST), shop_trowel_icon, {0.55, 0.35, 0.2, 1}, player_has_weapon(player, .SWORD));
     shop_distortion_handle = draw_shop_card("shop/distortion", "Distortion", void2_price(DISTORTION_COST), shop_distortion_icon, {0.12, 0.05, 0.35, 1}, player_has_weapon(player, .DISTORTION));
     UIK.panel_end();
 
     UIK.spacer(UIK.pixels(1), UIK.pixels(10));
     UIK.text("Melee & Traps", UIK.text_title());
+    UIK.panel_begin(UIK.layout_row(UIK.flex(1), UIK.fit(), 8));
+    shop_battle_axe_handle = draw_shop_card("shop/scythe", "Scythe", shop_price(player, SCYTHE_COST), shop_battle_axe_icon, {0.65, 0.65, 0.7, 1}, player_has_weapon(player, .BATTLE_AXE));
+    trowel_handle := draw_shop_card("shop/trowel", "Trowel", shop_price(player, TROWEL_COST), shop_trowel_icon, {0.55, 0.35, 0.2, 1}, player_has_weapon(player, .SWORD));
+    UIK.panel_end();
+    melee_cards := draw_requested_melee(player);
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
     utility_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
     UIK.panel_begin(utility_row);
@@ -567,6 +571,7 @@ draw_shop :: proc(player: Player) {
     if UIK.clicked(jump_handle) { buy_jump_pad(player); }
     if UIK.clicked(parry_handle) && !player.parry_owned && !player.parry_ready && Economy.can_withdraw_currency(player, "Coins", shop_price(player, 50)) { Economy.withdraw_currency(player, "Coins", shop_price(player, 50)); player.parry_owned = true; player.active_ability = null; player.play_reward_feedback("+Parry"); }
     process_event_featured(player, event_cards);
+    process_event_featured(player, melee_cards);
 
     if UIK.clicked(shop_gun_cutter_handle) && !player_has_weapon(player, .MEGA_BLADE) {
         buy_weapon_offer(player, .MEGA_BLADE, GUN_CUTTER_COST, "+Gun Cutter");
@@ -962,23 +967,6 @@ draw_admin_panel :: proc(player: Player) {
 
     UIK.list_end();
 
-    permission_target := find_online_player_by_username(player.admin_target_username);
-    UIK.text("Admin access", UIK.text_title());
-    if #alive(permission_target) {
-        UIK.text(can_access_admin_panel(permission_target) ? "Admin" : "Player", UIK.text_body());
-    }
-    permission_row := UIK.layout_row(UIK.flex(1), UIK.fit(), 8);
-    UIK.panel_begin(permission_row);
-    add_admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
-    add_admin_desc.panel.width = UIK.flex(1);
-    add_admin_desc.panel.height = UIK.pixels(52);
-    add_admin_btn := UIK.button("admin/add_admin", "Add Admin", add_admin_desc);
-    remove_admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
-    remove_admin_desc.panel.width = UIK.flex(1);
-    remove_admin_desc.panel.height = UIK.pixels(52);
-    remove_admin_btn := UIK.button("admin/remove_admin", "Remove Admin", remove_admin_desc);
-    UIK.panel_end();
-
     UIK.spacer(UIK.pixels(1), UIK.pixels(8));
     UIK.text("Special Maps", UIK.text_title());
     UIK.spacer(UIK.pixels(1), UIK.pixels(4));
@@ -1172,12 +1160,6 @@ draw_admin_panel :: proc(player: Player) {
 
     if UIK.clicked(amt10_btn) {
         player.admin_grant_amount = 10;
-    }
-    if UIK.clicked(add_admin_btn) {
-        admin_set_access(player, find_online_player_by_username(player.admin_target_username), true);
-    }
-    if UIK.clicked(remove_admin_btn) {
-        admin_set_access(player, find_online_player_by_username(player.admin_target_username), false);
     }
     if UIK.clicked(amt25_btn) {
         player.admin_grant_amount = 25;
@@ -1384,6 +1366,10 @@ draw_event_panel :: proc(player: Player) {
     mrlove_btn := UIK.button("events/start_mrlovebraids", "Mrlovebraids Event", tadc_desc);
     snap_btn := UIK.button("events/start_pileo_snap", "Pileo Snap", birthday_desc);
     peace_btn := UIK.button("events/no_fighting", "No Fighting", stop_desc);
+    king_btn := UIK.button("events/kingofbilly", "Kingofbilly Event", tadc_desc);
+    race_btn := UIK.button("events/peace_race", "Peace Race", tadc_desc);
+    coins_btn := UIK.button("events/double_coins", "×2 Coins", tadc_desc);
+    damage_btn := UIK.button("events/double_damage", "×2 Damage", tadc_desc);
     stop_btn := UIK.button("events/stop", "Stop Event", stop_desc);
     close_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     close_desc.panel.width = UIK.flex(1);
@@ -1401,6 +1387,10 @@ draw_event_panel :: proc(player: Player) {
         player.show_event_panel = false;
         player.play_reward_feedback("Event stopped");
     }
+    if UIK.clicked(king_btn) { start_requested_event(player, 1); }
+    if UIK.clicked(race_btn) { start_requested_event(player, 2); }
+    if UIK.clicked(coins_btn) { start_requested_event(player, 3); }
+    if UIK.clicked(damage_btn) { start_requested_event(player, 4); }
     if UIK.clicked(peace_btn) { stop_active_event(); g_event_no_fighting = true; g_event_ends_at = get_time() + 600; player.show_event_panel = false; Chat.server_send_message("No Fighting — peace for everyone"); }
     if UIK.clicked(mrlove_btn) { start_mrlovebraids_event(player); player.show_event_panel = false; }
     if UIK.clicked(snap_btn) { start_pileo_snap(player); player.show_event_panel = false; }

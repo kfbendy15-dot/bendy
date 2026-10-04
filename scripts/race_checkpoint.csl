@@ -1,0 +1,9 @@
+Race_Checkpoint :: class : Component {
+    index: s64;
+    ao_start :: method() {
+        s := entity.add_component(Sprite_Renderer); s.set_texture(get_asset(Texture_Asset, "$AO/circle.png"));
+        s.color = index == 4 ? v4{1, 0.8, 0.1, 0.8} : v4{0.2, 1, 0.7, 0.7}; s.layer = -1;
+        entity.set_local_scale({1.2, 1.2});
+    }
+    ao_update :: method(dt: float) { if !g_event_peace_race { entity.destroy(); } }
+}

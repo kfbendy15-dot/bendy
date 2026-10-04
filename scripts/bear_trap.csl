@@ -1,0 +1,22 @@
+Bear_Trap :: class : Component {
+    owner_user_id: string;
+    armed_at: float;
+    expires_at: float;
+    ao_start :: method() {
+        armed_at = get_time() + 1; expires_at = get_time() + 40;
+        s := entity.add_component(Sprite_Renderer); s.set_texture(get_asset(Texture_Asset, get_weapon_config(.LANDMINE).weapon_icon_path));
+        entity.set_local_scale({0.4, 0.4});
+    }
+    ao_update :: method(dt: float) {
+        if get_time() > expires_at { entity.destroy(); return; }
+        if get_time() < armed_at || g_event_no_fighting { return; }
+        for p: component_iterator(Player) {
+            if p.get_user_id() == owner_user_id || p.is_dead || length(p.entity.world_position - entity.world_position) > 0.8 { continue; }
+            owner := find_online_player_by_user_id(owner_user_id);
+            if !#alive(owner) || p.adventure_world != owner.adventure_world { continue; }
+            effect := new(Hair_Trap_Bind_Effect); p.entity.set_active_effect(effect);
+            weapon_target_apply_damage(p.weapon_target, 35, owner.entity.id, .BEAR_TRAP);
+            adventure_sound(entity); entity.destroy(); return;
+        }
+    }
+}
