@@ -53,19 +53,10 @@ update_requested_events :: proc() {
         }
     }
 }
-gun_needs_magazine :: proc(wt: Weapon_Type) -> bool {
+gun_uses_recoil :: proc(wt: Weapon_Type) -> bool {
     if wt == .NONE { return false; }
     c := get_weapon_config(wt);
     return c.ammo_per_shot > 0 && c.fire_mode != .SPECIAL && c.fire_mode != .LOBBED;
-}
-ensure_gun_magazine :: proc(p: Player, wt: Weapon_Type) {
-    i := wt.(int);
-    if p.gun_magazine_size[i] == 0 {
-        // Six magazines divide the initial supply into five equal reloads.
-        total := max(get_weapon_config(wt).ammo_first_pickup, weapon_get_ammo_count(p, wt));
-        p.gun_magazine_size[i] = max(1, ceil(total.(float) / 6.0).(s64));
-        p.gun_magazine[i] = min(p.gun_magazine_size[i], weapon_get_ammo_count(p, wt));
-    }
 }
 update_requested_player :: proc(p: Player, dt: float) {
     wild := p.equipped_weapon_type == .WILDCAT && !p.is_dead;

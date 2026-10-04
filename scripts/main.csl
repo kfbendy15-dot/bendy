@@ -1999,7 +1999,6 @@ Player :: class : Player_Base {
                 // button whenever Distortion is equipped.
                 ability_slot := 1;
                 if equipped_weapon_type == .BACKSTAB_KNIFE { draw_ability_button(this, Backstab_Ability, ability_slot); ability_slot += 1; }
-                if gun_needs_magazine(equipped_weapon_type) { draw_ability_button(this, Reload_Ability, ability_slot); ability_slot += 1; }
                 if #alive(shop_jump_pad_item(this)) { draw_ability_button(this, Place_Jump_Pad_Ability, ability_slot); ability_slot += 1; }
                 if g_event_birthday {
                     if ability_slot <= 5 { draw_ability_button(this, Birthday_Cake_Trap_Ability, ability_slot); ability_slot += 1; }
@@ -2066,7 +2065,6 @@ Player :: class : Player_Base {
     ao_can_use_ability :: method(ability: Ability_Base) -> bool {
         if is_dead return false;
         if g_event_peace_race && (get_time() < g_race_starts_at || race_finished) { return false; }
-        if entity.has_effect(Reload_Effect) && is_combat_ability(ability) { return false; }
         if g_event_no_fighting && (ability.#type == Knife_Ability || ability.#type == Backstab_Ability || ability.#type == Bear_Trap_Ability) { return false; }
         if g_event_no_fighting && is_combat_ability(ability) { return false; }
         if parry_owned && is_combat_ability(ability) && ability.#type != Parry_Ability { return false; }
