@@ -1,0 +1,10 @@
+Backstab_Effect :: class : Effect_Base {
+    direction: v2;
+    original_friction: float;
+    effect_start :: method() { original_friction = player.agent.friction; player.agent.friction = 0; player_specific.disable_movement_inputs = true; set_duration(0.22); }
+    effect_update :: method(dt: float) { player.agent.velocity = direction * 22; }
+    effect_end :: method(interrupt: bool) {
+        player.agent.friction = original_friction; player.agent.velocity = {0, 0};
+        if !interrupt { knife_strike(player.(Player), direction, true); }
+    }
+}

@@ -63,6 +63,7 @@ draw_settings :: proc(player: Player) {
 }
 
 draw_hud :: proc(player: Player) {
+    draw_dimension_toggle(player);
     UIK.begin(UIK.window(UIK.rect_topbar()));
 
     bar := UIK.layout_row();

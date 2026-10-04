@@ -1,0 +1,23 @@
+Knife_Ability :: class : Ability_Base {
+    on_init :: method() { name = "Slash"; is_aimed_ability = true; }
+    can_use :: method() -> bool { return player.(Player).equipped_weapon_type == .BACKSTAB_KNIFE; }
+    on_update :: method(params: ref Ability_Update_Params) {
+        a := Ability_Utilities.full_update_aimed_ability(player, ref params);
+        if !a.activate { return; }
+        current_cooldown = 0.5; p := player.(Player);
+        knife_strike(p, a.direction, false); Tutorial.report_ability_used(this);
+    }
+}
+knife_strike :: proc(p: Player, direction: v2, backstab: bool) {
+    for target: component_iterator(Player) {
+        if target == p || target.is_dead || target.adventure_world != p.adventure_world { continue; }
+        delta := target.entity.world_position - p.entity.world_position;
+        if length(delta) > 2.0 || dot(normalize(delta), direction) < 0.4 { continue; }
+        facing := target.last_aim_direction;
+        if length(facing) < 0.1 { facing = {sign(target.entity.local_scale.x), 0}; }
+        behind := dot(normalize(p.entity.world_position - target.entity.world_position), normalize(facing)) < -0.5;
+        damage := backstab && behind ? target.weapon_target.health * armor_damage_divisor(target.armor_tier) * 4 : 25.0;
+        weapon_target_apply_damage(target.weapon_target, damage, p.entity.id, .BACKSTAB_KNIFE);
+    }
+    mrlove_item_sound(p.entity, "reusable_weapons/sounds/reusable-weapons/katana_slash.wav");
+}

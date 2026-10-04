@@ -26,6 +26,10 @@ event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
 
     event := elemental_shop_event();
 
+    if g_event_kingofbilly {
+        if admin_shop { offers.append({.KINGOFBILLY_PISTOL, 500, "Kingofbilly Pistol", 0}); }
+        offers.append({.NONE, 10000, "Kingofbilly Hat · Damage ÷26", 14});
+    }
     if g_event_birthday {
 
         offers.append({.BIRTHDAY_PAPERCLIP_GUN, 0, "Birthday Paperclip Gun", 0});

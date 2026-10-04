@@ -30,6 +30,9 @@ Death_Effect :: class : Effect_Base {
         player_specific.disable_movement_inputs = true;
         player.(Player).death_started_at = get_time();
         publish_player_death(player.(Player), attacker_id);
+        for killer: component_iterator(Player) {
+            if killer.entity.id == attacker_id && killer != player { killer.mimicer_killed_ids.append(player.get_user_id()); record_mimicer_form(killer, player.(Player)); }
+        }
         if death_reason == "" {
             death_reason = format_string("death/%/%", {player.get_user_id(), get_frame_number()});
         }

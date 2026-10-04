@@ -1,0 +1,7 @@
+requested_event_test :: proc(p: Player, kind: s64) { start_requested_event(p, kind); } @chat_command @owner_or_editor
+requested_weapon_test :: proc(p: Player, kind: s64) {
+    if !can_access_admin_panel(p) { return; }
+    wt := kind == 1 ? Weapon_Type.KINGOFBILLY_PISTOL : kind == 2 ? Weapon_Type.BACKSTAB_KNIFE : kind == 3 ? Weapon_Type.BEAR_TRAP : Weapon_Type.WILDCAT;
+    grant_weapon_with_ammo(p, wt, 120); equip_weapon_item_if_present(p, wt);
+} @chat_command @owner_or_editor
+requested_expire_test :: proc(p: Player) { if can_access_admin_panel(p) { g_event_ends_at = get_time(); } } @chat_command @owner_or_editor

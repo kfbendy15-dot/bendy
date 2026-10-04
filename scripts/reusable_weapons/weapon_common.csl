@@ -181,6 +181,10 @@ weapon_shoot :: proc(player: Player, wt: Weapon_Type) {
 weapon_has_ammo :: proc(player: Player, wt: Weapon_Type) -> bool {
     config := get_weapon_config(wt);
     if config.ammo_per_shot <= 0 return true;
+    if gun_needs_magazine(wt) {
+        ensure_gun_magazine(player, wt);
+        if player.gun_magazine[wt.(int)] < config.ammo_per_shot { return false; }
+    }
     return weapon_get_ammo_count(player, wt) >= config.ammo_per_shot;
 }
 
@@ -204,6 +208,11 @@ weapon_get_ammo_count :: proc(player: Player, wt: Weapon_Type) -> s64 {
 }
 
 weapon_consume_ammo :: proc(player: Player, wt: Weapon_Type, amount: s64) {
+    if gun_needs_magazine(wt) {
+        ensure_gun_magazine(player, wt);
+        player.gun_magazine[wt.(int)] = max(0, player.gun_magazine[wt.(int)] - amount);
+        player.gun_recoil = min(0.65, player.gun_recoil + 0.05);
+    }
     ammo_def := get_ammo_def_for_weapon(wt);
     if ammo_def == null return;
 

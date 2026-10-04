@@ -4,6 +4,7 @@ armor_offer_available :: proc(tier: s64) -> bool {
         case 10: return g_event_tadc;
         case 11: return g_event_cyber_energy;
         case 13: return g_event_mrlovebraids;
+        case 14: return g_event_kingofbilly;
     }
     return true;
 }
@@ -17,13 +18,13 @@ clear_session_inventory :: proc(inventory: Inventory) {
 }
 
 ARMOR_WEAR_SECONDS :: 1200.0;
-g_armor_definitions: [14]Item_Definition;
+g_armor_definitions: [15]Item_Definition;
 g_badge_definition: Item_Definition;
 g_kill_sequence: s64;
 
 init_progression_items :: proc() {
     shield := get_asset(Texture_Asset, "$AO/ui/kit/Icons/misc_icons_1/shield_iron.png");
-    for tier: 1..13 {
+    for tier: 1..14 {
         g_armor_definitions[tier] = Items.register_item_definition(
             {`armor_{tier}`, armor_tier_name(tier) + " Armor", tier == 13 ? get_asset(Texture_Asset, "mrlovebraids/durp_space_armor.png") : shield, 1, .RARE}, instance_type=Armor_Item);
     }
@@ -36,6 +37,7 @@ armor_cost :: proc(tier: s64) -> s64 {
         case 2: return STONE_ARMOR_COST;
         case 12: return WOOL_ARMOR_COST;
         case 13: return DURP_SPACE_ARMOR_COST;
+        case 14: return 10000;
         case 3: return IRON_ARMOR_COST;
         case 4: return GOLD_ARMOR_COST;
         case 5: return DIAMOND_ARMOR_COST;
@@ -55,6 +57,7 @@ armor_damage_divisor :: proc(tier: s64) -> float {
         case 2: return 4.0;
         case 12: return 6.0;
         case 13: return 30.0;
+        case 14: return 26.0;
         case 3: return 8.0;
         case 4: return 10.0;
         case 5: return 20.0;
@@ -69,7 +72,7 @@ armor_damage_divisor :: proc(tier: s64) -> float {
 }
 
 owned_armor :: proc(p: Player, tier: s64) -> Armor_Item {
-    if p == null || p.armor_inventory == null || tier < 1 || tier > 13 { return null; }
+    if p == null || p.armor_inventory == null || tier < 1 || tier > 14 { return null; }
     for item, slot: p.armor_inventory.slots() {
         if #alive(item) && item.get_definition() == g_armor_definitions[tier] { return item.(Armor_Item); }
     }
@@ -78,13 +81,14 @@ owned_armor :: proc(p: Player, tier: s64) -> Armor_Item {
 
 armor_item_tier :: proc(item: Armor_Item) -> s64 {
     if !#alive(item) { return 0; }
-    for tier: 1..13 { if item.get_definition() == g_armor_definitions[tier] { return tier; } }
+    for tier: 1..14 { if item.get_definition() == g_armor_definitions[tier] { return tier; } }
     return 0;
 }
 
 equip_armor :: proc(p: Player, item: Armor_Item) {
     if !#alive(item) || item.inventory != p.armor_inventory || item.seconds_left <= 0 { return; }
     if #alive(p.equipped_armor) { Items.mark_item_dirty(p.equipped_armor); }
+    if p.armor_tier == 14 { p.animator.disable_skin("hat/cowboy_hat"); p.animator.refresh_skins(); }
     p.equipped_armor = item;
     p.armor_tier = armor_item_tier(item);
     p.sun_armor_active = p.armor_tier == 8;
@@ -116,7 +120,7 @@ grant_armor_item :: proc(p: Player, tier: s64) -> Armor_Item {
 }
 
 purchase_or_equip_armor :: proc(p: Player, tier: s64) {
-    if p == null || p.is_dead || tier < 1 || tier > 13 { return; }
+    if p == null || p.is_dead || tier < 1 || tier > 14 { return; }
     if !armor_offer_available(tier) { return; }
     item := owned_armor(p, tier);
     if #alive(item) && item.seconds_left > 0 { equip_armor(p, item); return; }
@@ -167,6 +171,7 @@ update_armor_wear :: proc(p: Player, dt: float) {
         Items.mark_item_dirty(p.equipped_armor); p.armor_save_elapsed = 0;
     }
     if p.equipped_armor.seconds_left <= 0 {
+        if p.armor_tier == 14 { p.animator.disable_skin("hat/cowboy_hat"); p.animator.refresh_skins(); }
         p.armor_tier = 0; p.sun_armor_active = false; p.cyber_armor_active = false;
         Save.set_int(p, ARMOR_TIER_KEY, 0);
         if #alive(p.armor_visual_entity) { p.armor_visual_entity.destroy(); p.armor_visual_entity = null; }

@@ -1,0 +1,10 @@
+Backstab_Ability :: class : Ability_Base {
+    on_init :: method() { name = "Backstab"; is_aimed_ability = true; }
+    can_use :: method() -> bool { return player.(Player).equipped_weapon_type == .BACKSTAB_KNIFE; }
+    on_update :: method(params: ref Ability_Update_Params) {
+        a := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
+        if !a.activate { return; }
+        current_cooldown = 4; e := new(Backstab_Effect); e.direction = a.direction;
+        player.entity.set_active_effect(e); Tutorial.report_ability_used(this);
+    }
+}

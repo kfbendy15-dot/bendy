@@ -1,4 +1,4 @@
-WEAPON_COUNT :: 64;
+WEAPON_COUNT :: 67;
 AMMO_TYPE_COUNT :: 10;
 
 g_weapon_item_defs: [WEAPON_COUNT]Item_Definition;
@@ -77,6 +77,9 @@ weapon_type_to_index :: proc(wt: Weapon_Type) -> s64 {
         case .HAIR_TRAP: return 61;
         case .LASERNICK_GRAPPLER: return 62;
         case .WILDCAT: return 63;
+        case .KINGOFBILLY_PISTOL: return 64;
+        case .BACKSTAB_KNIFE: return 65;
+        case .BEAR_TRAP: return 66;
     }
     return -1;
 }
@@ -240,6 +243,10 @@ init_weapon_items :: proc() {
     register_weapon(.HAIR_TRAP);
     register_weapon(.LASERNICK_GRAPPLER);
     register_weapon(.WILDCAT);
+    register_weapon(.KINGOFBILLY_PISTOL);
+    register_weapon(.BACKSTAB_KNIFE);
+    register_weapon(.BEAR_TRAP);
+    load_single_sound(.KINGOFBILLY_PISTOL, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
     load_single_sound(.WILDCAT, "reusable_weapons/sounds/reusable-weapons/equip_gun.wav");
 
     // Load fire sounds for each weapon
@@ -497,6 +504,9 @@ get_weapon_type_for_item :: proc(item_def: Item_Definition) -> Weapon_Type {
                 case 61: return .HAIR_TRAP;
                 case 62: return .LASERNICK_GRAPPLER;
                 case 63: return .WILDCAT;
+                case 64: return .KINGOFBILLY_PISTOL;
+                case 65: return .BACKSTAB_KNIFE;
+                case 66: return .BEAR_TRAP;
             }
         }
         i += 1;

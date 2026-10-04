@@ -5,13 +5,14 @@ MIMICER_SHAPESHIFT_TIME :: 60.0;
 MIMICER_FREEZE_TIME     :: 5.0;
 
 play_mimicer_local_sfx :: proc(player: Player, asset_path: string, volume: float) {
-    if player == null || !player.is_local() {
+    if player == null {
         return;
     }
 
     sfx := get_asset(SFX_Asset, asset_path);
     desc := SFX.default_sfx_desc();
     desc.entity_to_follow = player.entity.id;
+    desc.specific_to_player = player;
     desc.volume = volume;
     desc.speed_perturb = 0.08;
     SFX.play(sfx, desc);
@@ -57,6 +58,8 @@ restore_mimicer_form :: proc(player: Player) {
     }
     player.animator.refresh_skins();
     player.animator.set_tint(player.mimicer_saved_anim_tint);
+    player.animator.set_color_replace_color(player.avatar_color);
+    player.mimicer_selected_form = -1;
     player.set_name_override(player.mimicer_saved_name_override);
     player.do_name_color_override = player.mimicer_saved_do_name_color_override;
     player.name_color_override = player.mimicer_saved_name_color_override;
@@ -82,6 +85,7 @@ apply_mimicer_form :: proc(player: Player, target: Player) {
     }
     player.animator.refresh_skins();
     player.animator.set_tint(target.animator.get_tint());
+    player.animator.set_color_replace_color(target.avatar_color);
 
     target_name := target.get_name_override();
     if target_name == "" {
@@ -229,7 +233,7 @@ Mimicer_Dash_Ability :: class : Ability_Base {
     }
 
     can_use :: method() -> bool {
-        return player.(Player).is_mimicer;
+        return player.(Player).is_mimicer || g_event_peace_race;
     }
 
     on_update :: method(params: ref Ability_Update_Params) {
@@ -255,6 +259,10 @@ Mimicer_Dash_Ability :: class : Ability_Base {
             p.set_facing_right(dir.x > 0);
         }
 
+        if g_event_peace_race {
+            dash := new(Dash_Effect); dash.direction = normalize(dir); p.entity.set_active_effect(dash);
+            adventure_sound(p.entity); Tutorial.report_ability_used(this); return;
+        }
         effect := new(Mimicer_Dash_Effect);
         effect.direction = normalize(dir);
         p.entity.set_active_effect(effect);
@@ -269,7 +277,7 @@ Mimicer_Shapeshift_Ability :: class : Ability_Base {
     }
 
     can_use :: method() -> bool {
-        return player.(Player).is_mimicer;
+        return player.(Player).is_mimicer || g_event_peace_race;
     }
 
     on_update :: method(params: ref Ability_Update_Params) {
@@ -318,17 +326,11 @@ draw_mimicer_selector :: proc(player: Player) {
 
     target_user_ids: [..]string;
     target_handles: [..]Interact_Result;
-    for target: component_iterator(Player) {
-        username := target.get_username();
-        target_user_ids.append(target.get_user_id());
-
+    for form, index: player.mimicer_forms {
+        target_user_ids.append(form.user_id);
         row_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-        if target.get_user_id() == player.mimicer_form_target_user_id {
-            row_desc = UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
-        }
-        row_desc.panel.width = UIK.flex(1);
-        row_desc.panel.height = UIK.pixels(46);
-        target_handles.append(UIK.button(format_string("mimicer/target/%", {target.get_user_id()}), username, row_desc));
+        row_desc.panel.width = UIK.flex(1); row_desc.panel.height = UIK.pixels(46);
+        target_handles.append(UIK.button(`mimicer/form/{index}`, form.name, row_desc));
     }
 
     if target_user_ids.count == 0 {
@@ -352,10 +354,7 @@ draw_mimicer_selector :: proc(player: Player) {
 
     for i: 0..target_handles.count - 1 {
         if UIK.clicked(target_handles[i]) {
-            target := find_online_player_by_user_id(target_user_ids[i]);
-            if target != null {
-                apply_mimicer_form(player, target);
-            }
+            apply_mimicer_snapshot(player, i);
         }
     }
 }
