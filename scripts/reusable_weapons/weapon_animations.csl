@@ -12,8 +12,8 @@ setup_reusable_weapons_player_state_machine :: proc(player: Player) {
     use_1h_ik := sm.create_variable("use_1h_ik", .BOOL);
 
     //--- Base Layer: 2-handed weapon idle/run ---//
-    aim_run_2h := base_layer.create_state("redsun/Run_Fast_mIK_twohands", true);
-    aim_idle_2h := base_layer.create_state("redsun/Idle_mIK_twohands", true);
+    aim_run_2h := base_layer.create_state("game/weapon_run_2h", true);
+    aim_idle_2h := base_layer.create_state("game/weapon_idle_2h", true);
 
     base_layer.create_transition(ao_idle, aim_idle_2h, false).create_bool_condition(use_2h_ik, true);
     base_layer.create_transition(ao_run, aim_run_2h, false).create_bool_condition(use_2h_ik, true);
@@ -23,8 +23,8 @@ setup_reusable_weapons_player_state_machine :: proc(player: Player) {
     base_layer.create_transition(aim_run_2h, ao_run, false).create_bool_condition(use_2h_ik, false);
 
     //--- Base Layer: 1-handed weapon idle/run ---//
-    aim_run_1h := base_layer.create_state("redsun/Run_Fast_mIK", true);
-    aim_idle_1h := base_layer.create_state("redsun/Idle_mIK", true);
+    aim_run_1h := base_layer.create_state("game/weapon_run_1h", true);
+    aim_idle_1h := base_layer.create_state("game/weapon_idle_1h", true);
 
     base_layer.create_transition(ao_idle, aim_idle_1h, false).create_bool_condition(use_1h_ik, true);
     base_layer.create_transition(ao_run, aim_run_1h, false).create_bool_condition(use_1h_ik, true);

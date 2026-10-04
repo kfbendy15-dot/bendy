@@ -7,10 +7,10 @@ test_mrlovebraids_content :: proc() {
     Test.assert_component_int("Verity morph", "", "Player.troll_reference_morph", 1);
     Test.assert_entity_exists("Yellow smiley", "Verity Morph");
     Test.run_admin_command("mrlove_test_morph 2");
-    Test.assert_entity_exists("Pink smiley", "Lovity Morph");
+    Test.assert_entity_exists("Replacement purple-haired girl", "Lily Lovebraids Morph");
     Test.assert_entity_not_exists("Verity removed", "Verity Morph");
     Test.run_admin_command("mrlove_test_morph 3");
-    Test.assert_entity_exists("Braided pair morph", "Mrlovebraids & Marcat Morph");
+    Test.assert_entity_exists("Braided pair morph", "Mrlovebraids & Lily Morph");
     Test.run_admin_command("mrlove_test_morph 0");
     Test.assert_component_int("Unmorphed", "", "Player.troll_reference_morph", 0);
     Test.assert_component_bool("No leaked morph state", "", "Player.troll_morph_active", false);

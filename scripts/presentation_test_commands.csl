@@ -1,0 +1,13 @@
+presentation_test_check :: proc(p: Player) {
+    expected_rig := get_asset(Spine_Asset, "game_player/player.spine");
+    Save.set_int(p, "presentation_avatar_rig", p.animator.get_skeleton() == expected_rig ? 1 : 0);
+    Save.set_int(p, "presentation_emote_layer", p.animator.state_machine.try_get_layer("shop_emotes") != null ? 1 : 0);
+    valid := false;
+    for visual: component_iterator(Verity_Visual) {
+        if visual.owner_user_id != p.get_user_id() || visual.morph_kind != 2 { continue; }
+        sprite := visual.entity.get_component(Sprite_Renderer);
+        valid = #alive(sprite) && sprite.get_texture() == get_asset(Texture_Asset, reference_morph_path(2));
+    }
+    Save.set_int(p, "presentation_event_art", valid ? 1 : 0);
+    Save.set_string(p, "presentation_morph_name", p.get_name_override());
+} @chat_command @owner_or_editor

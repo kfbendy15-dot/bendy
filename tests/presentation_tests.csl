@@ -1,0 +1,29 @@
+test_troll_panel_avatar_and_event_replacement :: proc() {
+    Test.wait_seconds(1);
+    Test.run_admin_command("revision_setup");
+    Test.run_admin_command("mrlove_test_setup");
+    Test.run_admin_command("presentation_test_check");
+    Test.assert_save_int("Engine-configured avatar rig retained", "presentation_avatar_rig", 1);
+    Test.assert_save_int("Shop emotes still available", "presentation_emote_layer", 1);
+    Test.assert_button_not_clickable("No separate jumpscares shortcut", "open-jumpscares");
+    Test.click_button("troll_button");
+    Test.click_button("jumpscare/0");
+    Test.assert_save_int("Jumpscare works inside troll panel", "ui_test_troll_jumpscare_type", 0);
+    Test.wait_seconds(2.6);
+    Test.click_button("title_area_exit");
+    Test.run_admin_command("mrlove_test_event start");
+    Test.run_admin_command("mrlove_test_morph 2");
+    Test.wait_seconds(0.5);
+    Test.run_admin_command("presentation_test_check");
+    Test.assert_save_int("Event uses replacement texture", "presentation_event_art", 1);
+    Test.assert_save_string("Replacement character name", "presentation_morph_name", "Lily Lovebraids");
+    Test.run_admin_command("mrlove_test_event stop");
+    Test.wait_seconds(0.5);
+    Test.run_admin_command("presentation_test_check");
+    Test.assert_save_int("Existing morph refreshes after event stops", "presentation_event_art", 1);
+    Test.assert_save_string("Original character restored", "presentation_morph_name", "Lovity");
+    Test.run_admin_command("mrlove_test_morph 0");
+    Test.assert_component_bool("Normal avatar restored", "", "Player.troll_morph_active", false);
+    Test.run_admin_command("presentation_test_check");
+    Test.assert_save_int("Unmorph retains avatar animation rig", "presentation_avatar_rig", 1);
+}

@@ -1,22 +1,19 @@
-refresh_requested_appearance :: proc(p: Player) {
-    if !#alive(p.animator) { return; }
-    if !p.troll_morph_active && !#alive(p.red_sun_visual) {
-        p.animator.set_color_replace_color(is_pileo_harse(p) ? .WHITE1 : p.avatar_color);
-        if is_pileo_harse(p) {
-            t := get_time() * 2;
-            p.animator.set_tint({0.55 + 0.45 * sin(t), 0.55 + 0.45 * sin(t + 2.094), 0.55 + 0.45 * sin(t + 4.188), 1});
-        } else { p.animator.set_tint({1, 1, 1, 1}); }
-    }
-    // The 2D engine offers flat/narrow versus full-depth-styled character presentation.
-    p.animator.scale = p.visual_2d ? v2{0.72, 1} : v2{1, 1};
-    if p.armor_tier == 14 && !p.troll_morph_active {
-        p.animator.enable_skin("hat/cowboy_hat"); p.animator.refresh_skins();
-    }
-
-}
-draw_dimension_toggle :: proc(p: Player) {
-    UIK.begin(UIK.window(UI.get_safe_screen_rect().right_center_rect().grow(100, 0, 0, 50).offset(-12, -100)));
-    h := UIK.button("hud/dimension", p.visual_2d ? "2D" : "3D", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE));
-    UIK.end();
-    if UIK.clicked(h) { p.visual_2d = !p.visual_2d; refresh_requested_appearance(p); adventure_sound(p.entity); }
-}
+refresh_requested_appearance :: proc(p: Player) {
+    if !#alive(p.animator) { return; }
+    if !p.troll_morph_active && !#alive(p.red_sun_visual) {
+        p.animator.set_color_replace_color(p.avatar_color);
+        p.animator.set_tint({1, 1, 1, 1});
+    }
+    // The 2D engine offers flat/narrow versus full-depth-styled character presentation.
+    p.animator.scale = p.visual_2d ? v2{0.72, 1} : v2{1, 1};
+    if p.armor_tier == 14 && !p.troll_morph_active {
+        p.animator.enable_skin("hat/cowboy_hat"); p.animator.refresh_skins();
+    }
+
+}
+draw_dimension_toggle :: proc(p: Player) {
+    UIK.begin(UIK.window(UI.get_safe_screen_rect().right_center_rect().grow(100, 0, 0, 50).offset(-12, -100)));
+    h := UIK.button("hud/dimension", p.visual_2d ? "2D" : "3D", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE));
+    UIK.end();
+    if UIK.clicked(h) { p.visual_2d = !p.visual_2d; refresh_requested_appearance(p); adventure_sound(p.entity); }
+}
