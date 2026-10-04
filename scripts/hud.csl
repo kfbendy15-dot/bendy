@@ -11,9 +11,18 @@ draw_settings :: proc(player: Player) {
     content.height = UIK.flex(1);
     content.padding = v4{14, 18, 14, 18};
     content.gap = 8;
-    UIK.panel_begin(content);
+    UIK.list_begin("settings/scroll", content);
 
     UIK.text(UIK.text_title(), "Gameplay");
+    #unsafe aim_toggle := UIK.toggle("settings/aimbot", "Aimbot", (&player.aim_assist_enabled).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN));
+    if aim_toggle.clicked { adventure_sound(player.entity); }
+    walls_btn := UIK.button("settings/walls", player.is_admin_noclip ? "Go Through Walls: On" : "Go Through Walls: Off", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE));
+    if UIK.clicked(walls_btn) {
+        set_player_noclip(player, !player.is_admin_noclip);
+        adventure_sound(player.entity);
+    }
+    #unsafe arrows_toggle := UIK.toggle("settings/player_arrows", "Arrows to Players", (&player.show_player_arrows).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW));
+    if arrows_toggle.clicked { adventure_sound(player.entity); }
     if player.has_vip {
         #unsafe crown_result := UIK.toggle("settings/vip_crown", "Show VIP crown", (&player.show_vip_crown).(*bool), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW));
         if crown_result.clicked {
@@ -43,7 +52,7 @@ draw_settings :: proc(player: Player) {
     Save.set_int(player, "show_tutorial_button", player.show_tutorial_button ? 1 : 0);
     UIK.text(UIK.text_body(), "Your settings are saved automatically.");
 
-    UIK.panel_end();
+    UIK.list_end();
     UIK.panel_end();
     UIK.end();
 
@@ -105,8 +114,6 @@ draw_hud :: proc(player: Player) {
     has_sensor := has_caylus_sensor(player);
     map_btn: Interact_Result;
     shop_btn: Interact_Result;
-    admin_btn: Interact_Result;
-    admin_shop_btn: Interact_Result;
     events_btn: Interact_Result;
     vs_btn: Interact_Result;
     if has_sensor {
@@ -120,6 +127,12 @@ draw_hud :: proc(player: Player) {
     shop_desc.panel.height = UIK.pixels(52);
     shop_btn = UIK.button("hud/shop_button", "SHOP", shop_desc);
 
+    settings_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
+    settings_desc.panel.width = UIK.pixels(120);
+    settings_desc.panel.height = UIK.pixels(52);
+    settings_btn := UIK.button("hud/settings_button", "SETTINGS", settings_desc);
+    if UIK.clicked(settings_btn) { player.show_settings = !player.show_settings; }
+
     vs_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED);
     vs_desc.panel.width = UIK.pixels(104);
     vs_desc.panel.height = UIK.pixels(52);
@@ -127,16 +140,6 @@ draw_hud :: proc(player: Player) {
 
     troll_btn: Interact_Result;
     if has_admin_button {
-        admin_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY);
-        admin_desc.panel.width = UIK.pixels(120);
-        admin_desc.panel.height = UIK.pixels(52);
-        admin_btn = UIK.button("hud/admin_button", "ADMIN PANEL", admin_desc);
-
-        admin_shop_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREEN);
-        admin_shop_desc.panel.width = UIK.pixels(120);
-        admin_shop_desc.panel.height = UIK.pixels(52);
-        admin_shop_btn = UIK.button("hud/admin_shop_button", "ADMIN SHOP", admin_shop_desc);
-
         events_desc := UIK.widget_desc_button_auto_default(.BUTTON_BASIC_YELLOW);
         events_desc.panel.width = UIK.pixels(110);
         events_desc.panel.height = UIK.pixels(52);
@@ -162,14 +165,6 @@ draw_hud :: proc(player: Player) {
     }
     if UIK.clicked(vs_btn) {
         start_vs_battle(player);
-    }
-    if has_admin_button && UIK.clicked(admin_btn) {
-        player.show_admin_panel = true;
-        Save.set_int(player, "ui_test_show_admin", 1);
-    }
-    if has_admin_button && UIK.clicked(admin_shop_btn) {
-        player.show_admin_shop = true;
-        Save.set_int(player, "ui_test_show_admin_shop", 1);
     }
     if has_admin_button && UIK.clicked(events_btn) {
         // Events are a standalone panel, never a child/state of the admin panel.

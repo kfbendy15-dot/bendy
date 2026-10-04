@@ -1322,6 +1322,8 @@ Player :: class : Player_Base {
     battlepass_music_effect_count: s64;
     is_admin_noclip: bool;
     admin_aimbot: bool;
+    aim_assist_enabled: bool;
+    show_player_arrows: bool;
     parry_owned: bool;
     parry_ready: bool;
     mimicer_form_target_user_id: string;
@@ -1873,6 +1875,7 @@ Player :: class : Player_Base {
             if is_murder_mystery_active() && murder_role == .KILLER {
             }
             draw_hud(this);
+            draw_other_player_arrows(this);
 
             if show_caylus_map && has_caylus_sensor(this) {
                 draw_caylus_map(this);

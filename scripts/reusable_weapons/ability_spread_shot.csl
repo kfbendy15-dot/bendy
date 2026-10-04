@@ -26,6 +26,7 @@ Spread_Shot_Ability :: class : Ability_Base {
         ability.icon = get_asset(Texture_Asset, config.weapon_icon_path);
 
         aiming := Ability_Utilities.update_aiming_ability(p, ref params);
+        aiming.aim_direction = admin_auto_aim(p, aiming.aim_direction);
 
         if aiming.aim {
             p.last_aim_direction = aiming.aim_direction;
