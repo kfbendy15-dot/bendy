@@ -1,0 +1,57 @@
+test_shop_revision_emotes_and_catalog :: proc() {
+    Test.wait_seconds(1);
+    Test.run_admin_command("revision_setup");
+    Test.run_admin_command("revision_catalog");
+    Test.assert_save_int("Featured excludes Fish and Armor", "revision_catalog_valid", 1);
+    Test.assert_save_int("Protected tags match recipient whitelist", "revision_restricted_tag_valid", 1);
+    Test.click_button("emotes-button");
+    Test.click_button("emote-offer#emote_0:0");
+    Test.assert_save_int("Griddy permanently owned", "emote_owned_v1_0", 1);
+    Test.assert_component_bool("Griddy player ownership", "", "Player.owned_emotes[0]", true);
+    Test.run_admin_command("revision_emote 1");
+    Test.assert_save_int("Shake permanently owned", "emote_owned_v1_1", 1);
+    Test.run_admin_command("revision_emote 2");
+    Test.assert_save_int("L-Dance permanently owned", "emote_owned_v1_2", 1);
+    Test.run_admin_command("revision_emote_price_check");
+    Test.assert_save_int("Emotes cost 1000 plus 2000 plus 5000", "revision_emote_spent", 8000);
+    Test.run_admin_command("revision_emote 0");
+    Test.run_admin_command("revision_emote_price_check");
+    Test.assert_save_int("Owned emotes are free to replay", "revision_emote_spent", 8000);
+    Test.run_admin_command("revision_morph");
+    Test.assert_component_int("Pileo morph", "", "Player.troll_reference_morph", 7);
+    Test.run_admin_command("revision_unmorph");
+    Test.assert_component_int("Pileo reverses", "", "Player.troll_reference_morph", 0);
+    Test.run_admin_command("revision_scare 4");
+    Test.assert_component_int("Verity jumpscare", "", "Player.troll_scare_type", 4);
+    Test.wait_seconds(2.5);
+    Test.run_admin_command("revision_scare 5");
+    Test.assert_component_int("Lovity jumpscare", "", "Player.troll_scare_type", 5);
+    Test.wait_seconds(2.5);
+    Test.run_admin_command("revision_scare 6");
+    Test.assert_component_int("Pair jumpscare", "", "Player.troll_scare_type", 6);
+}
+test_shop_revision_direct_control :: proc() {
+    Test.wait_seconds(1); Test.run_admin_command("revision_setup");
+    Test.teleport({0, -11}); Test.spawn_dummy_players(1); Test.wait_seconds(8);
+    Test.run_admin_command("revision_control"); Test.wait_seconds(1);
+    Test.assert_component_int("Direct rather than scripted mode", "Editor_1000", "Player.troll_control_mode", 5);
+    Test.move({1, 0}); Test.wait_seconds(1); Test.stop_moving();
+    Test.assert_component_float_range("Controller moves target", "Editor_1000", "Player.entity.world_position.x", 7, 14);
+    Test.assert_player_near("Controller body stays put", {0, -11}, 0.5);
+    Test.assert_ability_available("Target gun available", 0);
+    if Test.device_kind() == "pc" { Test.click_at({700, 250}, 0.2); }
+    else { Test.drag_ability(0, {1, 0}); }
+    Test.wait_seconds(0.3);
+    Test.run_admin_command("revision_control_check");
+    Test.assert_save_int("Firing consumes target ammo", "revision_target_fired", 1);
+    Test.click_button("control/drop"); Test.wait_seconds(0.2);
+    Test.assert_component_int("Target weapon dropped", "Editor_1000", "Player.equipped_weapon_type", 0);
+    Test.run_admin_command("revision_interaction"); Test.wait_seconds(0.3);
+    Test.interact(); Test.wait_seconds(0.3);
+    Test.run_admin_command("revision_interaction_check");
+    Test.assert_save_int("Proximity interaction uses target identity", "revision_target_interacted", 1);
+    Test.click_button("control/release"); Test.wait_seconds(0.2);
+    Test.assert_component_int("Control removed", "Editor_1000", "Player.troll_control_mode", 0);
+    Test.move({1, 0}); Test.wait_seconds(0.5); Test.stop_moving();
+    Test.assert_component_float_range("Controller free again", "", "Player.entity.world_position.x", 1, 5);
+}

@@ -155,9 +155,16 @@ load_progression :: proc(p: Player, legacy_tier: s64) {
         if p.equipped_armor.seconds_left > 0 { equip_armor(p, p.equipped_armor); }
     }
     for slot: 0..2 { p.equipped_badges[slot] = Save.get_item_reference(p, `equipped_badge_{slot}`); }
+    for item, slot: p.badge_inventory.slots() {
+        if !#alive(item) || item.#type != Badge_Item { continue; }
+        label := player_title_for(p, item.(Badge_Item).label);
+        if label == "" { Items.destroy_item_instance(item); }
+        else if item.(Badge_Item).label != label { item.(Badge_Item).label = label; Items.mark_item_dirty(item); }
+    }
+
     if p.user_tag != "" { unlock_title_badges(p, p.user_tag); }
     lower := to_lower(p.get_username());
-    if p.is_admin_user && (lower == "ilikepaperclips" || lower == "ilikealtaccounts") { unlock_badge(p, "paperclip"); }
+    if is_protected_admin(p) { unlock_badge(p, "Paperclip"); }
     if p.has_vip { unlock_badge(p, "VIP"); }
     if p.is_admin_user { unlock_badge(p, "Admin"); }
     if p.has_claimed_parkour_reward { unlock_badge(p, "Parkour"); }
@@ -180,6 +187,7 @@ update_armor_wear :: proc(p: Player, dt: float) {
 }
 
 unlock_badge :: proc(p: Player, label: string) {
+    label = player_title_for(p, label);
     if p.badge_inventory == null || label == "" { return; }
     for item, slot: p.badge_inventory.slots() {
         if #alive(item) && item.#type == Badge_Item && item.(Badge_Item).label == label { return; }
@@ -198,6 +206,7 @@ unlock_badge :: proc(p: Player, label: string) {
 
 toggle_badge :: proc(p: Player, item: Item_Instance) {
     if !#alive(item) || item.inventory != p.badge_inventory { return; }
+    if item.#type != Badge_Item || player_title_for(p, item.(Badge_Item).label) == "" { return; }
     for slot: 0..2 {
         if p.equipped_badges[slot] == item {
             p.equipped_badges[slot] = null; Save.save_item_reference(p, `equipped_badge_{slot}`, null); adventure_sound(p.entity); return;

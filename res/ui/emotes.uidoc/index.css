@@ -1,0 +1,10 @@
+.safe { position: fixed; inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); pointer-events: none; }
+.launcher, .stop { position: absolute; right: 26%; bottom: 12px; min-width: 104px; height: 52px; border: 1px solid #be8dff; border-radius: 12px; background: #392353; color: #ffffff; font-size: 20px; pointer-events: auto; }
+.stop { bottom: 72px; font-size: 16px; }
+.backdrop { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(5,9,20,0.8); pointer-events: auto; }
+.panel { display: flex; flex-direction: column; gap: 14px; padding: 20px; width: 100%; max-width: 460px; border: 2px solid #af7af0; border-radius: 18px; background: #192039; }
+.header { display: flex; justify-content: space-between; align-items: center; color: white; font-size: 28px; }
+.header button { width: 44px; height: 44px; border-radius: 8px; background: #67334b; color: white; font-size: 24px; }
+.balance { color: #ffdb77; font-size: 20px; }
+.offer { display: flex; align-items: center; justify-content: space-between; padding: 14px; min-height: 72px; gap: 12px; background: #323d60; border: 1px solid #8e86bd; border-radius: 12px; color: white; font-size: 21px; }
+.offer span { color: #ffdb77; font-size: 17px; }

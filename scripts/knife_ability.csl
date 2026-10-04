@@ -2,7 +2,7 @@ Knife_Ability :: class : Ability_Base {
     on_init :: method() { name = "Slash"; is_aimed_ability = true; }
     can_use :: method() -> bool { return player.(Player).equipped_weapon_type == .BACKSTAB_KNIFE; }
     on_update :: method(params: ref Ability_Update_Params) {
-        a := Ability_Utilities.full_update_aimed_ability(player, ref params);
+        a := control_full_aiming(player, ref params);
         if !a.activate { return; }
         current_cooldown = 0.5; p := player.(Player);
         knife_strike(p, a.direction, false); Tutorial.report_ability_used(this);

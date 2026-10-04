@@ -1,0 +1,21 @@
+Shop_Emote_Effect :: class : Effect_Base {
+    emote_index: s64;
+    sound_id: u64;
+    effect_start :: method() {
+        setup_shop_emotes(player);
+        player.animator.state_machine.try_get_layer("shop_emotes").reset_to_initial_state();
+        player.animator.state_machine.set_int("shop_emote", emote_index + 1);
+        set_duration(120);
+        desc := SFX.default_sfx_desc();
+        desc.entity_to_follow = entity.id; desc.volume = 0.2; desc.loop = true;
+        sound_id = SFX.play(get_asset(SFX_Asset, "$AO/sfx/character_emote_dance_loop_v2.wav"), desc);
+    }
+    effect_update :: method(dt: float) {
+        if player.is_dead || length_squared(player.input_this_frame) > 0.01 { remove_effect(true); return; }
+    }
+    effect_end :: method(interrupt: bool) {
+        SFX.stop(sound_id);
+        player.animator.state_machine.set_int("shop_emote", 0);
+        player.animator.state_machine.try_get_layer("shop_emotes").reset_to_initial_state();
+    }
+}

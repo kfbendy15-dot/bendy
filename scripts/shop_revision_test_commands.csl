@@ -1,0 +1,57 @@
+revision_setup :: proc(p: Player) {
+    p.delegated_admin = true;
+    current := Economy.get_balance(p, "Coins");
+    if current < 20000 { Economy.deposit_currency(p, "Coins", 20000 - current); }
+    Save.set_int(p, "revision_coins_before", Economy.get_balance(p, "Coins"));
+    p.show_shop = false; p.show_armor_shop = false; p.show_emotes = false;
+} @chat_command @owner_or_editor
+revision_emote :: proc(p: Player, index: s64) { purchase_or_play_emote(p, index); } @chat_command @owner_or_editor
+revision_morph :: proc(p: Player) { troll_do_reference_morph(p, p, 7); } @chat_command @owner_or_editor
+revision_unmorph :: proc(p: Player) { troll_do_unmorph(p, p); } @chat_command @owner_or_editor
+revision_control :: proc(p: Player) {
+    p.troll_mind_next_allowed = 0;
+    for target: component_iterator(Player) {
+        if target == p { continue; }
+        target.entity.set_world_position({5, -11});
+        set_player_invincible(target, true);
+        clear_session_inventory(target.default_inventory);
+        grant_weapon_with_ammo(target, .ASSAULT_RIFLE, 50);
+        equip_weapon_item_if_present(target, .ASSAULT_RIFLE);
+        Save.set_int(p, "revision_target_ammo_before", weapon_get_ammo_count(target, .ASSAULT_RIFLE));
+        start_direct_control(p, target); return;
+    }
+} @chat_command @owner_or_editor
+revision_release :: proc(p: Player) { stop_direct_control(p); } @chat_command @owner_or_editor
+revision_scare :: proc(p: Player, index: s64) { troll_do_jumpscare(p, p, index); } @chat_command @owner_or_editor
+revision_catalog :: proc(p: Player) {
+    valid := true;
+    for offer: event_shop_offers(false) { if offer.armor_tier > 0 || offer.weapon == .KILLER_FISH { valid = false; } }
+    Save.set_int(p, "revision_catalog_valid", valid ? 1 : 0);
+    Save.set_int(p, "revision_restricted_tag_valid", player_title_for(p, "Admin") == (is_protected_admin(p) ? "Admin" : "") && player_title_for(p, "Paperclip") == (is_protected_admin(p) ? "Paperclip" : "") && player_title_for(p, "Hunter") == "Hunter" ? 1 : 0);
+} @chat_command @owner_or_editor
+
+
+
+revision_control_check :: proc(p: Player) {
+    target := direct_control_target(p);
+    if !#alive(target) { Save.set_int(p, "revision_target_fired", 0); return; }
+    Save.set_int(p, "revision_target_fired", weapon_get_ammo_count(target, .ASSAULT_RIFLE) < Save.get_int(p, "revision_target_ammo_before", 0) ? 1 : 0);
+} @chat_command @owner_or_editor
+
+revision_interaction :: proc(p: Player) {
+    target := direct_control_target(p); if !#alive(target) { return; }
+
+    adventure_travel(target, 1); target.jump_daily_uses = 0;
+    e := Scene.create_entity(); e.set_name("revision-target-pad"); e.set_world_position(target.entity.world_position);
+    e.add_component(Placed_Jump_Pad, on_before_start=proc(i: Placed_Jump_Pad) { i.owner_user_id = target.get_user_id(); i.world = target.adventure_world; });
+} @chat_command @owner_or_editor
+revision_interaction_check :: proc(p: Player) {
+    target := direct_control_target(p);
+    if !#alive(target) { Save.set_int(p, "revision_target_interacted", 0); return; }
+    Save.set_int(p, "revision_target_interacted", target.jump_daily_uses > 0 ? 1 : 0);
+} @chat_command @owner_or_editor
+
+
+revision_emote_price_check :: proc(p: Player) {
+    Save.set_int(p, "revision_emote_spent", Save.get_int(p, "revision_coins_before", 0) - Economy.get_balance(p, "Coins"));
+} @chat_command @owner_or_editor
