@@ -1,0 +1,10 @@
+Lava_Claim :: class : Interactable {
+    ao_start :: method() { set_listener(this); set_text("Claim Lava Badge"); radius = 2; }
+    can_use :: method(p: Player) -> bool { return !p.is_dead && p.adventure_world == 3 && p.nether_safe; }
+    on_interact :: method(p: Player) {
+        Save.set_int(p, "lava_badge_unlocked", 1);
+        unlock_badge(p, "Lava"); p.user_tag = "Lava"; Save.set_string(p, PLAYER_TITLE_SAVE_KEY, "Lava");
+        p.play_reward_feedback("Lava Badge - yours forever"); adventure_sound(entity);
+        spawn_item_reward(p, "generated_6ac26505_e00dfe.png");
+    }
+}

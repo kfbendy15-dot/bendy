@@ -80,7 +80,7 @@ draw_hud :: proc(player: Player) {
         if UIK.clicked(home) { adventure_travel(player, 0); }
         if player.adventure_world == 1 {
             UIK.text(format_string("Splash · Shards %/9 · Jumps %/9", {adventure_rescue_count(player.shard_mask), player.jump_daily_uses}), UIK.text_body());
-        } else { UIK.text(format_string("Rescued %/10", {adventure_rescue_count(player.rescue_mask)}), UIK.text_body()); }
+        } else if player.adventure_world == 3 { UIK.text(player.nether_safe ? "Claim Lava" : `Nether - {ceil(max(0.0, 35 - player.nether_elapsed)).(s64)}s`, UIK.text_body()); } else { UIK.text(format_string("Rescued %/10", {adventure_rescue_count(player.rescue_mask)}), UIK.text_body()); }
     }
     // Coin balance
     coin_tex := get_asset(Texture_Asset, "Gold_Coin_Icon_d3f0f3.png");

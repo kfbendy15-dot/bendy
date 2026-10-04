@@ -1,0 +1,38 @@
+Nether_Hazard :: class : Component {
+    owner_user_id: string;
+    ghast: bool;
+    elapsed: float;
+    next_shot: float = 1.5;
+    next_hit: float;
+    ao_start :: method() {
+        texture := get_asset(Texture_Asset, ghast ? "generated_6ac26505_7ee6fa.png" : "generated_6ac26505_e00dfe.png");
+        sprite := entity.add_component(Sprite_Renderer); sprite.set_texture(texture); sprite.layer = 0;
+        size := (ghast ? 2.4 : 1.1) / max(texture.get_world_size().y, 0.01);
+        entity.set_local_scale({size, size});
+    }
+    ao_update :: method(dt: float) {
+        p := find_online_player_by_user_id(owner_user_id);
+        if !#alive(p) || p.adventure_world != 3 || p.nether_safe || p.is_dead { entity.destroy(); return; }
+        elapsed += dt;
+        if elapsed > 12 { entity.destroy(); return; }
+        delta := p.entity.world_position - entity.world_position;
+        distance := length(delta);
+        if distance > 0.1 {
+            entity.set_world_position(entity.world_position + normalize(delta) * (ghast ? 1.2 : 2.7) * dt);
+        }
+        if !ghast { entity.set_local_rotation(to_degrees(elapsed * 4)); }
+        if distance < (ghast ? 1.3 : 0.8) && get_time() >= next_hit {
+            next_hit = get_time() + 1;
+            weapon_target_apply_damage(p.weapon_target, ghast ? 25 : 20, entity.id);
+            adventure_sound(entity);
+        }
+        if ghast && elapsed >= next_shot && distance > 0.1 {
+            next_shot = elapsed + 2.5;
+            e := Scene.create_entity(); e.set_name("Ghast Fireball"); e.set_world_position(entity.world_position);
+            e.add_component(Nether_Fireball, on_before_start=proc(f: Nether_Fireball) {
+                f.owner_user_id = owner_user_id; f.velocity = normalize(delta) * 6;
+            });
+            adventure_sound(entity);
+        }
+    }
+}
