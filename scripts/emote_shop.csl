@@ -1,0 +1,78 @@
+emote_name :: proc(index: s64) -> string {
+    if index == 0 { return "The Griddy"; }
+    if index == 1 { return "Shake"; }
+    return "L-Dance";
+}
+emote_price :: proc(index: s64) -> s64 {
+    if index == 0 { return 1000; }
+    if index == 1 { return 2000; }
+    return 5000;
+}
+emote_clip :: proc(index: s64) -> string {
+    if index == 0 { return "Emote/Dance_Griddy"; }
+    if index == 1 { return "game/emote_shake"; }
+    return "Emote/Dance_L";
+}
+setup_shop_emotes :: proc(p: Player) {
+    sm := p.animator.state_machine;
+    if sm.try_get_layer("shop_emotes") != null { return; }
+    mode := sm.create_variable("shop_emote", .INT);
+    layer := sm.create_layer("shop_emotes", 6);
+    empty := layer.create_state("__CLEAR_TRACK__", true);
+    layer.set_initial_state(empty);
+    for index: 0..2 {
+        state := layer.create_state(emote_clip(index), true);
+        layer.create_global_transition(state, false).create_int_condition(mode, index + 1, .EQUAL);
+    }
+    layer.create_global_transition(empty, false).create_int_condition(mode, 0, .EQUAL);
+}
+purchase_or_play_emote :: proc(p: Player, index: s64) {
+    if !#alive(p) || index < 0 || index > 2 || p.is_dead { return; }
+    if !p.owned_emotes[index] {
+        if !spend_coins(p, emote_price(index)) { return; }
+        p.owned_emotes[index] = true;
+        Save.set_int(p, `emote_owned_v1_{index}`, 1);
+        p.play_reward_feedback(emote_name(index) + " unlocked");
+    }
+    effect := new(Shop_Emote_Effect);
+    effect.emote_index = index;
+    p.entity.set_active_effect(effect);
+    p.show_emotes = false;
+}
+on_emote_shop_event :: proc(event: UIDoc_Event, userdata: Object) {
+    p := userdata.(Player);
+    if event.handler == "event:emote:open" { p.show_emotes = !p.show_emotes; }
+    if event.handler == "event:emote:close" { p.show_emotes = false; }
+    if event.handler == "event:emote:stop" { remove_effect(p.entity, Shop_Emote_Effect, true); }
+    if event.handler == "event:emote:choose" {
+        for index: 0..2 { if event.key == `emote_{index}` { purchase_or_play_emote(p, index); } }
+    }
+}
+draw_emote_shop :: proc(p: Player) {
+    if !can_present_player(p) { return; }
+    UI.push_layer(30); defer UI.pop_layer();
+    UI.uidoc_clear_bindings();
+    UI.uidoc_bind_bool("open", p.show_emotes);
+    UI.uidoc_bind_bool("dancing", has_effect(p.entity, Shop_Emote_Effect));
+    UI.uidoc_bind_text("balance", `{Economy.get_balance(p, "Coins")} Coins`);
+    UI.uidoc_begin_list("emotes");
+    for index: 0..2 {
+        UI.uidoc_list_item(`emote_{index}`);
+        UI.uidoc_list_bind_text("id", `emote_{index}`);
+        UI.uidoc_list_bind_text("name", emote_name(index));
+        UI.uidoc_list_bind_text("state", p.owned_emotes[index] ? "Owned · Dance" : `{emote_price(index)} Coins`);
+    }
+    UI.uidoc_end_list();
+    UI.uidoc(get_asset(UIDoc_Asset, "ui/emotes.uidoc"), false, p, on_emote_shop_event);
+}
+
+refresh_shop_emote_presentation :: proc(p: Player) {
+    rig := get_asset(Spine_Asset, "reusable_weapons/anims/reusable-weapons/player/player.merged_spine_rig#output");
+    if p.animator.get_skeleton() != rig {
+        p.animator.set_skeleton(rig);
+        p.animator.enable_skin("base/crewchsia"); p.animator.refresh_skins();
+    }
+    setup_shop_emotes(p);
+    effect, found := get_effect(p.entity, Shop_Emote_Effect);
+    p.animator.state_machine.set_int("shop_emote", found ? effect.emote_index + 1 : 0);
+}

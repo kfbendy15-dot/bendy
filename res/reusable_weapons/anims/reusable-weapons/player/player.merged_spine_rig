@@ -1,5 +1,5 @@
 {
-    "base_rig": "reusable_weapons/anims/reusable-weapons/player/013RED_Player_Character.spine",
+    "base_rig": "shop_emote_player_v2/013RED_Player_Character.spine",
     "rigs_to_merge": [
         { "rig": "$AO/schleem/playercharacter.spine" },
         { "rig": "reusable_weapons/anims/reusable-weapons/weapons/013RED_weapons.spine" },

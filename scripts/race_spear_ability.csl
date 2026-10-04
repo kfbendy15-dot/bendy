@@ -2,7 +2,7 @@ Race_Spear_Ability :: class : Ability_Base {
     on_init :: method() { name = "Spear"; is_aimed_ability = true; }
     can_use :: method() -> bool { return g_event_peace_race && get_time() >= g_race_starts_at; }
     on_update :: method(params: ref Ability_Update_Params) {
-        a := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
+        a := control_targeted_aiming(player, this, ref params);
         if !a.activate { return; }
         current_cooldown = 5;
         p := player.(Player); e := Scene.create_entity(); e.set_world_position(p.entity.world_position + a.direction);

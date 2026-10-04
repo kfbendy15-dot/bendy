@@ -103,7 +103,7 @@ draw_health_bar :: proc(player: Player) {
         tag_slot: s64 = 0;
         for item: player.equipped_badges {
             if !#alive(item) || item.#type != Badge_Item { continue; }
-            label := allowed_player_title(item.(Badge_Item).label);
+            label := player_title_for(player, item.(Badge_Item).label);
             if label == "" { continue; }
             if label == "Admin" && !player.show_admin_tag { continue; }
             draw_player_role_tag(player, label, tag_slot, {1.0, 0.86, 0.18, 1.0});

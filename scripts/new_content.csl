@@ -332,7 +332,7 @@ Distortion_Ability :: class : Ability_Base {
         return true;
     }
     on_update :: method(params: ref Ability_Update_Params) {
-        activation := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
+        activation := control_targeted_aiming(player, this, ref params);
         // Use secondary activation: we treat any click as vortex if cooldown ready, but primary fire is handled by Single_Shot
         // Here we check for hold activation separate from primary
         if activation.activate && current_cooldown <= 0 {
@@ -481,7 +481,7 @@ Buzz_Laser_Ability :: class : Ability_Base {
     }
 
     on_update :: method(params: ref Ability_Update_Params) {
-        activation := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
+        activation := control_targeted_aiming(player, this, ref params);
         if activation.activate && current_cooldown <= 0 {
             p := player.(Player);
             dir := activation.direction;

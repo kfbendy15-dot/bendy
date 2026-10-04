@@ -1,0 +1,114 @@
+is_directly_controlled :: proc(p: Player) -> bool {
+    return p.troll_control_owner_id != "" && get_time() < p.troll_control_until;
+}
+direct_control_target :: proc(owner: Player) -> Player {
+    if owner.control_target_id == "" { return null; }
+    target := find_online_player_by_user_id(owner.control_target_id);
+    if !#alive(target) || target.is_dead || target.troll_control_owner_id != owner.get_user_id() || !is_directly_controlled(target) { return null; }
+    return target;
+}
+control_input_player :: proc(p: Player) -> Player {
+    if is_directly_controlled(p) {
+        owner := find_online_player_by_user_id(p.troll_control_owner_id);
+        if #alive(owner) { return owner; }
+    }
+    return p;
+}
+can_present_player :: proc(p: Player) -> bool { return control_input_player(p).is_local_or_server(); }
+control_device :: proc(p: Player) -> Device_Kind { return control_input_player(p).device_kind; }
+start_direct_control :: proc(owner: Player, target: Player) -> bool {
+    if !can_access_troll_panel(owner) || !#alive(target) || target == owner || target.is_dead || owner.is_dead { return false; }
+    if is_directly_controlled(owner) || is_directly_controlled(target) || target.control_target_id != "" { return false; }
+    if get_time() < owner.troll_mind_next_allowed { owner.play_reward_feedback("Mind control cooling down"); return false; }
+    stop_direct_control(owner);
+    owner.control_target_id = target.get_user_id();
+    target.troll_control_owner_id = owner.get_user_id();
+    target.troll_control_until = get_time() + TROLL_MIND_DURATION;
+    target.troll_control_mode = 5;
+    owner.troll_mind_next_allowed = get_time() + TROLL_MIND_COOLDOWN;
+    owner.show_troll_panel = false; owner.active_ability = null; target.active_ability = null;
+    anchor := new(Control_Anchor_Effect); anchor.set_duration(TROLL_MIND_DURATION);
+    owner.entity.add_passive_effect(anchor);
+    effect := new(Direct_Control_Effect); effect.owner_id = owner.get_user_id(); effect.set_duration(TROLL_MIND_DURATION);
+    target.entity.add_passive_effect(effect);
+    proxy := Scene.create_entity(); proxy.set_parent(owner.entity, false);
+    proxy.add_component(Control_Interactable, on_before_start=proc(i: Control_Interactable) { i.owner_id = owner.get_user_id(); });
+    adventure_sound(target.entity);
+    owner.play_reward_feedback("Controlling " + target.get_username());
+    return true;
+}
+stop_direct_control :: proc(owner: Player) {
+    target := find_online_player_by_user_id(owner.control_target_id);
+    owner.control_target_id = "";
+    if #alive(target) && target.troll_control_owner_id == owner.get_user_id() { remove_effect(target.entity, Direct_Control_Effect, true); }
+    remove_effect(owner.entity, Control_Anchor_Effect, true);
+}
+tick_direct_control :: proc(p: Player) {
+    if p.control_target_id != "" && (!#alive(direct_control_target(p)) || p.is_dead || !can_access_troll_panel(p)) { stop_direct_control(p); }
+}
+// The real target abilities keep their own cooldowns/ammo/ownership. Only input UI belongs to the controller.
+draw_control_ability :: proc(input_owner: Player, target: Player, $T: typeid, index: int) {
+    if input_owner == target { draw_ability_button(target, T, index); return; }
+    saved_active := input_owner.active_ability;
+    input_owner.active_ability = target.active_ability;
+    defer { target.active_ability = input_owner.active_ability; input_owner.active_ability = saved_active; }
+    saved := input_owner.abilities;
+    input_owner.abilities = target.abilities;
+    defer input_owner.abilities = saved;
+    draw_ability_button(input_owner, T, index);
+}
+draw_control_session :: proc(owner: Player, target: Player) {
+    UIK.begin(UIK.window(UI.get_safe_screen_rect().top_center_rect().grow_bottom(112).grow(0, 180, 0, 180).offset(0, -85)));
+    result := UIK.button("control/release", "Release " + target.get_username(), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_RED));
+    item: Item_Instance;
+    if target.last_selected_index >= 0 && target.last_selected_index < target.default_inventory.capacity { item = target.default_inventory.get_item(target.last_selected_index); }
+    drop := UIK.button("control/drop", "Drop held item", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE));
+    UIK.end();
+    if UIK.clicked(result) { stop_direct_control(owner); }
+    else if UIK.clicked(drop) && #alive(item) {
+        Items.remove_item_from_inventory(item, target.default_inventory);
+        dropped := Dropped_Item.spawn(target.entity.world_position, item);
+        rng := rng_root_seed(); dropped.do_spawn_animation(ref rng);
+        target.handle_equipped_item_changing(target.last_selected_index);
+        adventure_sound(target.entity);
+    }
+}
+
+control_aiming :: proc(p: Player, params: ref Ability_Update_Params) -> Ability_Utilities.Aiming_Ability_Result {
+    result := Ability_Utilities.update_aiming_ability(control_input_player(p), ref params);
+    if control_device(p) == .PC && (result.aim || result.activate) { result.aim_direction = normalize(get_mouse_world_position() - p.entity.world_position); }
+    return result;
+}
+
+control_targeted_aiming :: proc(p: Player, ability: Ability_Base, params: ref Ability_Update_Params) -> Ability_Utilities.Full_Targeted_Aimed_Ability_Result {
+    owner := control_input_player(p);
+    if owner == p { return Ability_Utilities.full_update_targeted_aimed_ability(p, ability, ref params); }
+    result: Ability_Utilities.Full_Targeted_Aimed_Ability_Result;
+    targeted := Ability_Utilities.update_targeted_ability(owner, ability, ref params);
+    if targeted.targeting {
+        aiming := control_aiming(p, ref params);
+        result.direction = aiming.aim_direction;
+        if aiming.cancel { owner.active_ability = null; }
+        if aiming.aim {
+            previous := p.last_aim_direction; p.last_aim_direction = aiming.aim_direction;
+            draw_aiming_line(p.entity.world_position, aiming.aim_direction, 4.0 / owner.camera.size, p.entity.calculate_interpolation_offset(), previous, 4.0 / owner.camera.size_last_frame);
+        }
+        if aiming.activate { owner.active_ability = null; result.activate = params.can_use; }
+    }
+    return result;
+}
+control_full_aiming :: proc(p: Player, params: ref Ability_Update_Params) -> Ability_Utilities.Full_Aimed_Ability_Result {
+    owner := control_input_player(p);
+    if owner == p { return Ability_Utilities.full_update_aimed_ability(p, ref params); }
+    result: Ability_Utilities.Full_Aimed_Ability_Result;
+    if owner.active_ability == null {
+        aiming := control_aiming(p, ref params);
+        result.direction = aiming.aim_direction;
+        if aiming.aim {
+            previous := p.last_aim_direction; p.last_aim_direction = aiming.aim_direction;
+            draw_thin_aiming_line(p.entity.world_position, aiming.aim_direction, 4.0 / owner.camera.size, p.entity.calculate_interpolation_offset(), previous, 4.0 / owner.camera.size_last_frame);
+        }
+        if aiming.activate { result.activate = params.can_use; }
+    }
+    return result;
+}

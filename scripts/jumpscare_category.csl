@@ -1,0 +1,23 @@
+draw_jumpscare_category :: proc(admin: Player) {
+    if !admin.is_local_or_server() || !can_access_troll_panel(admin) { return; }
+    UIK.begin(UIK.modal(UIK.rect_window_large(), 20));
+    UIK.panel_begin(UIK.panel_modal(.BLACK));
+    exit := UIK.title_area(UIK.title_area_desc("Jumpscares"));
+    body := UIK.layout_column();
+    body.width = UIK.flex(1); body.height = UIK.flex(1); body.gap = 8;
+    UIK.list_begin("jumpscares/list", body);
+    targets: [..]string; target_buttons: [..]Interact_Result;
+    for target: component_iterator(Player) {
+        targets.append(target.get_username());
+        target_buttons.append(UIK.button("jumpscares/target/" + target.get_username(), target.get_username(), UIK.widget_desc_button_auto_default(.BUTTON_BASIC_GREY)));
+    }
+    UIK.text("Target: " + admin.troll_target_username, UIK.text_body());
+    buttons: [7]Interact_Result;
+    for index: 0..6 {
+        buttons[index] = UIK.button(`jumpscares/{index}`, troll_jumpscare_name(index), UIK.widget_desc_button_auto_default(troll_can_jumpscare(admin, index) ? .BUTTON_BASIC_RED : .BUTTON_BASIC_GREY));
+    }
+    UIK.list_end(); UIK.panel_end(); UIK.end();
+    if UIK.clicked(exit) { admin.show_jumpscares = false; }
+    for name, index: targets { if UIK.clicked(target_buttons[index]) { admin.troll_target_username = name; } }
+    for index: 0..6 { if UIK.clicked(buttons[index]) { target := troll_find_target(admin); if #alive(target) { troll_do_jumpscare(admin, target, index); } } }
+}

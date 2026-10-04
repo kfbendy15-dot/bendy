@@ -1,0 +1,44 @@
+// A private native prompt forwards proximity/hold interactions to the possessed body.
+Control_Interactable :: class : Interactable {
+    owner_id: string;
+    candidate_id: u64;
+    changed_frame: u64;
+    ao_start :: method() { set_listener(this); priority = 100000; radius = 2; set_text("Interact"); }
+    get_candidate :: method(target: Player) -> Interactable {
+        target.control_forwarding_interact = true;
+        defer target.control_forwarding_interact = false;
+        best: Interactable; best_distance := 1000000.0;
+        for i: component_iterator(Interactable) {
+            if i.#type == Control_Interactable || !i.entity.get_world_enabled() || !#alive(i.listener) { continue; }
+            offset := i.offset * i.entity.world_scale;
+            angle := to_radians(i.entity.world_rotation);
+            centre := i.entity.world_position + v2{offset.x * cos(angle) - offset.y * sin(angle), offset.x * sin(angle) + offset.y * cos(angle)};
+            distance := length(centre - target.entity.world_position);
+            range := i.radius * max(abs(i.entity.world_scale.x), abs(i.entity.world_scale.y));
+            if distance > range || !core_can_use_interactable(i, target) { continue; }
+            if !#alive(best) || i.priority > best.priority || (i.priority == best.priority && distance < best_distance) { best = i; best_distance = distance; }
+        }
+        return best;
+    }
+    ao_update :: method(dt: float) {
+        owner := find_online_player_by_user_id(owner_id);
+        if !#alive(owner) || !#alive(direct_control_target(owner)) { entity.destroy(); return; }
+        target := direct_control_target(owner);
+        prompt_offset = (target.entity.world_position - entity.world_position) / entity.world_scale + v2{0, 1};
+        old_id := candidate_id;
+        i := get_candidate(target);
+        if #alive(i) { set_text(i.get_text()); set_subtitle(i.get_subtitle()); set_hold_text(i.get_hold_text()); required_hold_time = i.required_hold_time; candidate_id = i.entity.id; }
+        else { candidate_id = 0; }
+        if candidate_id != old_id { changed_frame = get_frame_number(); }
+    }
+    can_use :: method(p: Player) -> bool { return p.get_user_id() == owner_id && #alive(direct_control_target(p)) && candidate_id != 0 && changed_frame != get_frame_number(); }
+    on_interact :: method(p: Player) {
+        target := direct_control_target(p); if !#alive(target) { return; }
+        i := get_candidate(target); if #alive(i) && i.entity.id == candidate_id { core_on_interactable_used(i, target); }
+    }
+    on_holding :: method(p: Player) {
+        target := direct_control_target(p); if !#alive(target) { return; }
+        i := get_candidate(target); if #alive(i) && i.entity.id == candidate_id { core_on_holding_interactable(i, target); }
+    }
+}
+

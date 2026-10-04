@@ -11,7 +11,7 @@ Peace_Race_Dash_Ability :: class : Ability_Base {
 
     on_update :: method(params: ref Ability_Update_Params) {
 
-        activation := Ability_Utilities.full_update_aimed_ability(player, ref params);
+        activation := control_full_aiming(player, ref params);
         if !activation.activate {
             return;
         }

@@ -1,0 +1,4 @@
+Control_Anchor_Effect :: class : Effect_Base {
+    effect_start :: method() { player_specific.freeze_player = true; }
+    effect_end :: method(interrupt: bool) { stop_direct_control(player); }
+}

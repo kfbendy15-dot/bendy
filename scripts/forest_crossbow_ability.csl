@@ -2,7 +2,7 @@ Forest_Crossbow_Ability :: class : Ability_Base {
     on_init :: method() { name = "Crossbow"; is_aimed_ability = true; icon = get_asset(Texture_Asset, "crossbow_0b6184.png"); }
     can_use :: method() -> bool { return player.(Player).adventure_world == 2; }
     on_update :: method(params: ref Ability_Update_Params) {
-        result := Ability_Utilities.full_update_targeted_aimed_ability(player, this, ref params);
+        result := control_targeted_aiming(player, this, ref params);
         if !result.activate return;
         current_cooldown = 2.5;
         p := player.(Player);

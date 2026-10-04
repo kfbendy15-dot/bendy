@@ -28,7 +28,6 @@ event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
 
     if g_event_kingofbilly {
         if admin_shop { offers.append({.KINGOFBILLY_PISTOL, 500, "Kingofbilly Pistol", 0}); }
-        offers.append({.NONE, 10000, "Kingofbilly Hat · Damage ÷26", 14});
     }
     if g_event_birthday {
 
@@ -50,7 +49,6 @@ event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
 
         offers.append({.SHURIKEN, ADMIN_SHOP_GUN_COST, "Shuriken", 0});
 
-        offers.append({.KILLER_FISH, 60, "Killer Fish", 0});
 
         offers.append({.GLACIATOR, ADMIN_SHOP_GUN_COST, "Glaciator", 0});
 
@@ -78,7 +76,7 @@ event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
 
         case 2: { offers.append(admin_shop ? Event_Shop_Offer{.HYDRO_CANNON, ADMIN_SHOP_GUN_COST, "Hydro Cannon", 0} : Event_Shop_Offer{.WATER_GUN, 30, "Water Gun", 0}); }
 
-        case 3: { offers.append(admin_shop ? Event_Shop_Offer{.SHURIKEN, ADMIN_SHOP_GUN_COST, "Shuriken", 0} : Event_Shop_Offer{.KILLER_FISH, 60, "Killer Fish", 0}); }
+        case 3: { if admin_shop { offers.append({.SHURIKEN, ADMIN_SHOP_GUN_COST, "Shuriken", 0}); } }
 
         case 4: { offers.append(admin_shop ? Event_Shop_Offer{.GLACIATOR, ADMIN_SHOP_GUN_COST, "Glaciator", 0} : Event_Shop_Offer{.ICE_LAUNCHER, 85, "Ice Launcher", 0}); }
 
@@ -98,9 +96,6 @@ event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
 
     }
 
-    if g_event_sun { offers.append({.NONE, SUN_ARMOR_COST, "Sun Armor", 8}); }
-    if g_event_tadc { offers.append({.NONE, JESTER_ARMOR_COST, "Jester Armor", 10}); }
-    if g_event_cyber_energy { offers.append({.NONE, CYBER_ARMOR_COST, "Cyber Armor", 11}); }
 
     if g_event_void2 { offers.append({.DISTORTION, 500, "Distortion", 0}); }
 
@@ -124,7 +119,6 @@ event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
 
     }
 
-    offers.append({.KILLER_FISH, 60, "Killer Fish", 0});
     if g_event_mrlovebraids {
         offers.append({.WILDCAT, 150, "Wildcat", 0});
         offers.append({.FLING_BAT, FLING_BAT_COST, "Baseball Bat", 0});
@@ -133,7 +127,6 @@ event_shop_offers :: proc(admin_shop: bool) -> [..]Event_Shop_Offer {
 
         offers.append({.LASERNICK_GRAPPLER, LASERNICK_GRAPPLER_COST, "Lasernick's Grappler", 0});
 
-        offers.append({.NONE, DURP_SPACE_ARMOR_COST, "Durp Space Armor · Damage ÷30", 13});
 
     }
 

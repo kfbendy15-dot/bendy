@@ -1,0 +1,8 @@
+<div class="safe">
+<button id="emotes-button" class="launcher" data-on-click="event:emote:open">Emotes</button>
+<button id="stop-emote" class="stop" data-if="dancing" data-on-click="event:emote:stop">Stop dance</button>
+<div class="backdrop" data-if="open"><div class="panel">
+<div class="header"><strong>Emotes</strong><button id="emotes-close" data-on-click="event:emote:close">×</button></div>
+<div class="balance">{{balance}}</div>
+<button class="offer" id="emote-offer" data-for="emote in emotes" data-for-key="emote.id" data-on-click="event:emote:choose"><strong>{{emote.name}}</strong><span>{{emote.state}}</span></button>
+</div></div></div>

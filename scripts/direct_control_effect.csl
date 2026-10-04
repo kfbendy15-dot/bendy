@@ -1,0 +1,19 @@
+Direct_Control_Effect :: class : Effect_Base {
+    owner_id: string;
+    effect_start :: method() { player_specific.disable_movement_inputs = true; }
+    effect_update :: method(dt: float) {
+        owner := find_online_player_by_user_id(owner_id);
+        if !#alive(owner) || owner.is_dead || player.is_dead || owner.control_target_id != player.get_user_id() || !can_access_troll_panel(owner) { remove_effect(true); return; }
+        player.input_this_frame = owner.input_this_frame;
+        if get_time() >= player.troll_frozen_until { player.override_movement_input_for_next_step(owner.input_this_frame); }
+    }
+    effect_end :: method(interrupt: bool) {
+        player.troll_control_owner_id = ""; player.troll_control_until = 0; player.troll_control_mode = 0;
+        player.active_ability = null; player.agent.velocity = {0, 0};
+        owner := find_online_player_by_user_id(owner_id);
+        if #alive(owner) && owner.control_target_id == player.get_user_id() {
+            owner.control_target_id = "";
+            remove_effect(owner.entity, Control_Anchor_Effect, true);
+        }
+    }
+}

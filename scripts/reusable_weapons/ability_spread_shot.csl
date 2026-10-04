@@ -25,23 +25,23 @@ Spread_Shot_Ability :: class : Ability_Base {
 
         ability.icon = get_asset(Texture_Asset, config.weapon_icon_path);
 
-        aiming := Ability_Utilities.update_aiming_ability(p, ref params);
+        aiming := control_aiming(p, ref params);
         aiming.aim_direction = normalize(aiming.aim_direction + v2{0, p.gun_recoil});
 
         if aiming.aim {
             p.last_aim_direction = aiming.aim_direction;
             p.set_aim_target(p.entity.world_position + aiming.aim_direction * 5.0);
-            draw_thin_aiming_line(p.entity.world_position, aiming.aim_direction, 1.0);
+            draw_thin_aiming_line(p.entity.world_position, aiming.aim_direction, 1.0, p.entity.calculate_interpolation_offset());
         }
 
-        if p.device_kind == .PC {
+        if control_device(p) == .PC {
             p.set_mouse_ik_enabled(aiming.aim);
         } else {
             p.set_mouse_ik_enabled(false);
         }
 
         should_fire := false;
-        if p.device_kind == .PC {
+        if control_device(p) == .PC {
             should_fire = aiming.activate;
         } else {
             should_fire = aiming.aim;
