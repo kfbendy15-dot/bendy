@@ -64,24 +64,6 @@ update_requested_player :: proc(p: Player, dt: float) {
     if !wild && p.wildcat_speed_active { p.agent.movement_speed = p.wildcat_base_speed; p.wildcat_speed_active = false; }
     p.gun_recoil = max(0.0, p.gun_recoil - dt * 0.2);
     if p.input_this_frame.y < -0.2 { p.gun_recoil = max(0.0, p.gun_recoil - dt * 4); }
-    near_wall := false;
-    if p.is_mimicer && !p.is_dead {
-        for wall: component_iterator(Box_Collider) {
-            if wall.is_trigger || wall.entity == p.entity { continue; }
-            low, high := wall.get_min_and_max_world(); pos := p.entity.world_position;
-            closest := v2{clamp(pos.x, low.x, high.x), clamp(pos.y, low.y, high.y)};
-            if length(pos - closest) < 1.25 { near_wall = true; }
-        }
-        for mesh: component_iterator(Navmesh) {
-            for i: 0..7 {
-                angle := i.(float) * PI / 4;
-                hit, ok := mesh.try_raycast(p.entity.world_position, v2{cos(angle), sin(angle)} * 1.3);
-                if ok && length(hit - p.entity.world_position) < 1.25 { near_wall = true; }
-            }
-        }
-    }
-    if near_wall && !p.mimicer_wall_hidden { p.add_invisibility_reason("mimicer_wall"); p.mimicer_wall_hidden = true; }
-    if !near_wall && p.mimicer_wall_hidden { p.remove_invisibility_reason("mimicer_wall"); p.mimicer_wall_hidden = false; }
     if g_event_peace_race && (get_time() < g_race_starts_at || p.race_finished) { p.override_movement_input_for_next_step({0, 0}); }
 }
 draw_requested_melee :: proc(p: Player) -> [..]Event_Shop_Card {

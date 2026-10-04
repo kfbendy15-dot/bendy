@@ -6,7 +6,7 @@ allowed_player_title :: proc(title: string) -> string {
     return "";
 }
 is_combat_ability :: proc(ability: Ability_Base) -> bool {
-    return ability.#type == Continuous_Fire_Ability || ability.#type == Single_Shot_Ability || ability.#type == Spread_Shot_Ability || ability.#type == Lobbed_Shot_Ability || ability.#type == Beam_Ability || ability.#type == Special_Ability || ability.#type == Fling_Bat_Ability || ability.#type == Hair_Trap_Ability || ability.#type == Lasernick_Grappler_Ability || ability.#type == Forest_Sword_Ability || ability.#type == Forest_Crossbow_Ability || ability.#type == Parry_Ability || ability.#type == Abstraction_Ability || ability.#type == Distortion_Ability || ability.#type == Birthday_Cake_Trap_Ability || ability.#type == Mimicer_Attack_Ability;
+    return ability.#type == Continuous_Fire_Ability || ability.#type == Single_Shot_Ability || ability.#type == Spread_Shot_Ability || ability.#type == Lobbed_Shot_Ability || ability.#type == Beam_Ability || ability.#type == Special_Ability || ability.#type == Fling_Bat_Ability || ability.#type == Hair_Trap_Ability || ability.#type == Lasernick_Grappler_Ability || ability.#type == Forest_Sword_Ability || ability.#type == Forest_Crossbow_Ability || ability.#type == Parry_Ability || ability.#type == Abstraction_Ability || ability.#type == Distortion_Ability || ability.#type == Birthday_Cake_Trap_Ability;
 }
 admin_auto_aim :: proc(p: Player, fallback: v2) -> v2 {
     if !p.admin_aimbot || !can_access_admin_panel(p) { return fallback; }

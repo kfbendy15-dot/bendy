@@ -572,7 +572,7 @@ is_player_invisible_for_targeting :: proc(player: Player) -> bool {
         return false;
     }
 
-    return player.mimicer_wall_hidden || player.admin_invisible_active || player.admin_gun_invisible_effect_count > 0 || player.powerup_invisible_active || player.powerup_invisible_effect_count > 0;
+    return player.admin_invisible_active || player.admin_gun_invisible_effect_count > 0 || player.powerup_invisible_active || player.powerup_invisible_effect_count > 0;
 }
 
 strip_admin_weapons :: proc(player: Player) {
@@ -1255,7 +1255,6 @@ Player :: class : Player_Base {
     show_caylus_map: bool;
     caylus_map_dismissed: bool;
     player_element: s64;
-    show_mimicer_selector: bool;
     show_minigames: bool;
     user_tag: string;
 
@@ -1299,11 +1298,6 @@ Player :: class : Player_Base {
     purchased_paper_gun: bool;
     is_admin_user: bool;
     delegated_admin: bool;
-    is_mimicer: bool;
-    mimicer_killed_ids: [..]string;
-    mimicer_forms: [..]Mimicer_Form;
-    mimicer_selected_form: s64 = -1;
-    mimicer_wall_hidden: bool;
     wildcat_speed_active: bool;
     wildcat_base_speed: float;
     gun_magazine: [68]s64;
@@ -1355,14 +1349,6 @@ Player :: class : Player_Base {
     admin_aimbot: bool;
     parry_owned: bool;
     parry_ready: bool;
-    mimicer_form_target_user_id: string;
-    mimicer_form_expires_at: float;
-    mimicer_saved_look_valid: bool;
-    mimicer_saved_name_override: string;
-    mimicer_saved_do_name_color_override: bool;
-    mimicer_saved_name_color_override: v4;
-    mimicer_saved_anim_tint: v4;
-    mimicer_saved_skins: []string;
     vs_target_user_id: string;
     ui_test_bonus_bullets_pending: bool;
     survive_mode_killed_by_creature: bool;
@@ -1571,9 +1557,7 @@ Player :: class : Player_Base {
         if user_tag == "PAPERCLIP" && !is_admin_user {
             user_tag = "";
         }
-        is_mimicer = false;
         shop_tab_index = 0;
-        show_mimicer_selector = false;
         show_minigames = false;
         armor_bonus_health = 0;
         armor_save_version := Save.get_int(this, ARMOR_SAVE_VERSION_KEY, 0);
@@ -1623,13 +1607,6 @@ Player :: class : Player_Base {
         caylus_map_dismissed = false;
         player_element = 0;
         gun_mutation_element = 0;
-        mimicer_form_target_user_id = "";
-        mimicer_form_expires_at = 0;
-        mimicer_saved_look_valid = false;
-        mimicer_saved_name_override = "";
-        mimicer_saved_do_name_color_override = false;
-        mimicer_saved_name_color_override = {1, 1, 1, 1};
-        mimicer_saved_anim_tint = {1, 1, 1, 1};
         vs_target_user_id = "";
         is_in_backrooms = false;
         backrooms_return_position = entity.world_position;
@@ -1698,11 +1675,7 @@ Player :: class : Player_Base {
     }
 
     ao_on_state_sync :: method() {
-        if is_mimicer && mimicer_selected_form >= 0 && mimicer_selected_form < mimicer_forms.count {
-            animator.disable_all_skins();
-            for skin: mimicer_forms[mimicer_selected_form].skins { if skin != "" { animator.enable_skin(skin); } }
-            animator.refresh_skins();
-        }
+
         refresh_requested_appearance(this);
     }
 
@@ -1862,9 +1835,7 @@ Player :: class : Player_Base {
             }
         }
 
-        if is_mimicer && mimicer_form_target_user_id != "" && mimicer_form_expires_at > 0 && get_time() >= mimicer_form_expires_at {
-            restore_mimicer_form(this);
-        }
+
 
         update_role_mode_player(this, dt);
         troll_tick(this, dt);
@@ -1948,9 +1919,7 @@ Player :: class : Player_Base {
                 draw_troll_status_overlays(this);
                 draw_sniper_overlays(this);
             }
-            if show_mimicer_selector {
-                draw_mimicer_selector(this);
-            }
+
             if show_minigames {
                 draw_minigames(this);
             }
@@ -1960,17 +1929,13 @@ Player :: class : Player_Base {
         if is_local_or_server() && !is_dead {
             if g_event_peace_race {
                 if !race_finished { Tutorial_Cue.world(this, race_waypoint(race_checkpoint)); }
-                draw_ability_button(this, Mimicer_Dash_Ability, 0);
+                draw_ability_button(this, Peace_Race_Dash_Ability, 0);
                 draw_ability_button(this, Race_Spear_Ability, 1);
             } else if adventure_world == 2 {
                 draw_ability_button(this, Forest_Crossbow_Ability, 0);
                 draw_ability_button(this, Forest_Sword_Ability, 1);
             } else if adventure_world == 1 {
                 draw_ability_button(this, Place_Jump_Pad_Ability, 0);
-            } else if is_mimicer {
-                draw_ability_button(this, Mimicer_Attack_Ability, 0);
-                draw_ability_button(this, Mimicer_Dash_Ability, 1);
-                draw_ability_button(this, Mimicer_Shapeshift_Ability, 2);
             } else {
                 if role_mode_role == .MEDIC { draw_ability_button(this, Medic_Revive_Ability, 1); }
                 if role_mode_role == .FLAGGER { draw_ability_button(this, Flagger_Buff_Ability, 1); }

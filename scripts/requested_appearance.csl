@@ -1,0 +1,15 @@
+refresh_requested_appearance :: proc(p: Player) {
+    if !#alive(p.animator) { return; }
+    // The 2D engine offers flat/narrow versus full-depth-styled character presentation.
+    p.animator.scale = p.visual_2d ? v2{0.72, 1} : v2{1, 1};
+    if p.armor_tier == 14 && !p.troll_morph_active {
+        p.animator.enable_skin("hat/cowboy_hat"); p.animator.refresh_skins();
+    }
+
+}
+draw_dimension_toggle :: proc(p: Player) {
+    UIK.begin(UIK.window(UI.get_safe_screen_rect().right_center_rect().grow(100, 0, 0, 50).offset(-12, -100)));
+    h := UIK.button("hud/dimension", p.visual_2d ? "2D" : "3D", UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE));
+    UIK.end();
+    if UIK.clicked(h) { p.visual_2d = !p.visual_2d; refresh_requested_appearance(p); adventure_sound(p.entity); }
+}
