@@ -73,7 +73,7 @@ weapon_target_apply_damage :: proc(target: Weapon_Target, damage: float, attacke
 
     if damage <= 0 || target.health <= 0 { return; }
     player := target.entity.get_component(Player);
-    if player != null && player.is_dead { return; }
+    if player != null && (player.is_dead || (player.adventure_world == 3 && player.nether_safe)) { return; }
     for defender: component_iterator(Player) {
         if defender.entity == target.entity && defender.parry_ready && attacker_id != defender.entity.id {
             defender.parry_ready = false;

@@ -41,7 +41,7 @@ reference_morph_name :: proc(kind: s64) -> string {
     if kind == 6 { return "Kingofbilly"; }
     if kind == 4 { return "Paperclips"; }
     if kind == 2 { return "Lovity"; }
-    if kind == 3 { return "Mrlovebraids & Marcat"; }
+    if kind == 3 { return "Mrlovebraids & Lily"; }
     return "Verity";
 }
 update_verity_visual :: proc(p: Player) {

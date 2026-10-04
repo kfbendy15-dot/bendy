@@ -1,0 +1,25 @@
+NETHER_DURATION :: 35.0;
+update_nether :: proc(p: Player, dt: float) {
+    if p.adventure_world != 3 || p.nether_safe || p.is_dead || p.out_of_bounds_respawn_active { return; }
+    p.nether_elapsed += dt;
+    if p.nether_elapsed >= NETHER_DURATION {
+        p.nether_safe = true;
+        p.agent.velocity = {0, 0};
+        p.entity.set_world_position({444, -2}); p.entity.mark_teleported();
+        p.play_reward_feedback("Survived! Claim Lava"); adventure_sound(p.entity);
+        return;
+    }
+    if p.nether_elapsed < p.nether_next_wave { return; }
+    p.nether_next_wave = p.nether_elapsed + 4;
+    wave := floor(p.nether_elapsed / 4).(s64);
+    ghast := wave % 3 == 2;
+    spawn_nether_hazard(p, ghast, {wave % 2 == 0 ? 385.5 : 414.5, 8 - (wave % 4).(float) * 4});
+}
+spawn_nether_hazard :: proc(p: Player, ghast: bool, position: v2) {
+    e := Scene.create_entity(); e.set_name(ghast ? "Ghast" : "Blaze Rod");
+    e.set_world_position(position);
+    e.add_component(Nether_Hazard, on_before_start=proc(h: Nether_Hazard) {
+        h.owner_user_id = p.get_user_id(); h.ghast = ghast;
+    });
+    adventure_sound(e);
+}

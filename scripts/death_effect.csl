@@ -3,7 +3,8 @@ respawn_player :: proc(player: Player) {
     player.survive_mode_death_reason = "";
     rng := rng_root_seed();
     idx := rng_range_int(ref rng, 0, 3);
-    player.entity.set_local_position(player.adventure_world == 1 ? v2{100, -10} : (player.adventure_world == 2 ? v2{200, -13} : get_spawn_point(idx)));
+    player.nether_elapsed = 0; player.nether_next_wave = 0; player.nether_safe = false;
+    player.entity.set_world_position(player.is_in_backrooms ? BACKROOMS_POSITION : (player.adventure_world == 0 ? get_spawn_point(idx) : adventure_spawn(player.adventure_world)));
     player.entity.mark_teleported();
     player.agent.velocity = {0, 0};
     player.agent.input_this_frame = {0, 0};

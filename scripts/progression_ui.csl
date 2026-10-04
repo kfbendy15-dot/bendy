@@ -1,6 +1,6 @@
 on_progression_event :: proc(event: UIDoc_Event, userdata: Object) {
     p := userdata.(Player);
-    if event.handler == "event:jumpscares:open" && can_access_troll_panel(p) { p.show_jumpscares = true; p.show_troll_panel = false; }
+    if event.handler == "event:jumpscares:open" && can_access_troll_panel(p) { p.show_jumpscares = false; p.show_troll_panel = true; }
     if event.handler == "event:armor:open" { p.show_shop = false; p.show_badges = false; p.show_armor_shop = true; }
     if event.handler == "event:badges:open" { p.show_armor_shop = false; p.show_badges = true; }
     if event.handler == "event:progress:close" { p.show_armor_shop = false; p.show_badges = false; }

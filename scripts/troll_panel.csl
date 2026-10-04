@@ -12,7 +12,7 @@ troll_jumpscare_name :: proc(idx: s64) -> string {
     if idx == 3 return "Alpha Mosasaurus";
     if idx == 4 return "Verity";
     if idx == 5 return "Lovity";
-    if idx == 6 return "Mrlovebraids & Marcat";
+    if idx == 6 return "Mrlovebraids & Lily";
     return "Unknown";
 }
 
@@ -631,6 +631,15 @@ draw_troll_panel :: proc(admin: Player) {
     }
     UIK.list_end();
 
+    UIK.text("Jumpscares", UIK.text_title());
+    scare_buttons: [7]Interact_Result;
+    for index: 0..6 {
+        scare_buttons[index] = UIK.button(`troll/jumpscare/{index}`, troll_jumpscare_name(index), UIK.widget_desc_button_auto_default(troll_can_jumpscare(admin, index) ? .BUTTON_BASIC_RED : .BUTTON_BASIC_GREY));
+    }
+    UIK.text("Teleport Selected Player", UIK.text_title());
+    travel_buttons: [4]Interact_Result;
+    destinations: [4]string = {"Teleport To Normal Map", "Teleport To Backrooms", "Teleport To Splash", "Teleport To Forest"};
+    for index: 0..3 { travel_buttons[index] = UIK.button(`troll/travel/{index}`, destinations[index], UIK.widget_desc_button_auto_default(.BUTTON_BASIC_BLUE)); }
     selected_morph_target := find_online_player_by_username(admin.troll_target_username);
 
     // Morphs stay near the target controls so the selected player can be transformed immediately.
@@ -669,7 +678,7 @@ draw_troll_panel :: proc(admin: Player) {
     pair_active := selected_morph_target != null && selected_morph_target.troll_reference_morph == 3;
     lovity_btn := UIK.button("troll/morph_lovity", lovity_active ? "Unmorph Lovity" : "Lovity", verity_desc);
     paperclips_morph_btn := UIK.button("troll/morph_paperclips", selected_morph_target != null && selected_morph_target.troll_reference_morph == 4 ? "Unmorph Paperclips" : "Paperclips Morph", verity_desc);
-    pair_btn := UIK.button("troll/morph_mrlovebraids_marcat", pair_active ? "Unmorph Mrlovebraids & Marcat" : "Mrlovebraids & Marcat", verity_desc);
+    pair_btn := UIK.button("troll/morph_mrlovebraids_marcat", pair_active ? "Unmorph Mrlovebraids & Lily" : "Mrlovebraids & Lily", verity_desc);
     UIK.panel_end();
     pileo_morph_btn := UIK.button("troll/morph_pileo", selected_morph_target != null && selected_morph_target.troll_reference_morph == 7 ? "Unmorph Pileo" : "Pileo", verity_desc);
     falsity_btn := UIK.button("troll/morph_falsity", selected_morph_target != null && selected_morph_target.troll_reference_morph == 5 ? "Unmorph Falsity" : "Falsity", verity_desc);
@@ -752,6 +761,15 @@ draw_troll_panel :: proc(admin: Player) {
         // No target selected
     }
 
+    for index: 0..6 { if UIK.clicked(scare_buttons[index]) && #alive(real_target) { troll_do_jumpscare(admin, real_target, index); } }
+    for index: 0..3 {
+        if UIK.clicked(travel_buttons[index]) && #alive(real_target) {
+            if index == 0 { return_player_from_backrooms(real_target); }
+            if index == 1 { send_player_to_backrooms(real_target); }
+            if index == 2 { adventure_travel(real_target, 1); }
+            if index == 3 { adventure_travel(real_target, 2); }
+        }
+    }
     if UIK.clicked(freeze_btn) {
         if real_target != null {
             troll_do_freeze(admin, real_target);

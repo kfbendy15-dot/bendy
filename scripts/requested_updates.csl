@@ -1,5 +1,6 @@
 g_event_no_fighting: bool;
 allowed_player_title :: proc(title: string) -> string {
+    if title == "Lava" || title == "Lava Badge" { return "Lava"; }
     if title == "Hunter" { return "Hunter"; }
     if title == "Paperclip" || title == "PAPERCLIP" || title == "paperclip" { return "Paperclip"; }
     if title == "Admin" { return "Admin"; }

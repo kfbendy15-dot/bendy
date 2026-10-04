@@ -69,10 +69,20 @@ draw_emote_shop :: proc(p: Player) {
 refresh_shop_emote_presentation :: proc(p: Player) {
     rig := get_asset(Spine_Asset, "reusable_weapons/anims/reusable-weapons/player/player.merged_spine_rig#output");
     if p.animator.get_skeleton() != rig {
-        p.animator.set_skeleton(rig);
-        p.animator.enable_skin("base/crewchsia"); p.animator.refresh_skins();
+        set_avatar_emote_rig(p);
     }
     setup_shop_emotes(p);
     effect, found := get_effect(p.entity, Shop_Emote_Effect);
     p.animator.state_machine.set_int("shop_emote", found ? effect.emote_index + 1 : 0);
+}
+
+// Preserve the engine-provided avatar outfit when changing only its animation rig.
+set_avatar_emote_rig :: proc(p: Player) {
+    skins: [..]string;
+    for skin: p.animator.get_skins() { skins.append(skin); }
+    p.animator.set_skeleton(get_asset(Spine_Asset, "reusable_weapons/anims/reusable-weapons/player/player.merged_spine_rig#output"));
+    p.animator.enable_skin("base/crewchsia");
+    for skin: skins { if skin != "" { p.animator.enable_skin(skin); } }
+    p.animator.refresh_skins();
+    p.animator.set_color_replace_color(p.avatar_color);
 }

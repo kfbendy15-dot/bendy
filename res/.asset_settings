@@ -1,5 +1,11 @@
 [
   {
+    "id": "volcanic_lava_rock_terrain_313870.png",
+    "texture": {
+      "wrap_repeat": true
+    }
+  },
+  {
     "id": "stone_ground_tile_ce8345.png",
     "texture": {
       "wrap_repeat": true

@@ -4,5 +4,6 @@ Hunter_Claim :: class : Interactable {
     on_interact :: method(p: Player) {
         unlock_badge(p, "Hunter"); p.user_tag = "Hunter"; Save.set_string(p, PLAYER_TITLE_SAVE_KEY, "Hunter");
         Save.set_int(p, "hunter_unlocked", 1); p.play_reward_feedback("Hunter"); adventure_sound(entity);
+        adventure_travel(p, 3);
     }
 }

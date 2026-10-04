@@ -34,12 +34,22 @@ update_adventure_day :: proc(p: Player) {
         Save.set_int(p, "jump_day", today); Save.set_int(p, "jump_daily_uses", 0);
     }
 }
+adventure_spawn :: proc(world: s64) -> v2 {
+    if world == 1 { return {100, -10}; }
+    if world == 2 { return {200, -13}; }
+    if world == 3 { return {400, -9}; }
+    return get_spawn_point(0);
+}
 adventure_travel :: proc(p: Player, world: s64) {
+    if p.is_dead { return; }
     p.adventure_world = world;
+    p.is_in_backrooms = false;
+    p.nether_safe = false; p.nether_elapsed = 0; p.nether_next_wave = 0;
     p.agent.velocity = {0, 0};
-    p.entity.set_world_position(world == 1 ? v2{100, -10} : (world == 2 ? v2{200, -13} : get_spawn_point(0)));
+    p.entity.set_world_position(adventure_spawn(world));
     p.entity.mark_teleported();
     p.out_of_bounds_respawn_active = false;
+    if world == 3 { p.weapon_target.health = p.weapon_target.max_health; }
     adventure_sound(p.entity);
 }
 adventure_rescue_count :: proc(mask: s64) -> s64 {
