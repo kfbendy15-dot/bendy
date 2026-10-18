@@ -1,0 +1,8 @@
+Duckie_Stun_Effect :: class : Effect_Base {
+    effect_start :: method() {
+        player_specific.freeze_player = true;
+        player.active_ability = null;
+        set_duration(2);
+        player.play_reward_feedback("Stunned!");
+    }
+}

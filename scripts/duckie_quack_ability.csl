@@ -1,0 +1,16 @@
+Duckie_Quack_Ability :: class : Ability_Base {
+    on_init :: method() { name = "Quack"; icon = get_asset(Texture_Asset, "generated_6ad4c7ba_e89e2e.png"); }
+    can_use :: method() -> bool { return player.(Player).troll_reference_morph == 9; }
+    on_update :: method(params: ref Ability_Update_Params) {
+        if !params.clicked || !params.can_use { return; }
+        p := player.(Player); current_cooldown = 7;
+        for target: component_iterator(Player) {
+            if target == p || target.is_dead || target.adventure_world != p.adventure_world { continue; }
+            if length_squared(target.entity.world_position - p.entity.world_position) > 16 { continue; }
+            target.entity.set_active_effect(new(Duckie_Stun_Effect));
+        }
+        mrlove_item_sound(p.entity, "yellow_quack_929af0.wav");
+        p.play_reward_feedback("Quack!");
+        Tutorial.report_ability_used(this);
+    }
+}
