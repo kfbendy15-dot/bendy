@@ -3936,6 +3936,12 @@ Player :: class : Player_Base {
 
 
     draw_play_controls :: method(input_owner: Player) {
+            if troll_reference_morph == 9 {
+                draw_control_ability(input_owner, this, Duckie_Quack_Ability, 0);
+                draw_control_ability(input_owner, this, Duckie_Pond_Ability, 1);
+                return;
+            }
+
 
             if g_event_peace_race {
 
@@ -4142,6 +4148,8 @@ Player :: class : Player_Base {
         if #alive(controlled) { return controlled.ao_can_use_ability(ability); }
 
         if is_dead return false;
+        if entity.has_effect(Duckie_Stun_Effect) return false;
+        if g_event_no_fighting && (ability.#type == Duckie_Quack_Ability || ability.#type == Duckie_Pond_Ability) return false;
 
         if g_event_peace_race && (get_time() < g_race_starts_at || race_finished) { return false; }
 

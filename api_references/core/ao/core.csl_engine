@@ -178,6 +178,7 @@ Rigidbody :: class : Component {
 
 Navmesh :: class : Component {
     try_find_closest_point_on_navmesh :: method(to_point: v2, result: ref v2, triangle_hint: ref s64) -> bool #foreign "navmesh_try_find_closest_point_on_navmesh";
+    // Snaps position onto the mesh, then follows direction (length ignored, no max range) to the mesh boundary. Only baked geometry blocks; false = mesh not built.
     try_raycast :: method(position: v2, direction: v2) -> (v2, bool) #foreign "navmesh_try_raycast";
     rebuild_immediately :: method() -> bool #foreign "navmesh_rebuild_immediately";
     mark_for_rebuild :: method() #foreign "navmesh_mark_for_rebuild";

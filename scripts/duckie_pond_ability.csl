@@ -1,0 +1,21 @@
+Duckie_Pond_Ability :: class : Ability_Base {
+    on_init :: method() { name = "Pond Trap"; icon = get_asset(Texture_Asset, "generated_6ad4c7dd_d33758.png"); }
+    can_use :: method() -> bool { return player.(Player).troll_reference_morph == 9; }
+    on_update :: method(params: ref Ability_Update_Params) {
+        if !params.clicked || !params.can_use { return; }
+        p := player.(Player); current_cooldown = 8;
+        count := 0; oldest: Duckie_Pond;
+        for trap: component_iterator(Duckie_Pond) {
+            if trap.owner_user_id != p.get_user_id() { continue; }
+            count += 1;
+            if !#alive(oldest) || trap.created_at < oldest.created_at { oldest = trap; }
+        }
+        if count >= 3 && #alive(oldest) { oldest.entity.destroy(); }
+        e := Scene.create_entity(); e.set_name("Duckie Pond Trap"); e.set_world_position(p.entity.world_position);
+        e.add_component(Duckie_Pond, on_before_start=proc(t: Duckie_Pond) {
+            t.owner_user_id = p.get_user_id(); t.adventure_world = p.adventure_world;
+        });
+        mrlove_item_sound(e, "reusable_weapons/sounds/reusable-weapons/player_throw_grenade.wav");
+        Tutorial.report_ability_used(this);
+    }
+}

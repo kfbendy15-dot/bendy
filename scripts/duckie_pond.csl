@@ -1,0 +1,28 @@
+Duckie_Pond :: class : Component {
+    owner_user_id: string;
+    adventure_world: s64;
+    created_at: float;
+    triggered: bool;
+    ao_start :: method() {
+        created_at = get_time();
+        texture := get_asset(Texture_Asset, "generated_6ad4c7dd_d33758.png");
+        s := entity.add_component(Sprite_Renderer); s.set_texture(texture); s.layer = -1;
+        size := texture.get_world_size(); s.scale = {3 / max(size.x, 0.01), 2 / max(size.y, 0.01)};
+        c := entity.add_component(Circle_Collider); c.radius = 1.1; c.is_trigger = true;
+        c.on_trigger_start = duckie_pond_contact; c.on_trigger_stay = duckie_pond_contact;
+        entity.queue_for_destruction(30);
+    }
+    ao_update :: method(dt: float) {
+        owner := find_online_player_by_user_id(owner_user_id);
+        if !#alive(owner) || owner.is_dead || owner.troll_reference_morph != 9 || owner.adventure_world != adventure_world { entity.destroy(); }
+    }
+}
+duckie_pond_contact :: proc(self: Collider, other: Collider) {
+    t := self.entity.get_component(Duckie_Pond); p := other.entity.get_component(Player);
+    if !#alive(t) || !#alive(p) || t.triggered || get_time() < t.created_at + 0.7 || g_event_no_fighting { return; }
+    if p.is_dead || p.get_user_id() == t.owner_user_id || p.adventure_world != t.adventure_world { return; }
+    t.triggered = true;
+    p.entity.set_active_effect(new(Duckie_Stun_Effect));
+    mrlove_item_sound(t.entity, "yellow_quack_929af0.wav");
+    t.entity.destroy();
+}

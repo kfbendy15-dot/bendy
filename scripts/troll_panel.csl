@@ -12,7 +12,7 @@ troll_jumpscare_name :: proc(idx: s64) -> string {
     if idx == 3 return "Alpha Mosasaurus";
     if idx == 4 return "Verity";
     if idx == 5 return reference_morph_name(2);
-    if idx == 6 return "Mrlovebraids & Lily";
+    if idx == 6 return "Mrlovebraids & Marcat";
     return "Unknown";
 }
 
@@ -686,8 +686,10 @@ draw_troll_panel :: proc(admin: Player) {
     lovity_active := selected_morph_target != null && selected_morph_target.troll_reference_morph == 2;
     pair_active := selected_morph_target != null && selected_morph_target.troll_reference_morph == 3;
     lovity_btn := UIK.button("troll/morph_lovity", (lovity_active ? "Unmorph " : "") + reference_morph_name(2), verity_desc);
+    lily_btn := UIK.button("troll/morph_lily", selected_morph_target != null && selected_morph_target.troll_reference_morph == 8 ? "Unmorph Lily" : "Lily", verity_desc);
+    duckie_btn := UIK.button("troll/morph_duckie", selected_morph_target != null && selected_morph_target.troll_reference_morph == 9 ? "Unmorph Duckie" : "Duckie", verity_desc);
     paperclips_morph_btn := UIK.button("troll/morph_paperclips", selected_morph_target != null && selected_morph_target.troll_reference_morph == 4 ? "Unmorph Paperclips" : "Paperclips Morph", verity_desc);
-    pair_btn := UIK.button("troll/morph_mrlovebraids_marcat", pair_active ? "Unmorph Mrlovebraids & Lily" : "Mrlovebraids & Lily", verity_desc);
+    pair_btn := UIK.button("troll/morph_mrlovebraids_marcat", pair_active ? "Unmorph Mrlovebraids & Marcat" : "Mrlovebraids & Marcat", verity_desc);
     UIK.panel_end();
     pileo_morph_btn := UIK.button("troll/morph_pileo", selected_morph_target != null && selected_morph_target.troll_reference_morph == 7 ? "Unmorph Pileo" : "Pileo", verity_desc);
     falsity_btn := UIK.button("troll/morph_falsity", selected_morph_target != null && selected_morph_target.troll_reference_morph == 5 ? "Unmorph Falsity" : "Falsity", verity_desc);
@@ -844,6 +846,15 @@ draw_troll_panel :: proc(admin: Player) {
         if real_target == null { admin.play_reward_feedback("Select a target"); }
         else if real_target.troll_reference_morph == kind { troll_do_unmorph(admin, real_target); }
         else { troll_do_reference_morph(admin, real_target, kind); }
+    }
+    if (UIK.clicked(lily_btn) || UIK.clicked(duckie_btn)) && #alive(real_target) {
+        kind := UIK.clicked(lily_btn) ? 8 : 9;
+        if real_target.troll_reference_morph == kind { troll_do_unmorph(admin, real_target); }
+        else {
+            if real_target.troll_morph_active { troll_do_unmorph(admin, real_target); }
+            real_target.active_ability = null;
+            troll_do_reference_morph(admin, real_target, kind);
+        }
     }
     if UIK.clicked(pileo_morph_btn) && #alive(real_target) {
         if real_target.troll_reference_morph == 7 { troll_do_unmorph(admin, real_target); }
